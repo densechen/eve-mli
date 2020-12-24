@@ -34,7 +34,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
-    "nbsphinx",
+    # "nbsphinx", # cause build failed online.
     # 'm2r', # cause bugs
 ]
 
