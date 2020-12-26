@@ -1,6 +1,6 @@
 # Eve: Making Learning Interesting
 
-![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve) [![Documentation Status](https://readthedocs.org/projects/eve-ml/badge/?version=latest)](https://eve-ml.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-ml)](https://pypi.org/project/eve-ml) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-ml)](https://pypi.org/project/eve-ml)
+![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve) [![Documentation Status](https://readthedocs.org/projects/Eve-ml/badge/?version=latest)](https://Eve-ml.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-ml)](https://pypi.org/project/eve-ml) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-ml)](https://pypi.org/project/eve-ml)
 
 Eve is an open-source deep learning framework used to devise various architectures in a more flexible and interesting way.
 
