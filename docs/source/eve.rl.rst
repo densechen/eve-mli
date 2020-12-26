@@ -11,6 +11,17 @@ Subpackages
    eve.rl.envs
    eve.rl.utils
 
+Submodules
+----------
+
+eve.rl.exp\_manager module
+--------------------------
+
+.. automodule:: eve.rl.exp_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

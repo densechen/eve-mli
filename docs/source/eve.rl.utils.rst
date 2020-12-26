@@ -4,26 +4,10 @@ eve.rl.utils package
 Submodules
 ----------
 
-eve.rl.utils.benchmark module
------------------------------
-
-.. automodule:: eve.rl.utils.benchmark
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 eve.rl.utils.callbacks module
 -----------------------------
 
 .. automodule:: eve.rl.utils.callbacks
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-eve.rl.utils.exp\_manager module
---------------------------------
-
-.. automodule:: eve.rl.utils.exp_manager
    :members:
    :undoc-members:
    :show-inheritance:
@@ -44,26 +28,10 @@ eve.rl.utils.import\_envs module
    :undoc-members:
    :show-inheritance:
 
-eve.rl.utils.record\_video module
----------------------------------
-
-.. automodule:: eve.rl.utils.record_video
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 eve.rl.utils.utils module
 -------------------------
 
 .. automodule:: eve.rl.utils.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-eve.rl.utils.wrappers module
-----------------------------
-
-.. automodule:: eve.rl.utils.wrappers
    :members:
    :undoc-members:
    :show-inheritance:

@@ -4,14 +4,6 @@ eve.cores package
 Submodules
 ----------
 
-eve.cores.conduct module
-------------------------
-
-.. automodule:: eve.cores.conduct
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 eve.cores.encoder module
 ------------------------
 
@@ -32,6 +24,30 @@ eve.cores.layers module
 -----------------------
 
 .. automodule:: eve.cores.layers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+eve.cores.node module
+---------------------
+
+.. automodule:: eve.cores.node
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+eve.cores.quan module
+---------------------
+
+.. automodule:: eve.cores.quan
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+eve.cores.utils module
+----------------------
+
+.. automodule:: eve.cores.utils
    :members:
    :undoc-members:
    :show-inheritance:

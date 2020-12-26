@@ -7,10 +7,11 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   eve.app
    eve.cores
-   eve.models
    eve.rl
    eve.upgrade
+   eve.utils
 
 Submodules
 ----------

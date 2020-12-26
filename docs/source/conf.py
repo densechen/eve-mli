@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../../eve'))
 
 # -- Project information -----------------------------------------------------
 
@@ -34,8 +34,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
-    # "nbsphinx", # cause build failed online.
-    # 'm2r', # cause bugs
 ]
 
 # Add any paths that contain templates here, relative to this directory.

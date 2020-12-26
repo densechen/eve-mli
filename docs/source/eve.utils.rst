@@ -1,13 +1,13 @@
-eve.rl.envs package
-===================
+eve.utils package
+=================
 
 Submodules
 ----------
 
-eve.rl.envs.nas module
-----------------------
+eve.utils.legacy module
+-----------------------
 
-.. automodule:: eve.rl.envs.nas
+.. automodule:: eve.utils.legacy
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ eve.rl.envs.nas module
 Module contents
 ---------------
 
-.. automodule:: eve.rl.envs
+.. automodule:: eve.utils
    :members:
    :undoc-members:
    :show-inheritance:
