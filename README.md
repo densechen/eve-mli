@@ -1,6 +1,6 @@
-# Eve: Making Learning Interesting
+# eve-mli: making learning interesting
 
-![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve) [![Documentation Status](https://readthedocs.org/projects/Eve-ml/badge/?version=latest)](https://Eve-ml.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-ml)](https://pypi.org/project/eve-ml) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-ml)](https://pypi.org/project/eve-ml)
+![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve-mli) [![Documentation Status](https://readthedocs.org/projects/eve-mli/badge/?version=latest)](https://eve-mli.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-mli)](https://pypi.org/project/eve-mli) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-mli)](https://pypi.org/project/eve-mli)
 
 Eve is an open-source deep learning framework used to devise various architectures in a more flexible and interesting way.
 
@@ -10,16 +10,16 @@ We provide a jupyter notebook to show the basic usage and the advanced features 
 
 ## Installation
 
-Install from [PyPI](https://pypi.org/project/eve-ml/):
+Install from [PyPI](https://pypi.org/project/eve-mli/):
 
 ```bash
-pip install eve-ml
+pip install eve-mli
 ```
 
-Developers can download and install the latest version from [GitHub](https://github.com/densechen/eve):
+Developers can download and install the latest version from [GitHub](https://github.com/densechen/eve-mli):
 
 ```bash
-git clone https://github.com/densechen/eve.git
+git clone https://github.com/densechen/eve-mli.git
 cd eve
 python setup.py install
 ```
@@ -30,7 +30,7 @@ This project is mainly based on [PyTorch](https://github.com/pytorch/pytorch) an
 *eve.Cores.Eve* succeeds *torch.nn.Module* and keeps all the features of latter.
 We design a *Trainer* to maintain training process and further wrapper it as a *gym.envs* to play with reinforcement learning.
 
-The documentation of Eve can be found [here](https://eve-ml.readthedocs.io).
+The documentation can be found [here](https://eve-mli.readthedocs.io).
 
 ## About the authors
 

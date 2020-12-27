@@ -19,11 +19,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     install_requires=install_requires,
-    name="Eve-ml",
+    name="eve-mli",
     version=__version__,
     author="densechen",
     author_email="densechen@foxmail.com",
-    description="Eve: make deep learning more interesting.",
+    description="eve-mli: making learning interesting.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/densechen/eve",

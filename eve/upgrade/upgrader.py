@@ -6,7 +6,7 @@ from itertools import chain
 from typing import Any, Dict, List, Union
 
 import torch
-from eve.cores import EveParameter
+from eve.cores.eve import EveParameter
 from torch import Tensor
 from torch._six import container_abcs
 

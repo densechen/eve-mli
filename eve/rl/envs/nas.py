@@ -65,13 +65,14 @@ class Nas(gym.Env):
                 keep the order of the defination order in network.
         
         Returns:
-            observation (np.ndarray): agent's observation states for current
+            observation (np.ndarray): agent's observation states for current 
                 trainer. [neurons times n] or [1 times n].
             reward (float): amout of reward returned after previous action.
             done (bool): whether the episode has ended, in which case further
                 step() calls will return undefined results.
             info (dict): contains auxiliary diagnostic information (helpful for
                 debugging and sometimes learning).
+
         """
         # take action
         self.trainer.take_action(action)
