@@ -218,7 +218,10 @@ class Upgrader(object):
 
         for group in self.param_groups:
             for p in group["params"]:
-                if p.obs is None or not p.requires_upgrading:
+                # sometimes p.obs can be None, but still need to be upgraded.
+                # if p.obs is None or not p.requires_upgrading:
+                #     continue
+                if not p.requires_upgrading:
                     continue
                 p.upgrade_fn(p, z=p.obs)
         return loss
