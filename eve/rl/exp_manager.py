@@ -26,8 +26,9 @@ from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 # For custom activation fn
 import torch.nn as nn
 
-# Register custom envs
-import eve.rl.utils.import_envs
+# NOTE: import the env, and automatically register the env to global gym.envs.
+import eve.rl.envs
+
 from eve.rl.utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
 from eve.rl.utils.hyperparams_opt import HYPERPARAMS_SAMPLER
 from eve.rl.utils.utils import ALGOS, get_callback_list, get_latest_run_id, get_wrapper_class, linear_schedule
@@ -38,7 +39,48 @@ class ExperimentManager(object):
     Experiment manager: read the hyperparameters,
     preprocess them, create the environment and the RL model.
 
-    Please take a look at `train.py` to have the details for each argument.
+    Args:
+        args (argparse.Namespace): the arguments namespace.
+        algo (str): RL Algorithm used to NAS searching.
+        env_id (str): the environment used to wrapper trainer. Different 
+            environments will apply different reward functions and interactive 
+            steps.
+        log_folder (str): the log folder of this experiment.
+        tensorboard_log (str): tensorboard log dir.
+        n_timesteps (int): rewrite n_timesteps.
+        eval_freq (int): evaluate the agent every n steps (if negative, no 
+            evaluation.)
+        n_eval_episodes (int): number of episodes to use for evaluation. 
+        save_freq (int): save the model every n steps (if negative, no checkpoint).
+        hyperparams (dict): overwrite hyperparameter (e.g. learning_rate:0.01)
+        env_kwargs (dict): optional keywork argument to pass to the env constructor
+            the trainer parameters is delivered here.
+        trained_agent (str): path to a pretrained agent to continue training.
+        optimize_hyperparameters (bool): run hyperparameters search.
+        storage (str): database storage path if distributed optimization should
+            be used.
+        study_name (str): study name for distributed optimization.
+        n_trials (int): number of trials for optimizing hyperparameters.
+        n_jobs (int): number of parallel jobs when optimizing hyperparameters
+        sampler (str): sampler to use when optimizing hyperparameters
+        pruner (str): pruner to use when optimizing hyperparameters.
+        n_startup_trials (int): number of trials before using optuna sampler.
+        n_evaluations (int): number of evaluations for hyperparameter optimization.
+        trauncate_last_trajectory (bool): when using HER with online sampling the
+            last trajectory in the replay buffer will be truncated after reloading
+            the replay buffer.
+        uuid_str (str): ensure that the run has a unique ID.
+        seed (int): random generator seed.
+        log_interval (int): overwrite log interval.
+        save_replay_buffer (bool): save the replay buffer too (when applicable).
+        verbose (int): verbose mode (0: no output, 1: INFO)
+        vec_env_type (str):  vec env type, dummy or subproc
+        default_hyperparameter_yaml (str): the path to the default 
+            hyperparameter yaml file.
+    
+    .. note:: 
+
+        Refer `examples/advanced.ipynb` for a detailed using example.
     """
     def __init__(
             self,
@@ -176,8 +218,10 @@ class ExperimentManager(object):
         return model
 
     def learn(self, model: BaseAlgorithm) -> None:
-        """
-        :param model: an initialized RL model
+        """ Performs the whole RL learning process.
+        
+        Args:
+            model (BaseAlgorithm): an initialized RL model
         """
         kwargs = {}
         if self.log_interval > -1:
@@ -199,11 +243,11 @@ class ExperimentManager(object):
                 pass
 
     def save_trained_model(self, model: BaseAlgorithm) -> None:
-        """
-        Save trained model optionally with its replay buffer
-        and ``VecNormalize`` statistics
+        """ Saves trained model optionally with its replay buffer
+        and ``VecNormalize`` statistics.
 
-        :param model:
+        Args:
+            model (BaseAlgorithm): the trained model.
         """
         print(f"Saving to {self.save_path}")
         model.save(f"{self.save_path}/{self.env_id}")
@@ -219,11 +263,11 @@ class ExperimentManager(object):
                 os.path.join(self.params_path, "vecnormalize.pkl"))
 
     def _save_config(self, saved_hyperparams: Dict[str, Any]) -> None:
-        """
-        Save unprocessed hyperparameters, this can be use later
+        """Saves unprocessed hyperparameters, this can be use later
         to reproduce an experiment.
 
-        :param saved_hyperparams:
+        Args:
+            saved_hyperparams
         """
         # Save hyperparams
         with open(os.path.join(self.params_path, "config.yml"), "w") as f:
@@ -240,7 +284,7 @@ class ExperimentManager(object):
         print(f"Log path: {self.save_path}")
 
     def read_hyperparameters(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        # Load hyperparameters from yaml file
+        """Load saved parameters form yaml file"""
         with open(f"{self.default_hyperparameter_yaml}/{self.algo}.yml",
                   "r") as f:
             hyperparams_dict = yaml.safe_load(f)
@@ -265,12 +309,17 @@ class ExperimentManager(object):
 
     @staticmethod
     def _preprocess_schedules(hyperparams: Dict[str, Any]) -> Dict[str, Any]:
+        """Creates the learning schedules for RL agent.
+
+        Args:
+            hyperparams:
+        """
         # Create schedules
         for key in ["learning_rate", "clip_range", "clip_range_vf"]:
             if key not in hyperparams:
                 continue
             if isinstance(hyperparams[key], str):
-                schedule, initial_value = hyperparams[key].split("_") # pylint: disable=unused-variable
+                schedule, initial_value = hyperparams[key].split("_")  # pylint: disable=unused-variable
                 initial_value = float(initial_value)
                 hyperparams[key] = linear_schedule(initial_value)
             elif isinstance(hyperparams[key], (float, int)):
@@ -285,6 +334,7 @@ class ExperimentManager(object):
 
     def _preprocess_normalization(
             self, hyperparams: Dict[str, Any]) -> Dict[str, Any]:
+        """Preprocess normalization."""
         if "normalize" in hyperparams.keys():
             self.normalize = hyperparams["normalize"]
 
@@ -306,6 +356,7 @@ class ExperimentManager(object):
 
     def _preprocess_her_model_class(
             self, hyperparams: Dict[str, Any]) -> Dict[str, Any]:
+        """Special preprocess for her model."""
         # HER is only a wrapper around an algo
         if self.algo == "her":
             model_class = hyperparams["model_class"]
@@ -319,6 +370,7 @@ class ExperimentManager(object):
     def _preprocess_hyperparams(
         self, hyperparams: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], Optional[Callable], List[BaseCallback]]:
+        """"Preprocesses hyperparams."""
         self.n_envs = hyperparams.get("n_envs", 1)
 
         if self.verbose > 0:
@@ -368,6 +420,7 @@ class ExperimentManager(object):
 
     def _preprocess_action_noise(self, hyperparams: Dict[str, Any],
                                  env: VecEnv) -> Dict[str, Any]:
+        """Preprocesses action noise."""
         # Special case for HER
         algo = hyperparams["model_class"] if self.algo == "her" else self.algo
         # Parse noise string for DDPG and SAC
@@ -400,10 +453,11 @@ class ExperimentManager(object):
         return hyperparams
 
     def create_log_folder(self):
+        """Creates log folder."""
         os.makedirs(self.params_path, exist_ok=True)
 
     def create_callbacks(self):
-
+        """Create necessary callbacks."""
         if self.save_freq > 0:
             # Account for the number of parallel environments
             self.save_freq = max(self.save_freq // self.n_envs, 1)
@@ -438,13 +492,12 @@ class ExperimentManager(object):
             self.callbacks.append(eval_callback)
 
     def _maybe_normalize(self, env: VecEnv, eval_env: bool) -> VecEnv:
-        """
-        Wrap the env into a VecNormalize wrapper if needed
-        and load saved statistics when present.
+        """Wraps the env into a VecNormalize wrapper if needed and load 
+        saved statistics when present.
 
-        :param env:
-        :param eval_env:
-        :return:
+        Args:
+            eve (VecEnv): the environment.
+            eval_env (bool):
         """
         # Pretrained model, load normalization
         path_ = os.path.join(os.path.dirname(self.trained_agent), self.env_id)
@@ -480,14 +533,16 @@ class ExperimentManager(object):
                     n_envs: int,
                     eval_env: bool = False,
                     no_log: bool = False) -> VecEnv:
-        """
-        Create the environment and wrap it if necessary.
+        """Creates the environment and wrap it if necessary.
 
-        :param n_envs:
-        :param eval_env: Whether is it an environment used for evaluation or not
-        :param no_log: Do not log training when doing hyperparameter optim
-            (issue with writing the same file)
-        :return: the vectorized environment, with appropriate wrappers
+        Args:
+            n_envs (int): the number of envs in parallel.
+            eval_env (bool): whether is it an environment used for evaluation or not.
+            no_log (bool): do not log training when doing hyperparameter optim
+                (issue with writing the same file)
+        
+        Returns:
+            the vectorized environment, with appropriate wrappers.
         """
         # Do not log eval env (issue with writing the same file)
         log_dir = None if eval_env or no_log else self.save_path
@@ -533,6 +588,12 @@ class ExperimentManager(object):
 
     def _load_pretrained_agent(self, hyperparams: Dict[str, Any],
                                env: VecEnv) -> BaseAlgorithm:
+        """Loads pretrained agent.
+
+        Args:
+            hyperparams (dict):
+            env (Env): 
+        """
         # Continue training
         print("Loading pretrained agent")
         # Policy should not be changed
@@ -564,6 +625,7 @@ class ExperimentManager(object):
         return model
 
     def _create_sampler(self, sampler_method: str) -> BaseSampler:
+        """Creates sampler"""
         # n_warmup_steps: Disable pruner until the trial reaches the given number of step.
         if sampler_method == "random":
             sampler = RandomSampler(seed=self.seed)
@@ -584,6 +646,7 @@ class ExperimentManager(object):
         return sampler
 
     def _create_pruner(self, pruner_method: str) -> BasePruner:
+        """Creates pruner."""
         if pruner_method == "halving":
             pruner = SuccessiveHalvingPruner(min_resource=1,
                                              reduction_factor=4,
@@ -600,6 +663,7 @@ class ExperimentManager(object):
         return pruner
 
     def objective(self, trial: optuna.Trial) -> float:
+        """return on object used to prune training."""
 
         kwargs = self._hyperparams.copy()
 
@@ -662,6 +726,7 @@ class ExperimentManager(object):
         return reward
 
     def hyperparameters_optimization(self) -> None:
+        """Implements the hyperparameters optimization process."""
 
         if self.verbose > 0:
             print("Optimizing hyperparameters")

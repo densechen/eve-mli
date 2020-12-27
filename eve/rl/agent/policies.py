@@ -7,25 +7,26 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
-import torch as th
-from torch import nn
-
+import torch
+import torch.nn as nn
 from stable_baselines3.common.distributions import (
-    BernoulliDistribution,
-    CategoricalDistribution,
-    DiagGaussianDistribution,
-    Distribution,
-    MultiCategoricalDistribution,
-    StateDependentNoiseDistribution,
-    make_proba_distribution,
-)
-from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, MlpExtractor, NatureCNN, create_mlp
-from stable_baselines3.common.utils import get_device, is_vectorized_observation
+    BernoulliDistribution, CategoricalDistribution, DiagGaussianDistribution,
+    Distribution, MultiCategoricalDistribution,
+    StateDependentNoiseDistribution, make_proba_distribution)
+from stable_baselines3.common.preprocessing import (get_action_dim,
+                                                    is_image_space,
+                                                    preprocess_obs)
+from stable_baselines3.common.torch_layers import (BaseFeaturesExtractor,
+                                                   FlattenExtractor,
+                                                   MlpExtractor, NatureCNN,
+                                                   create_mlp)
+from stable_baselines3.common.utils import (get_device,
+                                            is_vectorized_observation)
 from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
+# pylint: disable=no-member
 class BaseModel(nn.Module, ABC):
     """
     The base model object: makes predictions in response to observations.
@@ -33,19 +34,19 @@ class BaseModel(nn.Module, ABC):
     In the case of policies, the prediction is an action. In the case of critics, it is the
     estimated value of the observation.
 
-    :param observation_space: The observation space of the environment
-    :param action_space: The action space of the environment
-    :param features_extractor_class: Features extractor to use.
-    :param features_extractor_kwargs: Keyword arguments
-        to pass to the features extractor.
-    :param features_extractor: Network to extract features
-        (a CNN when using images, a nn.Flatten() layer otherwise)
-    :param normalize_images: Whether to normalize images or not,
-         dividing by 255.0 (True by default)
-    :param optimizer_class: The optimizer to use,
-        ``th.optim.Adam`` by default
-    :param optimizer_kwargs: Additional keyword arguments,
-        excluding the learning rate, to pass to the optimizer
+    Args:
+        observation_space: The observation space of the environment
+        action_space: The action space of the environment
+        features_extractor_class: Features extractor to use.
+        features_extractor_kwargs: Keyword arguments to pass to 
+            the features extractor.
+        features_extractor: Network to extract features (a CNN when using 
+            images, a nn.Flatten() layer otherwise)
+        normalize_images: Whether to normalize images or not, dividing 
+            by 255.0 (True by default)
+        optimizer_class: The optimizer to use, ``torch.optim.Adam`` by default
+        optimizer_kwargs: Additional keyword arguments, excluding the 
+            learning rate, to pass to the optimizer
     """
     def __init__(
         self,
@@ -56,7 +57,7 @@ class BaseModel(nn.Module, ABC):
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
         features_extractor: Optional[nn.Module] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_class: Type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
         super(BaseModel, self).__init__()
@@ -74,7 +75,7 @@ class BaseModel(nn.Module, ABC):
 
         self.optimizer_class = optimizer_class
         self.optimizer_kwargs = optimizer_kwargs
-        self.optimizer = None  # type: Optional[th.optim.Optimizer]
+        self.optimizer = None  # type: Optional[torch.optim.Optimizer]
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
@@ -92,11 +93,13 @@ class BaseModel(nn.Module, ABC):
         Update the network keyword arguments and create a new features extractor object if needed.
         If a ``features_extractor`` object is passed, then it will be shared.
 
-        :param net_kwargs: the base network keyword arguments, without the ones
-            related to features extractor
-        :param features_extractor: a features extractor object.
-            If None, a new object will be created.
-        :return: The updated keyword arguments
+        Args:
+            net_kwargs: the base network keyword arguments, without the ones
+                related to features extractor
+            features_extractor: a features extractor object.
+                If None, a new object will be created.
+        Returns:
+            The updated keyword arguments
         """
         net_kwargs = net_kwargs.copy()
         if features_extractor is None:
@@ -112,12 +115,15 @@ class BaseModel(nn.Module, ABC):
         return self.features_extractor_class(self.observation_space,
                                              **self.features_extractor_kwargs)
 
-    def extract_features(self, obs: th.Tensor) -> th.Tensor:
+    def extract_features(self, obs: torch.Tensor) -> torch.Tensor:
         """
         Preprocess the observation if needed and extract features.
+        NOTE: Rewrite this if you wanted to use a LSTM based feature extractor.
 
-        :param obs:
-        :return:
+        Args:
+            obs:
+        Returns:
+            torch.Tensor
         """
         assert self.features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(
@@ -130,8 +136,6 @@ class BaseModel(nn.Module, ABC):
         """
         Get data that need to be saved in order to re-create the model.
         This corresponds to the arguments of the constructor.
-
-        :return:
         """
         return dict(
             observation_space=self.observation_space,
@@ -143,11 +147,10 @@ class BaseModel(nn.Module, ABC):
         )
 
     @property
-    def device(self) -> th.device:
+    def device(self) -> torch.device:
         """Infer which device this policy lives on by inspecting its parameters.
         If it has no parameters, the 'cpu' device is used as a fallback.
-
-        :return:"""
+        """
         for param in self.parameters():
             return param.device
         return get_device("cpu")
@@ -156,9 +159,10 @@ class BaseModel(nn.Module, ABC):
         """
         Save model to a given location.
 
-        :param path:
+        Args:
+            path (str): the checkpoint path.
         """
-        th.save({
+        torch.save({
             "state_dict": self.state_dict(),
             "data": self._get_data()
         }, path)
@@ -166,16 +170,16 @@ class BaseModel(nn.Module, ABC):
     @classmethod
     def load(cls,
              path: str,
-             device: Union[th.device, str] = "auto") -> "BaseModel":
+             device: Union[torch.device, str] = "auto") -> "BaseModel":
         """
         Load model from path.
 
-        :param path:
-        :param device: Device on which the policy should be loaded.
-        :return:
+        Args:
+            path (str): the checkpoint path.
+            device (torc.device or str): device on which the policy should be loaded.
         """
         device = get_device(device)
-        saved_variables = th.load(path, map_location=device)
+        saved_variables = torch.load(path, map_location=device)
         # Create policy object
         model = cls(**saved_variables["data"])  # pytype: disable=not-instantiable
         # Load weights
@@ -187,18 +191,17 @@ class BaseModel(nn.Module, ABC):
         """
         Load parameters from a 1D vector.
 
-        :param vector:
+        Args:
+            vector (np.ndarray):
         """
-        th.nn.utils.vector_to_parameters(
-            th.FloatTensor(vector).to(self.device), self.parameters())
+        torch.nn.utils.vector_to_parameters(
+            torch.FloatTensor(vector).to(self.device), self.parameters())
 
     def parameters_to_vector(self) -> np.ndarray:
         """
         Convert the parameters to a 1D vector.
-
-        :return:
         """
-        return th.nn.utils.parameters_to_vector(
+        return torch.nn.utils.parameters_to_vector(
             self.parameters()).detach().cpu().numpy()
 
 
@@ -207,10 +210,11 @@ class BasePolicy(BaseModel):
 
     Parameters are mostly the same as `BaseModel`; additions are documented below.
 
-    :param args: positional arguments passed through to `BaseModel`.
-    :param kwargs: keyword arguments passed through to `BaseModel`.
-    :param squash_output: For continuous actions, whether the output is squashed
-        or not using a ``tanh()`` function.
+    Args:
+        args: positional arguments passed through to `BaseModel`.
+        kwargs: keyword arguments passed through to `BaseModel`.
+        squash_output: For continuous actions, whether the output is squashed
+            or not using a ``tanh()`` function.
     """
     def __init__(self, *args, squash_output: bool = False, **kwargs):
         super(BasePolicy, self).__init__(*args, **kwargs)
@@ -239,17 +243,19 @@ class BasePolicy(BaseModel):
 
     @abstractmethod
     def _predict(self,
-                 observation: th.Tensor,
-                 deterministic: bool = False) -> th.Tensor:
+                 observation: torch.Tensor,
+                 deterministic: bool = False) -> torch.Tensor:
         """
         Get the action according to the policy for a given observation.
 
         By default provides a dummy implementation -- not all BasePolicy classes
         implement this, e.g. if they are a Critic in an Actor-Critic method.
 
-        :param observation:
-        :param deterministic: Whether to use stochastic or deterministic actions
-        :return: Taken action according to the policy
+        Args:
+            observation:
+            deterministic: Whether to use stochastic or deterministic actions
+        Returns:
+            Taken action according to the policy
         """
 
     def predict(
@@ -263,12 +269,13 @@ class BasePolicy(BaseModel):
         Get the policy action and state from an observation (and optional state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).
 
-        :param observation: the input observation
-        :param state: The last states (can be None, used in recurrent policies)
-        :param mask: The last masks (can be None, used in recurrent policies)
-        :param deterministic: Whether or not to return deterministic actions.
-        :return: the model's action and the next state
-            (used in recurrent policies)
+        Args:
+            observation: the input observation
+            state: The last states (can be None, used in recurrent policies)
+            mask: The last masks (can be None, used in recurrent policies)
+            deterministic: Whether or not to return deterministic actions.
+        Returns:
+            the model's action and the next state (used in recurrent policies).
         """
         # TODO (GH/1): add support for RNN policies
         # if state is None:
@@ -298,8 +305,8 @@ class BasePolicy(BaseModel):
         observation = observation.reshape((-1, ) +
                                           self.observation_space.shape)
 
-        observation = th.as_tensor(observation).to(self.device)
-        with th.no_grad():
+        observation = torch.as_tensor(observation).to(self.device)
+        with torch.no_grad():
             actions = self._predict(observation, deterministic=deterministic)
         # Convert to numpy
         actions = actions.cpu().numpy()
@@ -328,8 +335,10 @@ class BasePolicy(BaseModel):
         Rescale the action from [low, high] to [-1, 1]
         (no need for symmetric action space)
 
-        :param action: Action to scale
-        :return: Scaled action
+        Args:
+            action: Action to scale
+        Returns:
+            Scaled action
         """
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
@@ -339,7 +348,8 @@ class BasePolicy(BaseModel):
         Rescale the action from [-1, 1] to [low, high]
         (no need for symmetric action space)
 
-        :param scaled_action: Action to un-scale
+        Args:
+            scaled_action: Action to un-scale
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
@@ -350,33 +360,32 @@ class ActorCriticPolicy(BasePolicy):
     Policy class for actor-critic algorithms (has both policy and value prediction).
     Used by A2C, PPO and the likes.
 
-    :param observation_space: Observation space
-    :param action_space: Action space
-    :param lr_schedule: Learning rate schedule (could be constant)
-    :param net_arch: The specification of the policy and value networks.
-    :param activation_fn: Activation function
-    :param ortho_init: Whether to use or not orthogonal initialization
-    :param use_sde: Whether to use State Dependent Exploration or not
-    :param log_std_init: Initial value for the log standard deviation
-    :param full_std: Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using gSDE
-    :param sde_net_arch: Network architecture for extracting features
-        when using gSDE. If None, the latent features from the policy will be used.
-        Pass an empty list to use the states as features.
-    :param use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
-        a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
-    :param squash_output: Whether to squash the output using a tanh function,
-        this allows to ensure boundaries when using gSDE.
-    :param features_extractor_class: Features extractor to use.
-    :param features_extractor_kwargs: Keyword arguments
-        to pass to the features extractor.
-    :param normalize_images: Whether to normalize images or not,
-         dividing by 255.0 (True by default)
-    :param optimizer_class: The optimizer to use,
-        ``th.optim.Adam`` by default
-    :param optimizer_kwargs: Additional keyword arguments,
-        excluding the learning rate, to pass to the optimizer
+    Args:
+        observation_space: Observation space
+        action_space: Action space
+        lr_schedule: Learning rate schedule (could be constant)
+        net_arch: The specification of the policy and value networks.
+        activation_fn: Activation function
+        ortho_init: Whether to use or not orthogonal initialization
+        use_sde: Whether to use State Dependent Exploration or not
+        log_std_init: Initial value for the log standard deviation
+        full_std: Whether to use (n_features x n_actions) parameters
+            for the std instead of only (n_features,) when using gSDE
+        sde_net_arch: Network architecture for extracting features
+            when using gSDE. If None, the latent features from the 
+            policy will be used. Pass an empty list to use the states as features.
+        use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
+            a positive standard deviation (cf paper). It allows to keep variance
+            above zero and prevent it from growing too fast. 
+            In practice, ``exp()`` is usually enough.
+        squash_output: Whether to squash the output using a tanh function,
+            this allows to ensure boundaries when using gSDE.
+        features_extractor_class: Features extractor to use.
+        features_extractor_kwargs: Keyword arguments to pass to the features extractor.
+        normalize_images: Whether to normalize images or not, dividing by 255.0 (True by default)
+        optimizer_class: The optimizer to use, ``torch.optim.Adam`` by default
+        optimizer_kwargs: Additional keyword arguments, excluding the 
+            learning rate, to pass to the optimizer
     """
     def __init__(
         self,
@@ -396,14 +405,14 @@ class ActorCriticPolicy(BasePolicy):
             BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_class: Type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
 
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
             # Small values to avoid NaN in Adam optimizer
-            if optimizer_class == th.optim.Adam:
+            if optimizer_class == torch.optim.Adam:
                 optimizer_kwargs["eps"] = 1e-5
 
         super(ActorCriticPolicy, self).__init__(
@@ -485,7 +494,8 @@ class ActorCriticPolicy(BasePolicy):
         """
         Sample new weights for the exploration matrix.
 
-        :param n_envs:
+        Args:
+            n_envs:
         """
         assert isinstance(self.action_dist, StateDependentNoiseDistribution
                           ), "reset_noise() is only available when using gSDE"
@@ -508,8 +518,9 @@ class ActorCriticPolicy(BasePolicy):
         """
         Create the networks and the optimizer.
 
-        :param lr_schedule: Learning rate schedule
-            lr_schedule(1) is the initial learning rate
+        Args:
+            lr_schedule: Learning rate schedule lr_schedule(1) is the
+                initial learning rate
         """
         self._build_mlp_extractor()
 
@@ -525,7 +536,7 @@ class ActorCriticPolicy(BasePolicy):
                 latent_dim=latent_dim_pi, log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             latent_sde_dim = latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
-            self.action_net, self.log_std = self.action_dist.proba_distribution_net(
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
                 latent_dim=latent_dim_pi,
                 latent_sde_dim=latent_sde_dim,
                 log_std_init=self.log_std_init)
@@ -565,16 +576,18 @@ class ActorCriticPolicy(BasePolicy):
                                               **self.optimizer_kwargs)
 
     def forward(
-            self,
-            obs: th.Tensor,
-            deterministic: bool = False
-    ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+        self,
+        obs: torch.Tensor,
+        deterministic: bool = False
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Forward pass in all the networks (actor and critic)
 
-        :param obs: Observation
-        :param deterministic: Whether to sample or use deterministic actions
-        :return: action, value and log probability of the action
+        Args:
+            obs: Observation
+            deterministic: Whether to sample or use deterministic actions
+        Returns:
+            action, value and log probability of the action
         """
         latent_pi, latent_vf, latent_sde = self._get_latent(obs)
         # Evaluate the values for the given observations
@@ -585,15 +598,17 @@ class ActorCriticPolicy(BasePolicy):
         log_prob = distribution.log_prob(actions)
         return actions, values, log_prob
 
-    def _get_latent(self,
-                    obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def _get_latent(
+            self, obs: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Get the latent code (i.e., activations of the last layer of each network)
         for the different networks.
 
-        :param obs: Observation
-        :return: Latent codes
-            for the actor, the value function and for gSDE function
+        Args:
+            obs: Observation
+        Returns:
+            Latent codes for the actor, the value function and for gSDE function.
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
@@ -607,14 +622,16 @@ class ActorCriticPolicy(BasePolicy):
 
     def _get_action_dist_from_latent(
             self,
-            latent_pi: th.Tensor,
-            latent_sde: Optional[th.Tensor] = None) -> Distribution:
+            latent_pi: torch.Tensor,
+            latent_sde: Optional[torch.Tensor] = None) -> Distribution:
         """
         Retrieve action distribution given the latent codes.
 
-        :param latent_pi: Latent code for the actor
-        :param latent_sde: Latent code for the gSDE exploration function
-        :return: Action distribution
+        Args:
+            latent_pi: Latent code for the actor
+            latent_sde: Latent code for the gSDE exploration function
+        Returns:
+            Action distribution
         """
         mean_actions = self.action_net(latent_pi)
 
@@ -623,47 +640,50 @@ class ActorCriticPolicy(BasePolicy):
                                                        self.log_std)
         elif isinstance(self.action_dist, CategoricalDistribution):
             # Here mean_actions are the logits before the softmax
-            return self.action_dist.proba_distribution(
+            return self.action_dist.proba_distribution(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
                 action_logits=mean_actions)
         elif isinstance(self.action_dist, MultiCategoricalDistribution):
             # Here mean_actions are the flattened logits
-            return self.action_dist.proba_distribution(
+            return self.action_dist.proba_distribution(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
                 action_logits=mean_actions)
         elif isinstance(self.action_dist, BernoulliDistribution):
             # Here mean_actions are the logits (before rounding to get the binary actions)
-            return self.action_dist.proba_distribution(
+            return self.action_dist.proba_distribution(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
                 action_logits=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(mean_actions,
-                                                       self.log_std,
-                                                       latent_sde)
+            return self.action_dist.proba_distribution(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg,too-many-function-args
+                mean_actions, self.log_std, latent_sde)
         else:
             raise ValueError("Invalid action distribution")
 
     def _predict(self,
-                 observation: th.Tensor,
-                 deterministic: bool = False) -> th.Tensor:
+                 observation: torch.Tensor,
+                 deterministic: bool = False) -> torch.Tensor:
         """
         Get the action according to the policy for a given observation.
 
-        :param observation:
-        :param deterministic: Whether to use stochastic or deterministic actions
-        :return: Taken action according to the policy
+        Args:
+            observation:
+            deterministic: Whether to use stochastic or deterministic actions
+        Returns:
+            Taken action according to the policy
         """
         latent_pi, _, latent_sde = self._get_latent(observation)
         distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
         return distribution.get_actions(deterministic=deterministic)
 
     def evaluate_actions(
-            self, obs: th.Tensor,
-            actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+        self, obs: torch.Tensor, actions: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
 
-        :param obs:
-        :param actions:
-        :return: estimated value, log likelihood of taking those actions
+        Args:
+            obs:
+            actions:
+        Returns:
+            estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
         latent_pi, latent_vf, latent_sde = self._get_latent(obs)
@@ -678,33 +698,33 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     CNN policy class for actor-critic algorithms (has both policy and value prediction).
     Used by A2C, PPO and the likes.
 
-    :param observation_space: Observation space
-    :param action_space: Action space
-    :param lr_schedule: Learning rate schedule (could be constant)
-    :param net_arch: The specification of the policy and value networks.
-    :param activation_fn: Activation function
-    :param ortho_init: Whether to use or not orthogonal initialization
-    :param use_sde: Whether to use State Dependent Exploration or not
-    :param log_std_init: Initial value for the log standard deviation
-    :param full_std: Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using gSDE
-    :param sde_net_arch: Network architecture for extracting features
-        when using gSDE. If None, the latent features from the policy will be used.
-        Pass an empty list to use the states as features.
-    :param use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
-        a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
-    :param squash_output: Whether to squash the output using a tanh function,
-        this allows to ensure boundaries when using gSDE.
-    :param features_extractor_class: Features extractor to use.
-    :param features_extractor_kwargs: Keyword arguments
-        to pass to the features extractor.
-    :param normalize_images: Whether to normalize images or not,
-         dividing by 255.0 (True by default)
-    :param optimizer_class: The optimizer to use,
-        ``th.optim.Adam`` by default
-    :param optimizer_kwargs: Additional keyword arguments,
-        excluding the learning rate, to pass to the optimizer
+    Args:
+        observation_space: Observation space
+        action_space: Action space
+        lr_schedule: Learning rate schedule (could be constant)
+        net_arch: The specification of the policy and value networks.
+        activation_fn: Activation function
+        ortho_init: Whether to use or not orthogonal initialization
+        use_sde: Whether to use State Dependent Exploration or not
+        log_std_init: Initial value for the log standard deviation
+        full_std: Whether to use (n_features x n_actions) parameters
+            for the std instead of only (n_features,) when using gSDE
+        sde_net_arch: Network architecture for extracting features
+            when using gSDE. If None, the latent features from the policy will be used.
+            Pass an empty list to use the states as features.
+        use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
+            a positive standard deviation (cf paper). It allows to keep variance
+            above zero and prevent it from growing too fast. In practice, 
+            ``exp()`` is usually enough.
+        squash_output: Whether to squash the output using a tanh function,
+            this allows to ensure boundaries when using gSDE.
+        features_extractor_class: Features extractor to use.
+        features_extractor_kwargs: Keyword arguments to pass to the features extractor.
+        normalize_images: Whether to normalize images or not, dividing 
+            by 255.0 (True by default)
+        optimizer_class: The optimizer to use, ``torch.optim.Adam`` by default
+        optimizer_kwargs: Additional keyword arguments, excluding the learning 
+            rate, to pass to the optimizer
     """
     def __init__(
         self,
@@ -723,7 +743,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_class: Type[torch.optim.Optimizer] = torch.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
         super(ActorCriticCnnPolicy, self).__init__(
@@ -760,18 +780,19 @@ class ContinuousCritic(BaseModel):
     By default, it creates two critic networks used to reduce overestimation
     thanks to clipped Q-learning (cf TD3 paper).
 
-    :param observation_space: Obervation space
-    :param action_space: Action space
-    :param net_arch: Network architecture
-    :param features_extractor: Network to extract features
-        (a CNN when using images, a nn.Flatten() layer otherwise)
-    :param features_dim: Number of features
-    :param activation_fn: Activation function
-    :param normalize_images: Whether to normalize images or not,
-         dividing by 255.0 (True by default)
-    :param n_critics: Number of critic networks to create.
-    :param share_features_extractor: Whether the features extractor is shared or not
-        between the actor and the critic (this saves computation time)
+    Args:
+        observation_space: Obervation space
+        action_space: Action space
+        net_arch: Network architecture
+        features_extractor: Network to extract features
+            (a CNN when using images, a nn.Flatten() layer otherwise)
+        features_dim: Number of features
+        activation_fn: Activation function
+        normalize_images: Whether to normalize images or not,
+            dividing by 255.0 (True by default)
+        n_critics: Number of critic networks to create.
+        share_features_extractor: Whether the features extractor is shared or not
+            between the actor and the critic (this saves computation time)
     """
     def __init__(
         self,
@@ -804,24 +825,28 @@ class ContinuousCritic(BaseModel):
             self.add_module(f"qf{idx}", q_net)
             self.q_networks.append(q_net)
 
-    def forward(self, obs: th.Tensor,
-                actions: th.Tensor) -> Tuple[th.Tensor, ...]:
+    def forward(self, obs: torch.Tensor,
+                actions: torch.Tensor) -> Tuple[torch.Tensor, ...]:
         # Learn the features extractor using the policy loss only
         # when the features_extractor is shared with the actor
-        with th.set_grad_enabled(not self.share_features_extractor):
+        with torch.set_grad_enabled(not self.share_features_extractor):
             features = self.extract_features(obs)
-        qvalue_input = th.cat([features, actions], dim=1)
+        qvalue_input = torch.cat([features, actions], dim=1)
         return tuple(q_net(qvalue_input) for q_net in self.q_networks)
 
-    def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
+    def q1_forward(self, obs: torch.Tensor,
+                   actions: torch.Tensor) -> torch.Tensor:
         """
         Only predict the Q-value using the first network.
         This allows to reduce computation when all the estimates are not needed
         (e.g. when updating the policy in TD3).
         """
-        with th.no_grad():
+        with torch.no_grad():
             features = self.extract_features(obs)
-        return self.q_networks[0](th.cat([features, actions], dim=1))
+        return self.q_networks[0](torch.cat([features, actions], dim=1))
+
+
+# TODO: Add LSTM PolicyNetworks
 
 
 def create_sde_features_extractor(
@@ -831,10 +856,10 @@ def create_sde_features_extractor(
     Create the neural network that will be used to extract features
     for the gSDE exploration function.
 
-    :param features_dim:
-    :param sde_net_arch:
-    :param activation_fn:
-    :return:
+    Args:
+        features_dim:
+        sde_net_arch:
+        activation_fn:
     """
     # Special case: when using states as features (i.e. sde_net_arch is an empty list)
     # don't use any activation function
@@ -860,9 +885,11 @@ def get_policy_from_name(base_policy_type: Type[BasePolicy],
     Returns the registered policy from the base type and name.
     See `register_policy` for registering policies and explanation.
 
-    :param base_policy_type: the base policy class
-    :param name: the policy name
-    :return: the policy
+    Args:
+        base_policy_type: the base policy class
+        name: the policy name
+    Returns: 
+        the policy
     """
     if base_policy_type not in _policy_registry:
         raise KeyError(
@@ -896,8 +923,9 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     In `get_policy_from_name`, the parent class (e.g. OnlinePolicy)
     is given and used to select and return the correct policy.
 
-    :param name: the policy name
-    :param policy: the policy class
+    Args:
+        name: the policy name
+        policy: the policy class
     """
     sub_class = None
     for cls in BasePolicy.__subclasses__():

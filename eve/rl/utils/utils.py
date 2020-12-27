@@ -5,17 +5,17 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import gym
-import stable_baselines3 as sb3  # noqa: F401
-import torch as th  # noqa: F401
+import stable_baselines3 as sb3
+# For custom activation fn
+import torch.nn as nn
 import yaml
 from stable_baselines3 import A2C, DDPG, DQN, HER, PPO, SAC, TD3
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike  # noqa: F401
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv, VecFrameStack, VecNormalize
-
-# For custom activation fn
-from torch import nn as nn  # noqa: F401 pylint: disable=unused-import
+from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
+from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
+                                              VecEnv, VecFrameStack,
+                                              VecNormalize)
 
 ALGOS = {
     "a2c": A2C,
@@ -34,7 +34,7 @@ def flatten_dict_observations(env: gym.Env) -> gym.Env:
         return gym.wrappers.FlattenObservation(env)
     except AttributeError:
         keys = env.observation_space.spaces.keys()
-        return gym.wrappers.FlattenDictWrapper(env, dict_keys=list(keys)) # pylint: disable=no-member
+        return gym.wrappers.FlattenDictWrapper(env, dict_keys=list(keys))  # pylint: disable=no-member
 
 
 def get_wrapper_class(
@@ -51,10 +51,10 @@ def get_wrapper_class(
         - utils.wrappers.PlotActionWrapper
         - utils.wrappers.TimeFeatureWrapper
 
-
-    :param hyperparams:
-    :return: maybe a callable to wrap the environment
-        with one or multiple gym.Wrapper
+    Args:
+        hyperparams:
+    Returns:
+        maybe a callable to wrap the environment with one or multiple gym.Wrapper
     """
     def get_module_name(wrapper_name):
         return ".".join(wrapper_name.split(".")[:-1])
@@ -122,8 +122,8 @@ def get_callback_list(hyperparams: Dict[str, Any]) -> List[BaseCallback]:
         - utils.callbacks.PlotActionWrapper
         - stable_baselines3.common.callbacks.CheckpointCallback
 
-    :param hyperparams:
-    :return:
+    Args:
+        hyperparams:
     """
     def get_module_name(callback_name):
         return ".".join(callback_name.split(".")[:-1])
@@ -179,15 +179,15 @@ def create_test_env(
     """
     Create environment for testing a trained agent
 
-    :param env_id:
-    :param n_envs: number of processes
-    :param stats_path: path to folder containing saved running averaged
-    :param seed: Seed for random number generator
-    :param log_dir: Where to log rewards
-    :param should_render: For Pybullet env, display the GUI
-    :param hyperparams: Additional hyperparams (ex: n_stack)
-    :param env_kwargs: Optional keyword argument to pass to the env constructor
-    :return:
+    Args:
+        env_id:
+        n_envs: number of processes
+        stats_path: path to folder containing saved running averaged
+        seed: Seed for random number generator
+        log_dir: Where to log rewards
+        should_render: For Pybullet env, display the GUI
+        hyperparams: Additional hyperparams (ex: n_stack)
+        env_kwargs: Optional keyword argument to pass to the env constructor
     """
     # Create the environment and wrap it if necessary
     env_wrapper = get_wrapper_class(hyperparams)
@@ -243,8 +243,8 @@ def linear_schedule(
     """
     Linear learning rate schedule.
 
-    :param initial_value: (float or str)
-    :return: (function)
+    Args:
+        initial_value: (float or str)
     """
     if isinstance(initial_value, str):
         initial_value = float(initial_value)
@@ -252,8 +252,9 @@ def linear_schedule(
     def func(progress_remaining: float) -> float:
         """
         Progress will decrease from 1 (beginning) to 0
-        :param progress_remaining: (float)
-        :return: (float)
+        
+        Args:
+            progress_remaining: (float)
         """
         return progress_remaining * initial_value
 
@@ -262,8 +263,10 @@ def linear_schedule(
 
 def get_trained_models(log_folder: str) -> Dict[str, Tuple[str, str]]:
     """
-    :param log_folder: (str) Root log folder
-    :return: (Dict[str, Tuple[str, str]]) Dict representing the trained agent
+    Args:
+        log_folder: (str) Root log folder
+    Returns:
+        (Dict[str, Tuple[str, str]]) Dict representing the trained agent
     """
     trained_models = {}
     for algo in os.listdir(log_folder):
@@ -281,9 +284,11 @@ def get_latest_run_id(log_path: str, env_id: str) -> int:
     Returns the latest run number for the given log name and log path,
     by finding the greatest number in the directories.
 
-    :param log_path: path to log folder
-    :param env_id:
-    :return: latest run number
+    Args:
+        log_path: path to log folder
+        env_id:
+    Returns: 
+        latest run number
     """
     max_run_id = 0
     for path in glob.glob(log_path + f"/{env_id}_[0-9]*"):
@@ -300,10 +305,10 @@ def get_saved_hyperparams(
         norm_reward: bool = False,
         test_mode: bool = False) -> Tuple[Dict[str, Any], str]:
     """
-    :param stats_path:
-    :param norm_reward:
-    :param test_mode:
-    :return:
+    Args:
+        stats_path:
+        norm_reward:
+        test_mode:
     """
     hyperparams = {}
     if not os.path.isdir(stats_path):

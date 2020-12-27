@@ -4,7 +4,7 @@ import numpy as np
 import optuna
 from stable_baselines3 import DDPG, DQN, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from torch import nn as nn
+import torch.nn as nn
 
 from eve.rl.utils import linear_schedule
 
@@ -12,9 +12,6 @@ from eve.rl.utils import linear_schedule
 def sample_ppo_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for PPO hyperparams.
-
-    :param trial:
-    :return:
     """
     batch_size = trial.suggest_categorical("batch_size",
                                            [8, 16, 32, 64, 128, 256, 512])
@@ -102,9 +99,6 @@ def sample_ppo_params(trial: optuna.Trial) -> Dict[str, Any]:
 def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for A2C hyperparams.
-
-    :param trial:
-    :return:
     """
     gamma = trial.suggest_categorical(
         "gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -188,9 +182,6 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
 def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for SAC hyperparams.
-
-    :param trial:
-    :return:
     """
     gamma = trial.suggest_categorical(
         "gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -249,9 +240,6 @@ def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
 def sample_td3_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for TD3 hyperparams.
-
-    :param trial:
-    :return:
     """
     gamma = trial.suggest_categorical(
         "gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -315,9 +303,6 @@ def sample_td3_params(trial: optuna.Trial) -> Dict[str, Any]:
 def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for DDPG hyperparams.
-
-    :param trial:
-    :return:
     """
     gamma = trial.suggest_categorical(
         "gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -382,9 +367,6 @@ def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
 def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for DQN hyperparams.
-
-    :param trial:
-    :return:
     """
     gamma = trial.suggest_categorical(
         "gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -440,9 +422,6 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
 def sample_her_params(trial: optuna.Trial) -> Dict[str, Any]:
     """
     Sampler for HER hyperparams.
-
-    :param trial:
-    :return:
     """
     model_class_str = {
         SAC: "sac",
@@ -462,34 +441,12 @@ def sample_her_params(trial: optuna.Trial) -> Dict[str, Any]:
     return hyperparams
 
 
-def sample_tqc_params(trial: optuna.Trial) -> Dict[str, Any]:
-    """
-    Sampler for TQC hyperparams.
-
-    :param trial:
-    :return:
-    """
-    # TQC is SAC + Distributional RL
-    hyperparams = sample_sac_params(trial)
-
-    n_quantiles = trial.suggest_int("n_quantiles", 5, 50)
-    top_quantiles_to_drop_per_net = trial.suggest_int(
-        "top_quantiles_to_drop_per_net", 0, n_quantiles - 1)
-
-    hyperparams["policy_kwargs"].update({"n_quantiles": n_quantiles})
-    hyperparams[
-        "top_quantiles_to_drop_per_net"] = top_quantiles_to_drop_per_net
-
-    return hyperparams
-
-
 HYPERPARAMS_SAMPLER = {
     "a2c": sample_a2c_params,
     "ddpg": sample_ddpg_params,
     "dqn": sample_dqn_params,
     "her": sample_her_params,
     "sac": sample_sac_params,
-    "tqc": sample_tqc_params,
     "ppo": sample_ppo_params,
     "td3": sample_td3_params,
 }
