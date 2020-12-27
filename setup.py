@@ -11,15 +11,15 @@ from setuptools import setup
 import sys
 from eve.version import __version__
 
-with open("./requirements.txt", "r", encoding="utf-8") as fh:
+with open("requires.txt", "r", encoding="utf-8") as fh:
     install_requires = fh.read()
 
-with open("./README.md", "r", encoding="utf-8") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     install_requires=install_requires,
-    name="eve-ml",
+    name="Eve-ml",
     version=__version__,
     author="densechen",
     author_email="densechen@foxmail.com",
@@ -33,8 +33,8 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "License :: Open-Intelligence Open Source License 1.0",
         "Operating System :: OS Independent",
     ],
+    license="MIT",
     python_requires='>=3.6',
 )
