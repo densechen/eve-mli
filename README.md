@@ -24,6 +24,12 @@ cd eve
 python setup.py install
 ```
 
+Vailidate installation:
+
+```bash
+python -c "import eve; print(eve.__version__)"
+```
+
 ## About the project
 
 This project is mainly based on [PyTorch](https://github.com/pytorch/pytorch) and [stable-baselines3](https://github.com/DLR-RM/stable-baselines3).
