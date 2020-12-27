@@ -283,16 +283,7 @@ class Node(Eve):
 
 
 def heaviside(x: Tensor) -> Tensor:
-    r"""The heaviside function, which is defined by:
-
-    .. math::
-        g(x) = 
-            \begin{case}
-                1, & x \geq 0 \\
-                0, & x < 0 \\
-            \end{case}
-
-    """
+    r"""The heaviside function."""
     return torch.ge(x, 0.).to(x)
 
 

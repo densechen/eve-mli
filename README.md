@@ -37,6 +37,7 @@ This project is mainly based on [PyTorch](https://github.com/pytorch/pytorch) an
 We design a *Trainer* to maintain training process and further wrapper it as a *gym.envs* to play with reinforcement learning.
 
 The documentation can be found [here](https://eve-mli.readthedocs.io).
+(Auto-building of documentation may fail sometimes, you can build it manually via ```cd docs; make html```)
 
 ## About the authors
 
