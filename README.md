@@ -48,3 +48,10 @@ Master @ National University of Defense Technology
 densechen@foxmail.com
 
 The project remains in development. We encourage more volunteers to come together, and make learning more interesting!
+
+## TODO
+
+- [ ] Test ImageNet dataloader code.
+- [ ] Add LSTM PolicyNetwork supporting.
+- [ ] Test neuron wise quan/spiking model.
+- [ ] Design hardward/structure awared reword function.
