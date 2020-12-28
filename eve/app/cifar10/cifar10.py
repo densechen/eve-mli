@@ -11,10 +11,10 @@ from eve.app.trainer import ClsNet, Trainer
 from gym import spaces
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
-from torchvision.datasets import ImageNet
+from torchvision.datasets import CIFAR10
 
 
-class EveImageNet(ClsNet):
+class EveCifar10(ClsNet):
     net = None
 
     def __init__(
@@ -29,35 +29,29 @@ class EveImageNet(ClsNet):
                          optimizer_kwargs, data_kwargs)
 
     def prepare_data(self):
-        # FIXME: check this code
-        train_dataset = ImageNet(
-            root=self.data_kwargs["root"],
-            split="train",
-            download=False,
-            transform=transforms.Compose([
-                transforms.RandomSizedCrop(max(
-                    self.data_kwargs["input_size"])),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=self.data_kwargs["mean"],
-                                     std=self.data_kwargs["std"])
-            ]),
-        )
+        cifar10_transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                 (0.2023, 0.1994, 0.2010)),
+        ])
+        cifar10_transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                 (0.2023, 0.1994, 0.2010)),
+        ])
+        train_dataset = CIFAR10(root=self.data_kwargs["root"],
+                                train=True,
+                                download=True,
+                                transform=cifar10_transform_train)
         self.train_dataset, self.valid_dataset = random_split(
-            train_dataset,
-            [len(train_dataset) * 0.01,
-             len(train_dataset) * 0.99])
-        self.test_dataset = ImageNet(
-            root=self.data_kwargs["root"],
-            split="val",
-            download=False,
-            transform=transforms.Compose([
-                transforms.CenterCrop(max(self.data_kwargs["input_size"])),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=self.data_kwargs["mean"],
-                                     std=self.data_kwargs["std"])
-            ]),
-        )
+            train_dataset, [45000, 5000])
+
+        self.test_dataset = CIFAR10(root=self.data_kwargs["root"],
+                                    train=False,
+                                    download=True,
+                                    transform=cifar10_transform_test)
 
     @property
     def action_space(self) -> spaces.Space:
@@ -72,8 +66,8 @@ class EveImageNet(ClsNet):
         return spaces.Box(low=-1, high=1, shape=(5, ), dtype=np.float32)
 
 
-class TrainerImageNet(Trainer):
-    eve_image_net = None
+class TrainerCifar10(Trainer):
+    eve_cifar10 = None
 
     def __init__(self,
                  checkpoint_path: str,
@@ -83,8 +77,8 @@ class TrainerImageNet(Trainer):
                  data_kwargs: Dict[str, Any] = {},
                  upgrader_kwargs: Dict[str, Any] = {},
                  **kwargs):
-        assert self.eve_image_net, "Invalid eve net work structure. {}".format(
-            self.eve_image_net)
-        super().__init__(self.eve_image_net, checkpoint_path, max_timesteps,
+        assert self.eve_cifar10, "Invalid eve net work structure. {}".format(
+            self.eve_cifar10)
+        super().__init__(self.eve_cifar10, checkpoint_path, max_timesteps,
                          net_arch_kwargs, optimizer_kwargs, data_kwargs,
                          upgrader_kwargs, **kwargs)

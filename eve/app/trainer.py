@@ -494,7 +494,7 @@ class TrainerSpec(object):
         optimizer_kwargs: dict = {},
         data_kwargs: dict = {},
         upgrader_kwargs: dict = {},
-        **kwargs,
+        kwargs: dict = {},
     ):
         self.id = id
         self.entry_point = entry_point

@@ -14,7 +14,8 @@ from typing import Union
 def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
                                        legacy_checkpoint: str,
                                        eve_checkpoint: str,
-                                       key_map: OrderedDict = None) -> None:
+                                       key_map: OrderedDict = None,
+                                       map_location: str = "cpu") -> None:
     """Loads the weight from legacy checkpoint and save it to eve_checkpoint.
 
     Args:
@@ -26,6 +27,7 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
         key_map (OrderedDict or str): eve_ckpt[k] = legacy_ckpt[key_map[k]]
             key_map[k] not in legacy_ckpt, just skip.
             if None, this script will guide you to generate an OrderedDict first.
+        map_location (str): load the checkpoint to device or not
 
     .. note:: 
 
@@ -34,7 +36,7 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
         but not make sure to 100% correctly loaded. So, it is better to re-evaluate
         the converted model to check any mistakes.
     """
-    ckpt = torch.load(legacy_checkpoint)
+    ckpt = torch.load(legacy_checkpoint, map_location=map_location)
     if "state_dict" not in ckpt:
         print(f"{legacy_checkpoint} does not contains a 'state_dict' key"
               "try to take the whole checkpoint as state_dict.")

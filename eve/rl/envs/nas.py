@@ -150,9 +150,9 @@ class Nas(gym.Env):
             f"original acc: {self.trainer.original_accuracy}  vs. rl acc: {self.trainer.best_accuracy}"
         )
         if acc > self.trainer.original_accuracy:
-            self.trainer.save(self.trainer.checkpoint_path)
+            self.trainer.save(self.trainer.best_model_save_path)
             print("save better model to {}".format(
-                self.trainer.checkpoint_path))
+                self.trainer.best_model_save_path))
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).
@@ -191,6 +191,7 @@ class FitNas(Nas):
         acc = self.trainer.test_one_step()
         if acc > self.trainer.best_accuracy:
             self.best_accuracy = acc
+            # save to best_model_save_path by default
             self.trainer.save()
 
         # load best model
