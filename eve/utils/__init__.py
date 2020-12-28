@@ -1,0 +1,1 @@
+from .legacy import load_weight_from_legacy_checkpoint

@@ -20,7 +20,7 @@ Developers can download and install the latest version from [GitHub](https://git
 
 ```bash
 git clone https://github.com/densechen/eve-mli.git
-cd eve
+cd eve-mli
 python setup.py install
 ```
 
@@ -29,6 +29,8 @@ Vailidate installation:
 ```bash
 python -c "import eve; print(eve.__version__)"
 ```
+
+*Currently, the APIs may be changed frequently. Install directly from github is suggested.*
 
 ## About the project
 

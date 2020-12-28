@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
 import eve
 import eve.cores
-
+from eve.app.imagenet.imagenet import EveImageNet, TrainerImageNet
 from torchvision import transforms
 from torchvision.datasets import ImageNet
 from eve.app.trainer import ClsNet, Trainer
@@ -85,7 +85,7 @@ class SpatialCrossMapLRN(eve.cores.Eve):
         return x
 
 
-class Net(eve.cores.Eve):
+class Vggm(eve.cores.Eve):
     def __init__(
         self,
         node: str = "IfNode",
@@ -95,7 +95,7 @@ class Net(eve.cores.Eve):
         encoder: str = "RateEncoder",
         encoder_kwargs: Dict[str, Any] = {},
     ):
-        super(Net, self).__init__()
+        super(Vggm, self).__init__()
 
         node = getattr(eve.cores, node)
         quan = getattr(eve.cores, quan)
@@ -184,7 +184,9 @@ class Net(eve.cores.Eve):
                                      nn.Linear(4096, 1000))
 
     def forward(self, x):
-        conv1 = self.conv1(x)
+        encoder = self.encoder(x)
+
+        conv1 = self.conv1(encoder)
         cdt1 = self.cdt1(conv1)
 
         conv2 = self.conv2(cdt1)
@@ -209,70 +211,9 @@ class Net(eve.cores.Eve):
         return out
 
 
-class EveVggm(ClsNet):
-    def __init__(
-        self,
-        max_timesteps: int = 1,
-        net_arch_kwargs: Dict[str, Any] = {},
-        optimizer_kwargs: Dict[str, Any] = {},
-        data_kwargs: Dict[str, Any] = {},
-    ):
-        super().__init__(Net, max_timesteps, net_arch_kwargs, optimizer_kwargs,
-                         data_kwargs)
-
-    def prepare_data(self):
-        # FIXME: check this code
-        train_dataset = ImageNet(
-            root=self.dataset_kwargs["root"],
-            split="train",
-            download=False,
-            transform=transforms.Compose([
-                transforms.RandomSizedCrop(
-                    max(self.dataset_kwargs["input_size"])),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=self.dataset_kwargs["mean"],
-                                     std=self.dataset_kwargs["std"])
-            ]),
-        )
-        self.train_dataset, self.valid_dataset = random_split(
-            train_dataset,
-            [len(train_dataset) * 0.01,
-             len(train_dataset) * 0.99])
-        self.test_dataset = ImageNet(
-            root=self.dataset_kwargs["root"],
-            split="val",
-            download=False,
-            transform=transforms.Compose([
-                transforms.CenterCrop(max(self.dataset_kwargs["input_size"])),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=self.dataset_kwargs["mean"],
-                                     std=self.dataset_kwargs["std"])
-            ]),
-        )
-
-    @property
-    def action_space(self) -> spaces.Space:
-        # return the action space of current model.
-        # this property will be used while defining a reinforcement environments
-        return spaces.Box(low=0, high=1, shape=(1, ), dtype=np.float32)
-
-    @property
-    def observation_space(self) -> spaces.Space:
-        # returns the observation space of current model.
-        # this property will be used while defining a reinforcement environments
-        return spaces.Box(low=-1, high=1, shape=(5, ), dtype=np.float32)
+class EveImageNetVggm(EveImageNet):
+    net = Vggm
 
 
-class TrainerVggm(Trainer):
-    def __init__(self,
-                 checkpoint_path: str,
-                 max_timesteps: int = 1,
-                 net_arch_kwargs: Dict[str, Any] = {},
-                 optimizer_kwargs: Dict[str, Any] = {},
-                 data_kwargs: Dict[str, Any] = {},
-                 upgrader_kwargs: Dict[str, Any] = {},
-                 **kwargs):
-        super().__init__(EveVggm, checkpoint_path, max_timesteps,
-                         net_arch_kwargs, optimizer_kwargs, data_kwargs,
-                         upgrader_kwargs, **kwargs)
+class TrainerImageNetVggm(TrainerImageNet):
+    eve_image_net = EveImageNetVggm
