@@ -76,18 +76,6 @@ class EveMnist(ClsNet):
             train_dataset, [55000, 5000])
         self.test_dataset = test_dataset
 
-    @property
-    def action_space(self) -> spaces.Space:
-        # return the action space of current model.
-        # this property will be used while defining a reinforcement environments
-        return spaces.Box(low=0, high=1, shape=(1, ), dtype=np.float32)
-
-    @property
-    def observation_space(self) -> spaces.Space:
-        # returns the observation space of current model.
-        # this property will be used while defining a reinforcement environments
-        return spaces.Box(low=-1, high=1, shape=(5, ), dtype=np.float32)
-
 
 class TrainerMnist(Trainer):
     def __init__(self,

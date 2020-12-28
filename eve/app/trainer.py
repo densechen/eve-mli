@@ -172,7 +172,30 @@ def _top_one_accuracy(y_hat, y):
 
 class ClsNet(EveNet):
     """Defines a Net used for classification task.
+
+    As for conduct structure, there exist a :class:`Node` and :class:`Quan`.
+    Both node and quan have an upgradable parameters, i.e. 
+    :attr:`voltage_threshold` and :attr:`bit_width`. 
+    
+    neuron wise mode for upgrader is not supported yet.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def action_space(self) -> spaces.Space:
+        # return the action space of current model.
+        # this property will be used while defining a reinforcement environments
+        # FIXME: neuron wise
+        return spaces.Box(low=0, high=1, shape=(1, ), dtype=np.float32)
+
+    @property
+    def observation_space(self) -> spaces.Space:
+        # returns the observation space of current model.
+        # this property will be used while defining a reinforcement environments
+        # FIXME: neuron wise
+        return spaces.Box(low=-1, high=1, shape=(5, ), dtype=np.float32)
+
     def spiking_forward(self, x: Tensor) -> Tensor:
         """Implements spiking forward pass.
         """
@@ -313,12 +336,14 @@ class Trainer(object):
         self.save(self.best_model_save_path)
 
         # define upgrader
-        eve_parameters_list = self.eve_module.eve_parameters_list()
-        if len(eve_parameters_list) == 0:
+        # the eve parameters should be updated sequentially, not parallel!
+        # do not use eve_parameters_list
+        eve_parameters = self.eve_module.eve_parameters()
+        if len(eve_parameters) == 0:
             self.upgrader = None
             print("no upgrader needed")
         else:
-            self.upgrader = Upgrader(eve_parameters_list, **upgrader_kwargs)
+            self.upgrader = Upgrader(eve_parameters, **upgrader_kwargs)
             print("create an upgrader automatically")
 
         # gen

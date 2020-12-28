@@ -53,18 +53,6 @@ class EveCifar10(ClsNet):
                                     download=True,
                                     transform=cifar10_transform_test)
 
-    @property
-    def action_space(self) -> spaces.Space:
-        # return the action space of current model.
-        # this property will be used while defining a reinforcement environments
-        return spaces.Box(low=0, high=1, shape=(1, ), dtype=np.float32)
-
-    @property
-    def observation_space(self) -> spaces.Space:
-        # returns the observation space of current model.
-        # this property will be used while defining a reinforcement environments
-        return spaces.Box(low=-1, high=1, shape=(5, ), dtype=np.float32)
-
 
 class TrainerCifar10(Trainer):
     eve_cifar10 = None
