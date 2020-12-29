@@ -103,10 +103,7 @@ class Vggm(eve.cores.Eve):
 
         self.encoder = encoder(**encoder_kwargs)
 
-        self.conv1 = nn.Sequential(nn.Conv2d(3, 96, 7, stride=2),
-                                   # nn.ReLU(),
-                                   )
-        # static_obs = eve.cores.fetch_static_obs(self.conv1)
+        self.conv1 = nn.Sequential(nn.Conv2d(3, 96, 7, stride=2), )
         state = eve.cores.State(self.conv1)
         self.cdt1 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -117,9 +114,7 @@ class Vggm(eve.cores.Eve):
             SpatialCrossMapLRN(5, 0.0005, 0.75, 2),
             nn.MaxPool2d(3, 2, padding=0, ceil_mode=True),
             nn.Conv2d(96, 256, 5, stride=2, padding=1),
-            # nn.ReLU(),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv2)
         state = eve.cores.State(self.conv2)
         self.cdt2 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -130,19 +125,15 @@ class Vggm(eve.cores.Eve):
             SpatialCrossMapLRN(5, 0.0005, 0.75, 2),
             nn.MaxPool2d(3, 2, padding=0, ceil_mode=True),
             nn.Conv2d(256, 512, 3, stride=1, padding=1),
-            # nn.ReLU(),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv3)
         state = eve.cores.State(self.conv3)
         self.cdt3 = nn.Sequential(
             node(state=state, **node_kwargs),
             quan(state=state, **quan_kwargs),
         )
 
-        self.conv4 = nn.Sequential(nn.Conv2d(512, 512, 3, stride=1, padding=1),
-                                   # nn.ReLU(),
-                                   )
-        # static_obs = eve.cores.fetch_static_obs(self.conv4)
+        self.conv4 = nn.Sequential(nn.Conv2d(512, 512, 3, stride=1,
+                                             padding=1), )
         state = eve.cores.State(self.conv4)
         self.cdt4 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -159,10 +150,7 @@ class Vggm(eve.cores.Eve):
             quan(static_obs=static_obs, **quan_kwargs),
         )
 
-        self.linear1 = nn.Sequential(nn.Linear(18432, 4096),
-                                     # nn.ReLU(),
-                                     )
-        # static_obs = eve.cores.fetch_static_obs(self.linear1)
+        self.linear1 = nn.Sequential(nn.Linear(18432, 4096), )
         state = eve.cores.State(self.linear1)
         self.cdt6 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -172,9 +160,7 @@ class Vggm(eve.cores.Eve):
         self.linear2 = nn.Sequential(
             eve.cores.Dropout(p=0.5),
             nn.Linear(4096, 4096),
-            # nn.ReLU(),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.linear2)
         state = eve.cores.State(self.linear2)
         self.cdt7 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -203,7 +189,7 @@ class Vggm(eve.cores.Eve):
         cdt5 = self.cdt5(conv5)
 
         cdt5 = F.max_pool2d(cdt5, 3, 2, padding=0, ceil_mode=True)
-        cdt5 = torch.flatten(cdt5, 1).unsqueeze(dim=0) # pylint: disable=no-member
+        cdt5 = torch.flatten(cdt5, 1).unsqueeze(dim=0)  # pylint: disable=no-member
 
         linear1 = self.linear1(cdt5)
         cdt6 = self.cdt6(linear1)
@@ -217,6 +203,18 @@ class Vggm(eve.cores.Eve):
 
 class EveImageNetVggm(EveImageNet):
     net = Vggm
+
+    @property
+    def max_neurons(self):
+        """Set this property while defining network
+        """
+        return 4096
+
+    @property
+    def max_diff_states(self):
+        """Set this property while defining network
+        """
+        return 2
 
 
 class TrainerImageNetVggm(TrainerImageNet):

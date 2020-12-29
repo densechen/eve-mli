@@ -53,61 +53,9 @@ class Quan(Eve):
         self.kwargs = kwargs
         self.requires_upgrading = requires_upgrading
 
-        # It is not necessary to register buffer any more.
-        # # register static_obs as buffer, not hidden states
-        # # NOTE: buffer will be saved along with parameters, but hidden states
-        # # will not. hidden states will be cleared while calling :meth:`reset()`,
-        # # but buffer will not.
-        # for n, v in zip(static_obs._fields, static_obs):
-        #     v = torch.Tensor([v] * self.neurons).view(self.neurons, -1)
-        #     # NOTE: the buffer should be started as `static_obs_`, otherwise will
-        #     # not be recognized as a static observation.
-        #     # NOTE: the shape of static_obs must in [neurons, 1], even though
-        #     # you have various static obs, you should register them one by one.
-        #     # but not register them together as [neurons, n].
-        #     self.register_buffer(f"static_obs_{n}", v, persistent=False)
-        #     # the static_obs keep the same every time, it is not necessary to
-        #     # save along with parametes. so, set persistent = False
-
-        # it is not necessary to register dynamic observation states to hidden state.
-        # zero_obs will clear them.
-        # # register dynamic_obs as hidden state, not buffer.
-        # # differnt with static_obs, which keeps unchanged, dynamic_obs
-        # # is calculated online and will be changed all the time.
-        # # we need to clear it in differnt batches. so, a hidden states is
-        # # more suitable.
-        # # NOTE: the dynamic_obs should begin with `dynamic_obs_`, otherwise
-        # # they will not fecthed as dynamic_obs, but common hidden_states.
-        # # once you register a hidden state with None, this attribute will
-        # # have all the properties of hidden_states, even it reassigned a new
-        # # value.
-        # self.register_hidden_state("dynamic_obs_kl_div", None)
-
         # register bit_width
         bit_width = torch.Tensor([max_bit_width] * self.neurons)
         bit_width = _align_dims(self.filter_type, bit_width)
-
-        # using the requires_upgrading operation to control this, not buffer.
-        # if requires_upgrading:
-        #     self.bit_width = EveParameter(bit_width, requires_upgrading=True)
-
-        #     def upgrade_fn(x, y=None, z=None):
-        #         if y is not None:
-        #             # y is in [0, 1], we convert it to [0, .., max_bit_width]
-        #             new_bit_width = torch.floor(y * (max_bit_width + 1))
-        #             x.zero_().add_(new_bit_width)
-        #         elif z is not None:
-        #             kl_div = z[..., -1]  # neurons times 1
-        #             # FIXME: 0.5 may not be a good value.
-        #             y = torch.where(kl_div > 0.5, 1, -1)
-        #             x.add_(y.view_as(x))
-        #         else:
-        #             # keep unchanged
-        #             pass
-
-        #     self.bit_width.register_upgrade_fn(upgrade_fn)
-        # else:
-        #     self.register_buffer("bit_width", bit_width)
 
         self.bit_width = EveParameter(bit_width,
                                       requires_upgrading=requires_upgrading)
@@ -131,51 +79,6 @@ class Quan(Eve):
         alpha = _align_dims(self.filter_type, alpha)
         self.alpha = Parameter(alpha, requires_grad=True)
 
-    # Move to utils
-    # def _align_dims(self, x: Tensor) -> Tensor:
-    #     """Aligns x to kernel type dimensions.
-
-    #     If kernel type is linear, x will be viewed as [1, 1, -1].
-    #     If kernel type is conv2d, x will be viewed as [1, -1, 1, 1].
-    #     """
-    #     if self.filter_type == nn.Linear:
-    #         return x.view(1, 1, -1)
-    #     elif self.filter_type == nn.Conv2d:
-    #         return x.view(1, -1, 1, 1)
-    #     else:
-    #         return TypeError("kernel type {} not supported".format(
-    #             self.filter_type))
-
-    # @property
-    # def static_obs(self):
-    #     """all buffer starts with `static_obs_` will be added to this property.
-    #     """
-    #     static_obs = [
-    #         v.view(-1, 1) for k, v in self.named_buffers()
-    #         if k.startswith("static_obs_") and v is not None
-    #     ]
-    #     if len(static_obs):
-    #         # NOTE: Must detach it from static observation, otherwise,
-    #         # a reset operation applied on all observation will erase all datas
-    #         # via a in-place operation.
-    #         return torch.cat(static_obs,
-    #                          dim=-1).detach().clone()  # [neurons, states]
-    #     else:
-    #         return None
-
-    # @property
-    # def dynamic_obs(self):
-    #     """all hidden states starts with `dynamic_obs_` will be added to this property.
-    #     """
-    #     dynamic_obs = [
-    #         v.view(-1, 1) for k, v in self.named_hidden_states()
-    #         if k.startswith("dynamic_obs_") and v is not None
-    #     ]
-    #     if len(dynamic_obs):
-    #         return torch.cat(dynamic_obs, dim=-1)  # [neurons, states]
-    #     else:
-    #         return None
-
     @staticmethod
     def _attach_obs_to_eve_parameters(cls, input: Tensor,
                                       output: Tensor) -> None:
@@ -197,23 +100,9 @@ class Quan(Eve):
             which is 
             :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
         """
-        # # if not eve parameters, we skip this function to speed up.
-        # if not self.requires_upgrading:
-        #     return
-        # if self.static_obs is not None and self.dynamic_obs is not None:
-        #     obs = torch.cat([self.static_obs, self.dynamic_obs], dim=-1)
-        # elif self.static_obs is not None:
-        #     obs = self.static_obs
-        # elif self.dynamic_obs is not None:
-        #     obs = self.dynamic_obs
-        # else:
-        #     raise ValueError("Invalid observation states."
-        #                      "Got {} and {}.".format(
-        #                          torch.typename(self.static_obs),
-        #                          torch.typename(self.dynamic_obs)))
-        if not cls.requires_upgrading: 
+        if not cls.requires_upgrading:
             return
-            
+
         l1_norm = cls.state.l1_norm  # [neurons, ]
         kl_div = cls.state.kl_div(input, output)  # [neurons, ]
 
@@ -232,44 +121,6 @@ class Quan(Eve):
             else:
                 raise ValueError("Cannot assign {} to {}".format(
                     torch.typename(obs), k))
-            # if v.numel() == 1:
-            #     # neuron wise mode
-            #     if v.obs is not None:
-            #         v.obs.mul_(0.5).add_(obs.mean(dim=0, keepdim=True),
-            #                              alpha=0.5)
-            #     else:
-            #         v.obs = obs.mean(dim=0, keepdim=True).detach().clone()
-            # elif v.numel() == self.neurons:
-            #     # neuron share mode
-            #     if v.obs is not None:
-            #         v.obs.mul_(0.5).add_(obs, alpha=0.5)
-            #     else:
-            #         v.obs = obs.detach().clone()
-            # else:
-            #     raise ValueError(
-            #         f"eve parameters {k} with shape {v.shape} is not"
-            #         "compatible with observation states with shape {obs.shape}"
-            #     )
-
-    # @torch.no_grad()
-    # def compute_dynamic_obs(self, x: Tensor, quan: Tensor) -> None:
-    #     """Computes the dynamic observation states based on currently data flow.
-    #     """
-    #     kl_div = F.kl_div(x, quan, reduction="none")
-
-    #     # means
-    #     dim = {"linear": [0, 1], "conv2d": [0, 2, 3]}[self.filter_type]
-
-    #     kl_div = kl_div.mean(dim, keepdim=True)
-    #     if (self.dynamic_obs_kl_div is not None
-    #             and self.dynamic_obs_kl_div.shape == kl_div.shape):
-    #         # dynamic_obs_ is not None, means that the Eve use zero_ reset.
-    #         # then, if the shape is the same, we assign it as in-place operation.
-    #         # the shape may be changed if the batch size is not the same.
-    #         self.dynamic_obs_kl_div.add_(kl_div)
-    #     else:
-    #         # use None reset, or the shape is not the same, just replace it.
-    #         self.dynamic_obs_kl_div = kl_div.detach().clone()
 
     def _reset(self, set_to_none: bool = False) -> None:
         """Resets current layer's hidden state to None.
@@ -284,24 +135,6 @@ class Quan(Eve):
 
     def forward(self, x: Tensor) -> Tensor:
         return self.quan(x)
-
-    # def forward(self, x: Tensor) -> Tensor:
-    #     # ensure x with standard shape, which means [b, c, h, w] for conv2d
-    #     # [b, n, c] for linear
-    #     # expand_dim = False
-    #     # if self.filter_type == "linear" and x.dim() == 2:
-    #     #     x = x.unsqueeze(dim=1)
-    #     #     expand_dim = True
-
-    #     quan = self.quan(x)
-
-    #     # # if no eve parameters, skip the computing process to speed up.
-    #     # if self.requires_upgrading:
-    #     #     self.compute_dynamic_obs(x, quan)
-
-    #     # if expand_dim:
-    #     #     quan = quan.squeeze(dim=1)
-    #     return quan
 
 
 def quantize(input: Tensor,

@@ -85,9 +85,7 @@ class Vgg(eve.cores.Eve):
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(128),
-            # nn.ReLU(inplace=True), # move ReLU to node
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv1)
         state = eve.cores.State(self.conv1)
         self.cdt1 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -97,9 +95,7 @@ class Vgg(eve.cores.Eve):
         self.conv2 = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(128),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv2)
         state = eve.cores.State(self.conv2)
         self.cdt2 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -110,9 +106,7 @@ class Vgg(eve.cores.Eve):
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(256),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv3)
         state = eve.cores.State(self.conv3)
         self.cdt3 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -122,9 +116,7 @@ class Vgg(eve.cores.Eve):
         self.conv4 = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(256),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv4)
         state = eve.cores.State(self.conv4)
         self.cdt4 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -135,9 +127,7 @@ class Vgg(eve.cores.Eve):
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(256, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv5)
         state = eve.cores.State(self.conv5)
         self.cdt5 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -147,9 +137,7 @@ class Vgg(eve.cores.Eve):
         self.conv6 = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv6)
         state = eve.cores.State(self.conv6)
         self.cdt6 = nn.Sequential(
             node(state=state, **node_kwargs),

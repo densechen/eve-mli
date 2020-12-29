@@ -56,10 +56,7 @@ class AlexNet(eve.cores.Eve):
         self.encoder = encoder(**encoder_kwargs)
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
-            # nn.ReLU(inplace=True),
-        )
-        # static_obs = eve.cores.fetch_static_obs(self.conv1)
+            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2), )
         state = eve.cores.State(self.conv1)
         self.cdt1 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -69,9 +66,7 @@ class AlexNet(eve.cores.Eve):
         self.conv2 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(64, 192, kernel_size=5, padding=2),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv2)
         state = eve.cores.State(self.conv2)
         self.cdt2 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -81,9 +76,7 @@ class AlexNet(eve.cores.Eve):
         self.conv3 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.conv3)
         state = eve.cores.State(self.conv3)
         self.cdt3 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -91,10 +84,7 @@ class AlexNet(eve.cores.Eve):
         )
 
         self.conv4 = nn.Sequential(
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            # nn.ReLU(inplace=True),
-        )
-        # static_obs = eve.cores.fetch_static_obs(self.conv4)
+            nn.Conv2d(384, 256, kernel_size=3, padding=1), )
         state = eve.cores.State(self.conv4)
         self.cdt4 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -102,10 +92,7 @@ class AlexNet(eve.cores.Eve):
         )
 
         self.conv5 = nn.Sequential(
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            # nn.ReLU(inplace=True),
-        )
-        # static_obs = eve.cores.fetch_static_obs(self.conv5)
+            nn.Conv2d(256, 256, kernel_size=3, padding=1), )
         state = eve.cores.State(self.conv5)
         self.cdt5 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -115,9 +102,7 @@ class AlexNet(eve.cores.Eve):
         self.cls_1 = nn.Sequential(
             nn.Dropout(),
             nn.Linear(256 * 6 * 6, 4096),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.cls_1)
         state = eve.cores.State(self.cls_1)
         self.cdt6 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -127,9 +112,7 @@ class AlexNet(eve.cores.Eve):
         self.cls_2 = nn.Sequential(
             nn.Dropout(),
             nn.Linear(4096, 4096),
-            # nn.ReLU(inplace=True),
         )
-        # static_obs = eve.cores.fetch_static_obs(self.cls_2)
         state = eve.cores.State(self.cls_2)
         self.cdt7 = nn.Sequential(
             node(state=state, **node_kwargs),
@@ -175,6 +158,18 @@ class AlexNet(eve.cores.Eve):
 class EveImageNetAlexNet(EveImageNet):
     # specified the network architecture.
     net = AlexNet
+
+    @property
+    def max_neurons(self):
+        """Set this property while defining network
+        """
+        return 4096
+
+    @property
+    def max_diff_states(self):
+        """Set this property while defining network
+        """
+        return 2
 
 
 class TrainerImageNetAlexNet(TrainerImageNet):
