@@ -57,78 +57,83 @@ class AlexNet(eve.cores.Eve):
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv1)
+        # static_obs = eve.cores.fetch_static_obs(self.conv1)
+        state = eve.cores.State(self.conv1)
         self.cdt1 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64, 192, kernel_size=5, padding=2),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv2)
+        # static_obs = eve.cores.fetch_static_obs(self.conv2)
+        state = eve.cores.State(self.conv2)
         self.cdt2 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv3 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=3, stride=2),
             nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv3)
+        # static_obs = eve.cores.fetch_static_obs(self.conv3)
+        state = eve.cores.State(self.conv3)
         self.cdt3 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv4 = nn.Sequential(
             nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv4)
+        # static_obs = eve.cores.fetch_static_obs(self.conv4)
+        state = eve.cores.State(self.conv4)
         self.cdt4 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv5 = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.AdaptiveAvgPool2d((6, 6)),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv5)
+        # static_obs = eve.cores.fetch_static_obs(self.conv5)
+        state = eve.cores.State(self.conv5)
         self.cdt5 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.cls_1 = nn.Sequential(
             nn.Dropout(),
             nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.cls_1)
+        # static_obs = eve.cores.fetch_static_obs(self.cls_1)
+        state = eve.cores.State(self.cls_1)
         self.cdt6 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.cls_2 = nn.Sequential(
             nn.Dropout(),
             nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.cls_2)
+        # static_obs = eve.cores.fetch_static_obs(self.cls_2)
+        state = eve.cores.State(self.cls_2)
         self.cdt7 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.cls_3 = nn.Linear(4096, 1000)
@@ -151,7 +156,10 @@ class AlexNet(eve.cores.Eve):
         conv5 = self.conv5(cdt4)
         cdt5 = self.cdt5(conv5)
 
-        cdt5 = torch.flatten(cdt5, 1)  # pylint: disable=no-member
+        cdt5 = F.max_pool2d(cdt5, kernel_size=3, stride=2)
+        cdt5 = F.avg_pool2d(cdt5, kernel_size=6)
+
+        cdt5 = torch.flatten(cdt5, 1).unsqueeze(dim=1)  # batch_size, 1, dims  # pylint: disable=no-member
 
         cls_1 = self.cls_1(cdt5)
         cdt6 = self.cdt6(cls_1)
@@ -161,7 +169,7 @@ class AlexNet(eve.cores.Eve):
 
         cls_3 = self.cls_3(cdt7)
 
-        return cls_3
+        return cls_3.squeeze(dim=1)  # batch_size, class
 
 
 class EveImageNetAlexNet(EveImageNet):

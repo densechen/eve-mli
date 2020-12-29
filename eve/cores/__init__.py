@@ -4,7 +4,8 @@ from .eve import Eve, EveParameter
 from .layers import Cell, Dropout, Dropout2d
 from .node import IfNode, LifNode, Node
 from .quan import LlsqQuan, LsqQuan, Quan, SteQuan
-from .utils import fetch_static_obs, static_obs
+# from .utils import fetch_static_obs, static_obs
+from .state import State
 
 __node__ = {"LifNode": LifNode, "IfNode": IfNode}
 
@@ -38,6 +39,7 @@ __all__ = [
     "Dropout",
     "Dropout2d",
     "Cell",
-    "fetch_static_obs",
-    "static_obs",
+    # "fetch_static_obs",
+    # "static_obs",
+    "State",
 ]

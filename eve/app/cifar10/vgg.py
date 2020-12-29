@@ -17,6 +17,8 @@ model_urls = {
     'https://github.com/rhhc/zxd_releases/releases/download/Re/cifar10-vggsmall-zxd-93.4-8943fa3.pth',
 }
 key_map = {
+    'task_module.clssifier.bias': 'classifier.bias',
+    'task_module.clssifier.weight': 'classifier.weight',
     'task_module.conv1.0.weight': 'features.0.weight',
     'task_module.conv1.1.bias': 'features.1.bias',
     'task_module.conv1.1.num_batches_tracked':
@@ -31,13 +33,13 @@ key_map = {
     'task_module.conv2.1.running_mean': 'features.4.running_mean',
     'task_module.conv2.1.running_var': 'features.4.running_var',
     'task_module.conv2.1.weight': 'features.4.weight',
-    'task_module.conv3.0.weight': 'features.7.weight',
-    'task_module.conv3.1.bias': 'features.8.bias',
-    'task_module.conv3.1.num_batches_tracked':
+    'task_module.conv3.1.weight': 'features.7.weight',
+    'task_module.conv3.2.bias': 'features.8.bias',
+    'task_module.conv3.2.num_batches_tracked':
     'features.8.num_batches_tracked',
-    'task_module.conv3.1.running_mean': 'features.8.running_mean',
-    'task_module.conv3.1.running_var': 'features.8.running_var',
-    'task_module.conv3.1.weight': 'features.8.weight',
+    'task_module.conv3.2.running_mean': 'features.8.running_mean',
+    'task_module.conv3.2.running_var': 'features.8.running_var',
+    'task_module.conv3.2.weight': 'features.8.weight',
     'task_module.conv4.0.weight': 'features.10.weight',
     'task_module.conv4.1.bias': 'features.11.bias',
     'task_module.conv4.1.num_batches_tracked':
@@ -45,13 +47,13 @@ key_map = {
     'task_module.conv4.1.running_mean': 'features.11.running_mean',
     'task_module.conv4.1.running_var': 'features.11.running_var',
     'task_module.conv4.1.weight': 'features.11.weight',
-    'task_module.conv5.0.weight': 'features.14.weight',
-    'task_module.conv5.1.bias': 'features.15.bias',
-    'task_module.conv5.1.num_batches_tracked':
+    'task_module.conv5.1.weight': 'features.14.weight',
+    'task_module.conv5.2.bias': 'features.15.bias',
+    'task_module.conv5.2.num_batches_tracked':
     'features.15.num_batches_tracked',
-    'task_module.conv5.1.running_mean': 'features.15.running_mean',
-    'task_module.conv5.1.running_var': 'features.15.running_var',
-    'task_module.conv5.1.weight': 'features.15.weight',
+    'task_module.conv5.2.running_mean': 'features.15.running_mean',
+    'task_module.conv5.2.running_var': 'features.15.running_var',
+    'task_module.conv5.2.weight': 'features.15.weight',
     'task_module.conv6.0.weight': 'features.17.weight',
     'task_module.conv6.1.bias': 'features.18.bias',
     'task_module.conv6.1.num_batches_tracked':
@@ -59,8 +61,6 @@ key_map = {
     'task_module.conv6.1.running_mean': 'features.18.running_mean',
     'task_module.conv6.1.running_var': 'features.18.running_var',
     'task_module.conv6.1.weight': 'features.18.weight',
-    'task_module.clssifier.bias': 'classifier.bias',
-    'task_module.clssifier.weight': 'classifier.weight',
 }
 
 
@@ -85,70 +85,75 @@ class Vgg(eve.cores.Eve):
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True), # move ReLU to node
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv1)
+        # static_obs = eve.cores.fetch_static_obs(self.conv1)
+        state = eve.cores.State(self.conv1)
         self.cdt1 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv2 = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv2)
+        # static_obs = eve.cores.fetch_static_obs(self.conv2)
+        state = eve.cores.State(self.conv2)
         self.cdt2 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv3 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv3)
+        # static_obs = eve.cores.fetch_static_obs(self.conv3)
+        state = eve.cores.State(self.conv3)
         self.cdt3 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv4 = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv4)
+        # static_obs = eve.cores.fetch_static_obs(self.conv4)
+        state = eve.cores.State(self.conv4)
         self.cdt4 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv5 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(256, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv5)
+        # static_obs = eve.cores.fetch_static_obs(self.conv5)
+        state = eve.cores.State(self.conv5)
         self.cdt5 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.conv6 = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            # nn.ReLU(inplace=True),
         )
-        static_obs = eve.cores.fetch_static_obs(self.conv6)
+        # static_obs = eve.cores.fetch_static_obs(self.conv6)
+        state = eve.cores.State(self.conv6)
         self.cdt6 = nn.Sequential(
-            node(static_obs=static_obs, **node_kwargs),
-            quan(static_obs=static_obs, **quan_kwargs),
+            node(state=state, **node_kwargs),
+            quan(state=state, **quan_kwargs),
         )
 
         self.clssifier = nn.Linear(512 * 16, 10)
@@ -174,7 +179,8 @@ class Vgg(eve.cores.Eve):
         conv6 = self.conv6(cdt5)
         cdt6 = self.cdt6(conv6)
 
-        cdt6 = torch.flatten(cdt6, 1)
+        cdt6 = F.max_pool2d(cdt6, kernel_size=2, stride=2)
+        cdt6 = torch.flatten(cdt6, 1)  # pylint: disable=no-member
 
         return self.clssifier(cdt6)
 

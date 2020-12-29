@@ -53,7 +53,4 @@ The project remains in development. We encourage more volunteers to come togethe
 
 - [ ] Test ImageNet dataloader code: waiting for ImageNet dataset.
 - [ ] Add LSTM PolicyNetwork supporting: next to do.
-- [ ] Test neuron wise quan/spiking model: it is difficult to support neuron wise mode in upgrader with RL,
-for the reason that, the action space of each layer is different, the agent is hard to predict that.
 - [ ] Design hardward/structure awared reword function: next to do.
-- [ ] Rewrite namedtuple static_obs to class with properties: namedtuple limits the usage of the static_obs.

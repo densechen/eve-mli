@@ -292,46 +292,52 @@ class Upgrader(object):
 
         The StopIteration Exception should be handled by calling.
         """
-        params = []
-        obs_min = []
-        obs_max = []
+        # No longer needed.
+        # params = []
+        # obs_min = []
+        # obs_max = []
+        # for group in self.param_groups:
+        #     params.append(group['params'])
+        #     for p in group['params']:
+        #         if p.obs is not None:
+        #             # obs is in [neurons, states] format.
+        #             # we need to calculate the min and max for each states
+        #             # but not neurons. In other word, all neurons share the
+        #             # same min and max value, even in neuron wise mode.
+        #             if len(obs_min) == 0 and len(obs_max) == 0:
+        #                 obs_max_, _ = torch.max(p.obs, dim=0, keepdim=True)
+        #                 obs_min_, _ = torch.min(p.obs, dim=0, keepdim=True)
+        #                 # add following line to avoid only one params
+        #                 obs_max = torch.zeros_like(obs_max_)
+        #                 obs_min = torch.zeros_like(obs_min_)
+        #             else:
+        #                 obs_max_, _ = torch.max(p.obs, dim=0, keepdim=True)
+        #                 obs_min_, _ = torch.min(p.obs, dim=0, keepdim=True)
+
+        #             obs_max = torch.max(torch.cat([obs_max, obs_max_], dim=0),
+        #                                 dim=0,
+        #                                 keepdim=True)[0]
+        #             obs_min = torch.min(torch.cat([obs_min, obs_min_], dim=0),
+        #                                 dim=0,
+        #                                 keepdim=True)[0]
+
+        # for v in zip(*params):
+        #     # do normalization for each variable's observation states
+        #     # the obs will be modified if we finetune the model every time
+        #     # but, we think it is fine to use the pre-calculated min-max to
+        #     # do the normalization operation.
+        #     if len(obs_min) and len(obs_max):
+        #         for v_ in v:
+        #             v_.obs.add_(-obs_min).div_((obs_max - obs_min + 1e-8))  # pylint: disable=invalid-unary-operand-type
+        #     yield v
+
         for group in self.param_groups:
-            params.append(group['params'])
-            for p in group['params']:
-                if p.obs is not None:
-                    # obs is in [neurons, states] format.
-                    # we need to calculate the min and max for each states
-                    # but not neurons. In other word, all neurons share the
-                    # same min and max value, even in neuron wise mode.
-                    if len(obs_min) == 0 and len(obs_max) == 0:
-                        obs_max_, _ = torch.max(p.obs, dim=0, keepdim=True)
-                        obs_min_, _ = torch.min(p.obs, dim=0, keepdim=True)
-                        # add following line to avoid only one params
-                        obs_max = torch.zeros_like(obs_max_)
-                        obs_min = torch.zeros_like(obs_min_)
-                    else:
-                        obs_max_, _ = torch.max(p.obs, dim=0, keepdim=True)
-                        obs_min_, _ = torch.min(p.obs, dim=0, keepdim=True)
+            eve_param = group['params']
+            for v in eve_param:
+                if v.obs is not None and v.requires_upgrading:
+                    yield v
 
-                    obs_max = torch.max(torch.cat([obs_max, obs_max_], dim=0),
-                                        dim=0,
-                                        keepdim=True)[0]
-                    obs_min = torch.min(torch.cat([obs_min, obs_min_], dim=0),
-                                        dim=0,
-                                        keepdim=True)[0]
-
-        for v in zip(*params):
-            # do normalization for each variable's observation states
-            # the obs will be modified if we finetune the model every time
-            # but, we think it is fine to use the pre-calculated min-max to
-            # do the normalization operation.
-            if len(obs_min) and len(obs_max):
-                for v_ in v:
-                    v_.obs.add_(-obs_min).div_((obs_max - obs_min + 1e-8))  # pylint: disable=invalid-unary-operand-type
-            yield v
-
-    def take_action(self, params: List[EveParameter],
-                    action: List[Tensor]) -> None:
+    def take_action(self, params: EveParameter, action: Tensor) -> None:
         """Take the action from agent and apply to params.
 
         Args:
@@ -346,11 +352,13 @@ class Upgrader(object):
         defination order in QModule. If in neuron-wise mode, action is specified for
         each neurons, otherwise, an action to a layer.
         """
-        if len(params) != len(action):
-            raise ValueError(
-                "the number of eve parameters is not the same with"
-                "actions. Excepted {}, got {}".format(len(params),
-                                                      len(action)))
-        # Call upgrade_fn to take action
-        for p, a in zip(params, action):
-            p.upgrade_fn(p, y=a)
+        # no longer needed
+        # if len(params) != len(action):
+        #     raise ValueError(
+        #         "the number of eve parameters is not the same with"
+        #         "actions. Excepted {}, got {}".format(len(params),
+        #                                               len(action)))
+        # # Call upgrade_fn to take action
+        # for p, a in zip(params, action):
+        #     p.upgrade_fn(p, y=a)
+        params.upgrade_fn(params, y=action)

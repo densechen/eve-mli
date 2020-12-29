@@ -61,13 +61,40 @@ class EveNet(Eve):
     def action_space(self) -> spaces.Space:
         # return the action space of current model.
         # this property will be used while defining a reinforcement environments
-        return None
+        # To maintain a good code style, we will return the action space for each
+        # neurons, though sometimes they are the same value.
+        # and the action space will be defined the max neurons among all eve param
+
+        return spaces.Box(low=-1,
+                          high=1,
+                          shape=[
+                              self.max_neurons,
+                          ],
+                          dtype=np.float32)
 
     @property
     def observation_space(self) -> spaces.Space:
         # returns the observation space of current model.
         # this property will be used while defining a reinforcement environments
-        return None
+        # To maintain a good code style, we will return the observation space for each
+        # neurons, though somtimes they are th same value.
+        # we will return a max neurons among all, and zero will be padded.
+        return spaces.Box(low=-1,
+                          high=1,
+                          shape=(self.max_neurons, self.max_diff_states),
+                          dtype=np.float32)
+
+    @property
+    def max_neurons(self):
+        """Set this property while defining network
+        """
+        raise NotImplementedError
+
+    @property
+    def max_diff_states(self):
+        """Set this property while defining network
+        """
+        raise NotImplementedError
 
     def forward(self, x: Tensor):
         """Implements forward pass.
@@ -181,20 +208,6 @@ class ClsNet(EveNet):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    @property
-    def action_space(self) -> spaces.Space:
-        # return the action space of current model.
-        # this property will be used while defining a reinforcement environments
-        # FIXME: neuron wise
-        return spaces.Box(low=0, high=1, shape=(1, ), dtype=np.float32)
-
-    @property
-    def observation_space(self) -> spaces.Space:
-        # returns the observation space of current model.
-        # this property will be used while defining a reinforcement environments
-        # FIXME: neuron wise
-        return spaces.Box(low=-1, high=1, shape=(5, ), dtype=np.float32)
 
     def spiking_forward(self, x: Tensor) -> Tensor:
         """Implements spiking forward pass.
@@ -338,7 +351,7 @@ class Trainer(object):
         # define upgrader
         # the eve parameters should be updated sequentially, not parallel!
         # do not use eve_parameters_list
-        eve_parameters = self.eve_module.eve_parameters()
+        eve_parameters = list(self.eve_module.eve_parameters())
         if len(eve_parameters) == 0:
             self.upgrader = None
             print("no upgrader needed")
@@ -471,7 +484,19 @@ class Trainer(object):
         self.last_eve_parameters = eve_parameters
 
         if eve_parameters is not None:
-            return eve_parameters[0].obs.cpu().numpy().astype(np.float32)
+            # pad to [max_neurons, max_states]
+            obs = eve_parameters.obs
+            neurons, states = obs.shape
+            padding = [
+                0,
+                self.task_module.max_diff_states - states,
+                0,
+                self.task_module.max_neurons - neurons,
+            ]
+
+            obs = F.pad(obs, pad=padding)
+
+            return obs.cpu().numpy().astype(np.float32)
         else:
             return None
 
@@ -480,7 +505,9 @@ class Trainer(object):
         """
         action = torch.as_tensor(action, device=self.device)
 
-        action = torch.split(action, split_size_or_sections=1, dim=0)
+        # action = torch.split(action, split_size_or_sections=1, dim=0)
+        # filter out usless actions
+        action = action[:len(self.last_eve_parameters)]
 
         self.upgrader.take_action(self.last_eve_parameters, action)
 

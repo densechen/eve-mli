@@ -32,12 +32,9 @@ register(
     net_arch_kwargs={
         "node": "IfNode",
         "node_kwargs": {
-            "neuron_wise": False
         },
         "quan": "SteQuan",
         "quan_kwargs": {
-            "neuron_wise": False,
-            "upgradable": True,
         },
         "encoder": "RateEncoder",
         "encoder_kwargs": {}
@@ -72,12 +69,9 @@ register(
     net_arch_kwargs={
         "node": "IfNode",
         "node_kwargs": {
-            "neuron_wise": False
         },
         "quan": "SteQuan",
         "quan_kwargs": {
-            "neuron_wise": False,
-            "upgradable": True,
         },
         "encoder": "RateEncoder",
         "encoder_kwargs": {}
@@ -112,12 +106,9 @@ register(
     net_arch_kwargs={
         "node": "IfNode",
         "node_kwargs": {
-            "neuron_wise": False
         },
         "quan": "SteQuan",
         "quan_kwargs": {
-            "neuron_wise": False,
-            "upgradable": True,
         },
         "encoder": "RateEncoder",
         "encoder_kwargs": {}
@@ -152,12 +143,9 @@ register(
     net_arch_kwargs={
         "node": "IfNode",
         "node_kwargs": {
-            "neuron_wise": False
         },
         "quan": "SteQuan",
         "quan_kwargs": {
-            "neuron_wise": False,
-            "upgradable": True,
         },
         "encoder": "RateEncoder",
         "encoder_kwargs": {}
