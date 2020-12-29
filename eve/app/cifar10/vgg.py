@@ -175,7 +175,17 @@ class Vgg(eve.cores.Eve):
 
 class EveCifar10Vgg(EveCifar10):
     net = Vgg
+    @property
+    def max_neurons(self):
+        """Set this property while defining network
+        """
+        return 512
 
+    @property
+    def max_diff_states(self):
+        """Set this property while defining network
+        """
+        return 2
 
 class TrainerCifar10Vgg(TrainerCifar10):
     eve_cifar10 = EveCifar10Vgg

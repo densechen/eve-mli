@@ -87,6 +87,9 @@ class Node(Eve):
         # register voltage as hidden state, which will reset every time.
         self.register_hidden_state("voltage", None)
 
+        # register an forward hook to calculate the observation states
+        self.register_forward_hook(Node._attach_obs_to_eve_parameters)
+
     @staticmethod
     def _attach_obs_to_eve_parameters(cls, input: Tensor,
                                       output: Tensor) -> None:
@@ -121,7 +124,7 @@ class Node(Eve):
             # only attach to the eve parameters needed upgrading.
             if v is None or not v.requires_upgrading:
                 continue
-            elif v.obs is not None and v.obs.shape == obs:
+            elif v.obs is not None and v.obs.shape == obs.shape:
                 v.obs.mul_(0.5).add_(obs, alpha=0.5)
             elif v.obs is None:
                 v.obs = obs.detach().clone()

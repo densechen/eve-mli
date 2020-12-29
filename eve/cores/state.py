@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
+from typing import List
 
 # pylint: disable=no-member
 class State(object):
@@ -109,18 +109,18 @@ class State(object):
     def l1_norm(self):
         if self.filter_type == nn.Linear:
             # filter shape is [featout, featin]
-            weight = self.filter_weight()
-            return weight.abs().mean(dim=1)  # [featout]
+            weight = self.filter_weight
+            return weight.abs().sum(dim=1)  # [featout]
         elif self.filter_type == nn.Conv2d:
             # filter shape is [outchannel, inchannel, w, h]
-            weight = self.filter_weight()
-            return weight.abs().mean(dim=(1, 2, 3))  # [featout]
+            weight = self.filter_weight
+            return weight.abs().sum(dim=(1, 2, 3))  # [featout]
         else:
             raise NotImplementedError
 
-    def kl_div(self, x: Tensor, quan: Tensor):
+    def kl_div(self, x: List[Tensor], quan: Tensor):
         dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[self.filter_type]
-        return F.kl_div(x, quan, reduction="none").mean(dim, keepdim=False)
+        return F.kl_div(x[0], quan, reduction="none").mean(dim, keepdim=False)
 
     def fire_rate(self, x: Tensor, fire: Tensor):
         dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[self.filter_type]

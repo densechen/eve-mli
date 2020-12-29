@@ -29,16 +29,6 @@ register(
     entry_point=TrainerMnist,
     checkpoint_path="",
     max_timesteps=1,
-    net_arch_kwargs={
-        "node": "IfNode",
-        "node_kwargs": {
-        },
-        "quan": "SteQuan",
-        "quan_kwargs": {
-        },
-        "encoder": "RateEncoder",
-        "encoder_kwargs": {}
-    },
     optimizer_kwargs={
         "optimizer":
         "Adam",  # which kind of optimizer, SGD or Adam is supported current.
@@ -55,7 +45,6 @@ register(
         "batch_size": 128,
         "num_workers": 4,
     },
-    upgrader_kwargs={},
     kwargs={
         "device": "cpu",
     },
@@ -66,16 +55,6 @@ register(
     entry_point=TrainerImageNetAlexNet,
     checkpoint_path="",
     max_timesteps=1,
-    net_arch_kwargs={
-        "node": "IfNode",
-        "node_kwargs": {
-        },
-        "quan": "SteQuan",
-        "quan_kwargs": {
-        },
-        "encoder": "RateEncoder",
-        "encoder_kwargs": {}
-    },
     optimizer_kwargs={
         "optimizer":
         "Adam",  # which kind of optimizer, SGD or Adam is supported current.
@@ -92,7 +71,6 @@ register(
         "batch_size": 128,
         "num_workers": 4,
     },
-    upgrader_kwargs={},
     kwargs={
         "device": "cpu",
     },
@@ -103,16 +81,6 @@ register(
     entry_point=TrainerImageNetVggm,
     checkpoint_path="",
     max_timesteps=1,
-    net_arch_kwargs={
-        "node": "IfNode",
-        "node_kwargs": {
-        },
-        "quan": "SteQuan",
-        "quan_kwargs": {
-        },
-        "encoder": "RateEncoder",
-        "encoder_kwargs": {}
-    },
     optimizer_kwargs={
         "optimizer":
         "Adam",  # which kind of optimizer, SGD or Adam is supported current.
@@ -129,7 +97,6 @@ register(
         "batch_size": 128,
         "num_workers": 4,
     },
-    upgrader_kwargs={},
     kwargs={
         "device": "cpu",
     },
@@ -140,16 +107,6 @@ register(
     entry_point=TrainerCifar10Vgg,
     checkpoint_path="",
     max_timesteps=1,
-    net_arch_kwargs={
-        "node": "IfNode",
-        "node_kwargs": {
-        },
-        "quan": "SteQuan",
-        "quan_kwargs": {
-        },
-        "encoder": "RateEncoder",
-        "encoder_kwargs": {}
-    },
     optimizer_kwargs={
         "optimizer":
         "Adam",  # which kind of optimizer, SGD or Adam is supported current.
@@ -166,7 +123,6 @@ register(
         "batch_size": 128,
         "num_workers": 4,
     },
-    upgrader_kwargs={},
     kwargs={
         "device": "cpu",
     },

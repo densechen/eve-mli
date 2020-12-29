@@ -489,9 +489,9 @@ class Trainer(object):
             neurons, states = obs.shape
             padding = [
                 0,
-                self.task_module.max_diff_states - states,
+                self.eve_module.max_diff_states - states,
                 0,
-                self.task_module.max_neurons - neurons,
+                self.eve_module.max_neurons - neurons,
             ]
 
             obs = F.pad(obs, pad=padding)
@@ -507,7 +507,8 @@ class Trainer(object):
 
         # action = torch.split(action, split_size_or_sections=1, dim=0)
         # filter out usless actions
-        action = action[:len(self.last_eve_parameters)]
+        action = action[:self.last_eve_parameters.numel()].view_as(
+            self.last_eve_parameters)
 
         self.upgrader.take_action(self.last_eve_parameters, action)
 

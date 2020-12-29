@@ -205,6 +205,8 @@ class ExperimentManager(object):
         elif self.optimize_hyperparameters:
             return None
         else:
+            from eve.rl.agent import MlpPolicy
+            self._hyperparams["policy"] = MlpPolicy
             # Train an agent from scratch
             model = ALGOS[self.algo](
                 env=env,

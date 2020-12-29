@@ -79,6 +79,9 @@ class Quan(Eve):
         alpha = _align_dims(self.filter_type, alpha)
         self.alpha = Parameter(alpha, requires_grad=True)
 
+        # register an forward hook to calculate the observation states
+        self.register_forward_hook(Quan._attach_obs_to_eve_parameters)
+        
     @staticmethod
     def _attach_obs_to_eve_parameters(cls, input: Tensor,
                                       output: Tensor) -> None:
@@ -114,7 +117,7 @@ class Quan(Eve):
             # only attach to the eve parameters needed upgrading.
             if v is None or not v.requires_upgrading:
                 continue
-            elif v.obs is not None and v.obs.shape == obs:
+            elif v.obs is not None and v.obs.shape == obs.shape:
                 v.obs.mul_(0.5).add_(obs, alpha=0.5)
             elif v.obs is None:
                 v.obs = obs.detach().clone()
