@@ -4,8 +4,8 @@ from typing import Optional
 import numpy as np
 import optuna
 from matplotlib import pyplot as plt
-from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
-from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv
+from eve.rl.common.callbacks import BaseCallback, EvalCallback
+from eve.rl.common.vec_env import DummyVecEnv, VecEnv
 
 
 class TrialEvalCallback(EvalCallback):

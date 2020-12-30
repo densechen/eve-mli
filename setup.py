@@ -9,7 +9,7 @@ import os
 from setuptools import find_packages
 from setuptools import setup
 import sys
-from eve.version import __version__
+from eve import __version__
 
 with open("requires.txt", "r", encoding="utf-8") as fh:
     install_requires = fh.read()
@@ -30,9 +30,6 @@ setup(
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
     ],
     license="MIT",

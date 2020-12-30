@@ -13,20 +13,20 @@ import yaml
 from optuna.integration.skopt import SkoptSampler
 from optuna.pruners import BasePruner, MedianPruner, SuccessiveHalvingPruner
 from optuna.samplers import BaseSampler, RandomSampler, TPESampler
-from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from stable_baselines3.common.preprocessing import is_image_space
-from stable_baselines3.common.utils import constant_fn
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv, VecFrameStack, VecNormalize, VecTransposeImage
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
+from eve.rl.common.base_class import BaseAlgorithm
+from eve.rl.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
+from eve.rl.common.env_util import make_vec_env
+from eve.rl.common.monitor import Monitor
+from eve.rl.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from eve.rl.common.utils import constant_fn
+from eve.rl.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv, VecNormalize
+from eve.rl.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 # For custom activation fn
 import torch.nn as nn
 
 # NOTE: import the env, and automatically register the env to global gym.envs.
+# FIXME: move envs to trainer.
 import eve.rl.envs
 
 from eve.rl.utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
@@ -205,8 +205,6 @@ class ExperimentManager(object):
         elif self.optimize_hyperparameters:
             return None
         else:
-            from eve.rl.agent import MlpPolicy
-            self._hyperparams["policy"] = MlpPolicy
             # Train an agent from scratch
             model = ALGOS[self.algo](
                 env=env,
@@ -565,20 +563,6 @@ class ExperimentManager(object):
         # Wrap the env into a VecNormalize wrapper if needed
         # and load saved statistics when present
         env = self._maybe_normalize(env, eval_env)
-
-        # Optional Frame-stacking
-        if self.frame_stack is not None:
-            n_stack = self.frame_stack
-            env = VecFrameStack(env, n_stack)
-            if self.verbose > 0:
-                print(f"Stacking {n_stack} frames")
-
-        # Wrap if needed to re-order channels
-        # (switch from channel last to channel first convention)
-        if is_image_space(env.observation_space):
-            if self.verbose > 0:
-                print("Wrapping into a VecTransposeImage")
-            env = VecTransposeImage(env)
 
         # check if wrapper for dict support is needed
         if self.algo == "her":

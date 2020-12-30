@@ -4,18 +4,16 @@ import importlib
 import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import eve.rl as sb3
 import gym
-import stable_baselines3 as sb3
 # For custom activation fn
 import torch.nn as nn
 import yaml
-from stable_baselines3 import A2C, DDPG, DQN, HER, PPO, SAC, TD3
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
-from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
-                                              VecEnv, VecFrameStack,
-                                              VecNormalize)
+from eve.rl import A2C, DDPG, DQN, HER, PPO, SAC, TD3
+from eve.rl.common.callbacks import BaseCallback
+from eve.rl.common.env_util import make_vec_env
+from eve.rl.common.vec_env import (DummyVecEnv, SubprocVecEnv, VecEnv,
+                                   VecNormalize)
 
 ALGOS = {
     "a2c": A2C,
@@ -114,13 +112,13 @@ def get_callback_list(hyperparams: Dict[str, Any]) -> List[BaseCallback]:
     Get one or more Callback class specified as a hyper-parameter
     "callback".
     e.g.
-    callback: stable_baselines3.common.callbacks.CheckpointCallback
+    callback: eve.rl.common.callbacks.CheckpointCallback
 
     for multiple, specify a list:
 
     callback:
         - utils.callbacks.PlotActionWrapper
-        - stable_baselines3.common.callbacks.CheckpointCallback
+        - eve.rl.common.callbacks.CheckpointCallback
 
     Args:
         hyperparams:
@@ -230,11 +228,6 @@ def create_test_env(
                 env.norm_reward = False
             else:
                 raise ValueError(f"VecNormalize stats {path_} not found")
-
-        n_stack = hyperparams.get("frame_stack", 0)
-        if n_stack > 0:
-            print(f"Stacking {n_stack} frames")
-            env = VecFrameStack(env, n_stack)
     return env
 
 

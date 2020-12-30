@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 import numpy as np
 import optuna
-from stable_baselines3 import DDPG, DQN, SAC, TD3
-from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from eve.rl import DDPG, DQN, SAC, TD3
+from eve.rl.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 import torch.nn as nn
 
 from eve.rl.utils import linear_schedule

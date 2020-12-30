@@ -141,10 +141,6 @@ FetchPush-v1:
 FetchPickAndPlace-v1:
   env_wrapper:
     - sb3_contrib.common.wrappers.TimeFeatureWrapper
-    # - utils.wrappers.DoneOnSuccessWrapper:
-    #     reward_offset: 0
-    #     n_successes: 4
-    # - stable_baselines3.common.monitor.Monitor
   n_timesteps: !!float 1e6
   policy: 'MlpPolicy'
   model_class: 'tqc'
