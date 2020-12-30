@@ -53,5 +53,5 @@ The project remains in development. We encourage more volunteers to come togethe
 
 - [ ] Test ImageNet dataloader code: waiting for ImageNet dataset.
 - [ ] Add LSTM PolicyNetwork supporting: next to do.
-- [ ] Design hardward/structure awared reword function: next to do.
 - [ ] Depart from stable-baselines3: current doing.
+- [ ] Reconstruct Trainer and Env: Currently Trainer and Eve are confusing. We will reconstruct them and merge them together.

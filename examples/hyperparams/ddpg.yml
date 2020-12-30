@@ -18,7 +18,7 @@ FixedNas-v0:
   policy: 'MlpPolicy'
   gamma: 0.98
   buffer_size: 2000
-  learning_starts: 0
+  learning_starts: 10000
   noise_type: 'normal'
   noise_std: 0.1
   gradient_steps: -1

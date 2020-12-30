@@ -65,7 +65,7 @@ class EveNet(Eve):
         # neurons, though sometimes they are the same value.
         # and the action space will be defined the max neurons among all eve param
 
-        return spaces.Box(low=-1,
+        return spaces.Box(low=0,
                           high=1,
                           shape=[
                               self.max_neurons,
@@ -345,12 +345,18 @@ class Trainer(object):
 
         print("original accuracy: {}".format(self.original_accuracy))
 
-        # save it
-        self.save(self.best_model_save_path)
-
         # define upgrader
         # the eve parameters should be updated sequentially, not parallel!
         # do not use eve_parameters_list
+
+        upgrader_target = kwargs.get("upgrader_target", [])
+        if len(upgrader_target) > 0:
+            for k, v in self.eve_module.named_eve_parameters():
+                if k.split(".")[-1] in upgrader_target:
+                    v.requires_upgrading_(True)
+                else:
+                    v.requires_upgrading_(False)
+
         eve_parameters = list(self.eve_module.eve_parameters())
         if len(eve_parameters) == 0:
             self.upgrader = None
@@ -359,6 +365,9 @@ class Trainer(object):
             self.upgrader = Upgrader(eve_parameters, **upgrader_kwargs)
             print("create an upgrader automatically")
 
+        # save it
+        self.save(self.best_model_save_path)
+        
         # gen
         self.eve_parameters_gen = None
         self.last_eve_parameters = None

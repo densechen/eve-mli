@@ -47,6 +47,7 @@ register(
     },
     kwargs={
         "device": "cpu",
+        "upgrader_target": ["bit_width"],
     },
 )
 
@@ -73,6 +74,7 @@ register(
     },
     kwargs={
         "device": "cpu",
+        "upgrader_target": ["bit_width"],
     },
 )
 
@@ -99,6 +101,7 @@ register(
     },
     kwargs={
         "device": "cpu",
+        "upgrader_target": ["bit_width"],
     },
 )
 
@@ -125,5 +128,6 @@ register(
     },
     kwargs={
         "device": "cpu",
+        "upgrader_target": ["bit_width"],
     },
 )

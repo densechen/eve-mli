@@ -10,6 +10,18 @@ from abc import abstractmethod
 import torch
 
 
+def compress_rate(eve_params):
+    bit_width = 0
+    bit_bound = 0
+    for v in eve_params:
+        if v.requires_upgrading:
+            bit_width += v.sum()
+            bit_bound += v.numel() * 8 # max_bit_width
+
+    compress_rate = bit_width / bit_bound
+    return compress_rate.item()
+
+
 class Nas(gym.Env):
     """A basic environment for network architecture searching.
 
@@ -206,9 +218,10 @@ class FitNas(Nas):
         return self.trainer.fetch_observation_state()
 
     def reward(self):
+        rate = compress_rate(list(self.trainer.upgrader.eve_parameters()))
         self.trainer.upgrader.zero_obs()
         acc = self.trainer.train_one_step()
-        return acc - self.trainer.original_accuracy
+        return acc - self.trainer.original_accuracy - rate * 0.1
 
 
 class FixedNas(Nas):
@@ -240,6 +253,8 @@ class FixedNas(Nas):
         return self.trainer.fetch_observation_state()
 
     def reward(self):
+        rate = compress_rate(list(self.trainer.upgrader.eve_parameters()))
+
         self.trainer.upgrader.zero_obs()
         acc = self.trainer.valid_one_step()
-        return acc - self.trainer.original_accuracy
+        return acc - self.trainer.original_accuracy - rate * 0.1
