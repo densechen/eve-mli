@@ -13,17 +13,6 @@ Subpackages
    eve.upgrade
    eve.utils
 
-Submodules
-----------
-
-eve.version module
-------------------
-
-.. automodule:: eve.version
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

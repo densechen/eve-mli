@@ -182,7 +182,7 @@ class Eve(Module):
         super(Eve, self).__init__()
 
         self.spiking = False
-        self._hidden_states = OrderedDict()
+        # self._hidden_states = OrderedDict()
         self._eve_parameters = OrderedDict()
 
         # register an forward hook to calculate the observation states
@@ -258,57 +258,70 @@ class Eve(Module):
         else:
             raise KeyError(f"{name} is not a eve parameter")
 
+    # def register_hidden_state(self, name: str, tensor: Union[Tensor,
+    #                                                          None]) -> None:
+    #     """Adds a hidden states to the module.
+
+    #     This is typically used to register a hidden states that should not to be
+    #     considered a model parameter or model buffer. For example, the voltage
+    #     of a IFNode or LIFNode is not a parameter, but is part of the module's state.
+
+    #     Hidden states can be accessed as attributes using given names.
+    #     Compared with buffer, hidden states will not be saved with weights and
+    #     will be reseted while :meth:`Eve.reset` is called.
+
+    #     Args:
+    #         name (str): name of the hidden state. The hidden state can be
+    #             accessed from this module using the given name.
+    #         tensor (Tensor): hidden state to be registered.
+
+    #     .. note::
+
+    #         All hidden states will be reset in :meth:`Eve.reset()`, and will not
+    #         appear in :meth:`self.state_dict()`.
+    #         We provide :meth:`self.hidden_states()` and :meth:`self.named_hidden_states()`
+    #         to fetch them.
+
+    #     Example::
+
+    #         >>> self.register_hidden_state("voltage", torch.randn(feat_in))
+    #         >>> # or register a hidden state as None.
+    #         >>> self.register_hidden_state("obs", None)
+    #         >>> # though obs is None, but self.obs will obtain all hidden state property.
+    #         >>> # even though obs assigned other values.
+
+    #     """
+    #     if "_hidden_states" not in self.__dict__:
+    #         raise AttributeError(
+    #             "cannot assign hidden state before Eve.__init__() call")
+    #     elif not isinstance(name, torch._six.string_classes):
+    #         raise TypeError("hidden state name should be a string. "
+    #                         "Got {}".format(torch.typename(name)))
+    #     elif "." in name:
+    #         raise KeyError("hidden state name can't contain \".\"")
+    #     elif name == "":
+    #         raise KeyError("hidden state name can't be empty string.")
+    #     elif hasattr(self, name) and name not in self._hidden_states:
+    #         raise KeyError("attribute '{}' already exists".format(name))
+    #     elif tensor is not None and not isinstance(tensor, torch.Tensor):
+    #         raise TypeError("cannot assign '{}' object to hidden state '{}'"
+    #                         "(torch Tensor or None required)".format(
+    #                             torch.typename(tensor), name))
+    #     else:
+    #         self._hidden_states[name] = tensor
+
     def register_hidden_state(self, name: str, tensor: Union[Tensor,
                                                              None]) -> None:
-        """Adds a hidden states to the module.
+        """Register a buffer as hidden state to the module.
 
-        This is typically used to register a hidden states that should not to be
-        considered a model parameter or model buffer. For example, the voltage 
-        of a IFNode or LIFNode is not a parameter, but is part of the module's state.
+        The hidden state will not be saved along with weights and will be cleared
+        while self.reset() called.
 
-        Hidden states can be accessed as attributes using given names. 
-        Compared with buffer, hidden states will not be saved with weights and 
-        will be reseted while :meth:`Eve.reset` is called.
-
-        Args:
-            name (str): name of the hidden state. The hidden state can be 
-                accessed from this module using the given name.
-            tensor (Tensor): hidden state to be registered.
-        
-        .. note::
-
-            All hidden states will be reset in :meth:`Eve.reset()`, and will not
-            appear in :meth:`self.state_dict()`. 
-            We provide :meth:`self.hidden_states()` and :meth:`self.named_hidden_states()`
-            to fetch them.
-        
-        Example::
-
-            >>> self.register_hidden_state("voltage", torch.randn(feat_in))
-            >>> # or register a hidden state as None.
-            >>> self.register_hidden_state("obs", None)
-            >>> # though obs is None, but self.obs will obtain all hidden state property.
-            >>> # even though obs assigned other values.
-
+        The hidden state is a special buffer variable which ends with a _hid postfix.
         """
-        if "_hidden_states" not in self.__dict__:
-            raise AttributeError(
-                "cannot assign hidden state before Eve.__init__() call")
-        elif not isinstance(name, torch._six.string_classes):
-            raise TypeError("hidden state name should be a string. "
-                            "Got {}".format(torch.typename(name)))
-        elif "." in name:
-            raise KeyError("hidden state name can't contain \".\"")
-        elif name == "":
-            raise KeyError("hidden state name can't be empty string.")
-        elif hasattr(self, name) and name not in self._hidden_states:
-            raise KeyError("attribute '{}' already exists".format(name))
-        elif tensor is not None and not isinstance(tensor, torch.Tensor):
-            raise TypeError("cannot assign '{}' object to hidden state '{}'"
-                            "(torch Tensor or None required)".format(
-                                torch.typename(tensor), name))
-        else:
-            self._hidden_states[name] = tensor
+        name = name + "_hid"
+
+        self.register_buffer(name, tensor, persistent=False)
 
     def _apply(self, fn) -> T:
         for module in self.children():
@@ -393,17 +406,17 @@ class Eve(Module):
                             key].obs = obs_applied.requires_grad_(
                                 param.obs.requires_grad)
 
-        for key, hid in self._hidden_states.items():
-            if hid is not None:
-                self._hidden_states[key] = fn(hid)
+        # for key, hid in self._hidden_states.items():
+        #     if hid is not None:
+        #         self._hidden_states[key] = fn(hid)
 
         return self
 
     def __getattr__(self, name: str) -> Union[Tensor, T]:
-        if "_hidden_states" in self.__dict__:
-            _hidden_states = self.__dict__["_hidden_states"]
-            if name in _hidden_states:
-                return _hidden_states[name]
+        # if "_hidden_states" in self.__dict__:
+        #     _hidden_states = self.__dict__["_hidden_states"]
+        #     if name in _hidden_states:
+        #         return _hidden_states[name]
         if "_eve_parameters" in self.__dict__:
             _eve_parameters = self.__dict__["_eve_parameters"]
             if name in _eve_parameters:
@@ -488,14 +501,14 @@ class Eve(Module):
             eve_parameters[name] = value
             return
 
-        hidden_states = self.__dict__.get("_hidden_states")
-        if hidden_states is not None and name in hidden_states:
-            if value is not None and not isinstance(value, torch.Tensor):
-                raise TypeError("cannot assign '{}' as hidden state '{}'"
-                                "(torch.Tensor or None expected)".format(
-                                    torch.typename(value), name))
-            hidden_states[name] = value
-            return
+        # hidden_states = self.__dict__.get("_hidden_states")
+        # if hidden_states is not None and name in hidden_states:
+        #     if value is not None and not isinstance(value, torch.Tensor):
+        #         raise TypeError("cannot assign '{}' as hidden state '{}'"
+        #                         "(torch.Tensor or None expected)".format(
+        #                             torch.typename(value), name))
+        #     hidden_states[name] = value
+        #     return
 
         buffers = self.__dict__.get('_buffers')
         if buffers is not None and name in buffers:
@@ -516,8 +529,8 @@ class Eve(Module):
             self._non_persistent_buffers_set.discard(name)
         elif name in self._modules:
             del self._modules[name]
-        elif name in self._hidden_states:
-            del self._hidden_states[name]
+        # elif name in self._hidden_states:
+        #     del self._hidden_states[name]
         elif name in self._eve_parameters:
             del self._eve_parameters[name]
         else:
@@ -762,23 +775,19 @@ class Eve(Module):
             recurse (bool): if True, then yields hidden states of this module
                 and all submodules. Otherwise, yields only hidden states that
                 are direct members of this module.
-        
+
         Yields:
             (string, torch.Tensor): Tuple containing the name and hidden states.
-        
+
         Example::
-        
+
             >>> for name, hid in self.named_hidden_states():
             >>>     if name in ["voltage"]:
             >>>         print(hid.size())
         """
-        gen = self._named_members(
-            lambda m: dict().items()
-            if not isinstance(m, Eve) else m._hidden_states.items(),
-            prefix=prefix,
-            recurse=recurse)
-        for elem in gen:
-            yield elem
+        for name, hid in self.named_buffers():
+            if name.endswith("_hid"):
+                yield name, hid
 
     def spike(self: T, mode: bool = True) -> T:
         """Sets the module in spiking mode.
@@ -895,8 +904,9 @@ class Eve(Module):
         eve_parameters = list(self._eve_parameters.keys())
         modules = list(self._modules.keys())
         buffers = list(self._buffers.keys())
-        hidden_states = list(self._hidden_states.keys())
-        keys = module_attrs + attrs + parameters + eve_parameters + modules + buffers + hidden_states
+        # hidden_states = list(self._hidden_states.keys())
+        # keys = module_attrs + attrs + parameters + eve_parameters + modules + buffers + hidden_states
+        keys = module_attrs + attrs + parameters + eve_parameters + modules + buffers
 
         # Eliminate attrs that are not legal Python variable names
         keys = [key for key in keys if not key[0].isdigit()]
@@ -912,7 +922,7 @@ class Eve(Module):
         replica._parameters = OrderedDict()
         replica._eve_parameters = OrderedDict()
         replica._buffers = replica._buffers.copy()
-        replica._hidden_states = replica._hidden_states.copy()
+        # replica._hidden_states = replica._hidden_states.copy()
         replica._modules = replica._modules.copy()
         replica._is_replica = True
 

@@ -16,11 +16,6 @@ Welcome to eve's documentation!
    
    Copyright <copyright.rst>
 
-API
-------------------
-
-* :ref:`APIs`
-
 Indices and tables
 ==================
 

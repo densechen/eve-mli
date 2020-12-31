@@ -20,14 +20,6 @@ eve.rl.utils.hyperparams\_opt module
    :undoc-members:
    :show-inheritance:
 
-eve.rl.utils.import\_envs module
---------------------------------
-
-.. automodule:: eve.rl.utils.import_envs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 eve.rl.utils.utils module
 -------------------------
 

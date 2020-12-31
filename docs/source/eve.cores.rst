@@ -44,6 +44,14 @@ eve.cores.quan module
    :undoc-members:
    :show-inheritance:
 
+eve.cores.state module
+----------------------
+
+.. automodule:: eve.cores.state
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 eve.cores.utils module
 ----------------------
 

@@ -1,13 +1,13 @@
-eve.rl.agent package
-====================
+eve.app.mnist package
+=====================
 
 Submodules
 ----------
 
-eve.rl.agent.policies module
-----------------------------
+eve.app.mnist.mnist module
+--------------------------
 
-.. automodule:: eve.rl.agent.policies
+.. automodule:: eve.app.mnist.mnist
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ eve.rl.agent.policies module
 Module contents
 ---------------
 
-.. automodule:: eve.rl.agent
+.. automodule:: eve.app.mnist
    :members:
    :undoc-members:
    :show-inheritance:

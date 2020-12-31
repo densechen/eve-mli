@@ -7,8 +7,15 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   eve.rl.agent
+   eve.rl.a2c
+   eve.rl.common
+   eve.rl.ddpg
+   eve.rl.dqn
    eve.rl.envs
+   eve.rl.her
+   eve.rl.ppo
+   eve.rl.sac
+   eve.rl.td3
    eve.rl.utils
 
 Submodules
