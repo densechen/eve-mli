@@ -58,6 +58,3 @@ The project remains in development. We encourage more volunteers to come togethe
   - An RNN framework of policies network is also on the way.
 - Add hardware speed up support to eve-mli
   - currently, eve-Mali is purely based on python code, in the future, we will use tools like TVM to improve the performance.
-- Replace EveParameter with Parameter for better compatibility with PyTorch
-  - currently, EveParameter is a subclass of torch.Tensor, which may cause some errors while implementation distributed training. A better way is to add some regularization on the name of Parameter, and realize the properties of EveParameter via other tricks.
-  - tried, failed. the upgrade_fn is hard to implement without creating a new class.

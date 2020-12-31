@@ -353,9 +353,9 @@ class Trainer(object):
         if len(upgrader_target) > 0:
             for k, v in self.eve_module.named_eve_parameters():
                 if k.split(".")[-1] in upgrader_target:
-                    v.requires_upgrading_(True)
+                    v.requires_grad_(True)
                 else:
-                    v.requires_upgrading_(False)
+                    v.requires_grad_(False)
 
         eve_parameters = list(self.eve_module.eve_parameters())
         if len(eve_parameters) == 0:

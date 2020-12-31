@@ -9,7 +9,7 @@ from torch import Tensor
 from torch.autograd import Function, Variable
 from torch.nn import Parameter
 
-from eve.cores.eve import Eve, EveParameter
+from eve.cores.eve import Eve
 from eve.cores.state import State
 from eve.cores.utils import _align_dims
 
@@ -24,7 +24,7 @@ class Quan(Eve):
         max_bit_width (int): the max bit width of current layer. if bit width is not
             upgradable, the bit_width is the initial bit width of current layer.
             if bit width is upgradable, the bit_width is the max bits allowed.
-        requires_upgrading (bool): if ``True``, the bit width will be added to eve
+        requires_upgrade (bool): if ``True``, the bit width will be added to eve
             parameters, which can be upgraded. Default: ``False``.
     
     .. note::
@@ -39,49 +39,50 @@ class Quan(Eve):
     """
     neurons: int  # the number of neurons in this layer
     filter_type: str  # the type of kernels in previous layers
-    requires_upgrading: bool  # whether add bit_width to eve parameters.
+    requires_upgrade: bool  # whether add bit_width to eve parameters.
 
     def __init__(self,
                  state: State,
                  max_bit_width: int = 8,
-                 requires_upgrading: bool = False,
+                 requires_upgrade: bool = False,
                  **kwargs):
         super(Quan, self).__init__()
         self.state = state
         self.neurons = state.neurons
         self.filter_type = state.filter_type
         self.kwargs = kwargs
-        self.requires_upgrading = requires_upgrading
+        self.requires_upgrade = requires_upgrade
 
         # register bit_width
         bit_width = torch.Tensor([max_bit_width] * self.neurons)
         bit_width = _align_dims(self.filter_type, bit_width)
 
-        self.bit_width = EveParameter(bit_width,
-                                      requires_upgrading=requires_upgrading)
+        self.register_eve_parameter(
+            "bit_width_eve",
+            Parameter(bit_width, requires_grad=requires_upgrade))
 
-        def upgrade_fn(x, y=None, z=None):
-            if y is not None:
+        def upgrade_fn(param, action=None, obs=None):
+            if action is not None:
                 # ensure y in [0, 1]
-                y = torch.clamp(y, min=0.0, max=1.0)
+                action = torch.clamp(action, min=0.0, max=1.0)
                 # convert to specified bit
-                new_bit_width = torch.floor(y * (max_bit_width + 1))
-                x.zero_().add_(new_bit_width)
+                new_bit_width = torch.floor(action * (max_bit_width + 1))
+                param.zero_().add_(new_bit_width)
             else:
                 pass
 
-        self.bit_width.register_upgrade_fn(upgrade_fn)
+        self.register_upgrade_fn(self.bit_width_eve, upgrade_fn)
 
         # register parameter used in optimizer optimization.
         # this parameter will be ignored in some cases, such as ste quantization
         # method, however, we still define it here.
-        alpha = 1.0 / (2**self.bit_width - 1 + 1e-8)
+        alpha = 1.0 / (2**self.bit_width_eve - 1 + 1e-8)
         alpha = _align_dims(self.filter_type, alpha)
         self.alpha = Parameter(alpha, requires_grad=True)
 
         # register an forward hook to calculate the observation states
         self.register_forward_hook(Quan._attach_obs_to_eve_parameters)
-        
+
     @staticmethod
     def _attach_obs_to_eve_parameters(cls, input: Tensor,
                                       output: Tensor) -> None:
@@ -103,7 +104,7 @@ class Quan(Eve):
             which is 
             :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
         """
-        if not cls.requires_upgrading:
+        if not cls.requires_upgrade:
             return
 
         l1_norm = cls.state.l1_norm  # [neurons, ]
@@ -115,12 +116,12 @@ class Quan(Eve):
         # do not apply to sub-module or other module. so, set resurse=False.
         for k, v in cls.named_eve_parameters(recurse=False):
             # only attach to the eve parameters needed upgrading.
-            if v is None or not v.requires_upgrading:
+            if v is None or not v.requires_grad:
                 continue
-            elif v.obs is not None and v.obs.shape == obs.shape:
-                v.obs.mul_(0.5).add_(obs, alpha=0.5)
-            elif v.obs is None:
-                v.obs = obs.detach().clone()
+            elif v.grad is not None and v.grad.shape == obs.shape:
+                v.grad.mul_(0.5).add_(obs, alpha=0.5)
+            elif v.grad is None:
+                v.grad = obs.detach().clone()
             else:
                 raise ValueError("Cannot assign {} to {}".format(
                     torch.typename(obs), k))
@@ -315,14 +316,14 @@ class SteQuan(Quan):
     def quan(self, x: Tensor) -> Tensor:
         # if bit width is changed by upgrader, alpha should be updated.
         def update_alpha():
-            alpha = 1.0 / (2**self.bit_width - 1 + 1e-8)
+            alpha = 1.0 / (2**self.bit_width_eve - 1 + 1e-8)
             alpha = _align_dims(self.filter_type, alpha)
             self.alpha.data.zero_().add_(alpha.to(self.alpha))
 
-        if self.requires_upgrading:  # only happens in requires_upgrading.
+        if self.requires_upgrade:  # only happens in requires_upgrade.
             update_alpha()
 
-        return ste().apply(x, self.alpha, self.bit_width)
+        return ste().apply(x, self.alpha, self.bit_width_eve)
 
 
 class LsqQuan(Quan):
@@ -335,7 +336,7 @@ class LsqQuan(Quan):
         self.alpha.data.fill_(1.0)
 
     def quan(self, x: Tensor) -> Tensor:
-        return lsq().apply(x, self.alpha, self.bit_width)
+        return lsq().apply(x, self.alpha, self.bit_width_eve)
 
 
 class LlsqQuan(Quan):
@@ -348,5 +349,5 @@ class LlsqQuan(Quan):
         self.alpha.data.fill_(1.0)
 
     def quan(self, x: Tensor) -> Tensor:
-        return llsq().apply(x, self.alpha, self.bit_width,
+        return llsq().apply(x, self.alpha, self.bit_width_eve,
                             self.kwargs.get("regular", "l2"))

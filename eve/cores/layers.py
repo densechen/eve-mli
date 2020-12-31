@@ -36,12 +36,12 @@ class Dropout(Eve):
                                   self.p,
                                   training=self.training)
 
-    def forward(self, x: Tensor) -> Tensor:
-        if self.spiking:
-            self.drop_mask(x)
-            return x * self.mask
-        else:
-            return F.dropout(x, self.p, training=self.training)
+    def spiking_forward(self, x: Tensor) -> Tensor:
+        self.drop_mask(x)
+        return x * self.mask
+
+    def non_spiking_forward(self, x: Tensor) -> Tensor:
+        return F.dropout(x, self.p, training=self.training)
 
 
 class Dropout2d(Dropout):

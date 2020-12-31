@@ -1,593 +1,172 @@
-import functools
-import itertools
 import math
 import warnings
 from collections import OrderedDict
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
                     Tuple, TypeVar, Union)
+from abc import abstractmethod
 import torch
 import torch.nn.functional as F
 from torch import Tensor
-from torch._C import _disabled_torch_function_impl
 from torch.nn import Module, Parameter
-from eve.cores.eve_parameter import EveParameter
-r"""This tracks hooks common to all modules that are executed before/after
-calling forward and backward. This is global state used for debugging/profiling
-purposes"""
-_global_backward_hooks = OrderedDict()
-_global_forward_pre_hooks = OrderedDict()
-_global_forward_hooks = OrderedDict()
 
-
-class ModuleAttributeError(AttributeError):
-    """ When `__getattr__` raises AttributeError inside a property,
-    AttributeError is raised with the property name instead of the
-    attribute that initially raised AttributeError, making the error
-    message uninformative. Using `ModuleAttributeError` instead
-    fixes this issue."""
-
-
-T = TypeVar("T", bound="Eve")
+upgrade_fn = OrderedDict()
 
 
 class Eve(Module):
     """Base class for Eve.
-    
-    Based on :class:`nn.Module`, :class:`Eve` adds two vital properties, i.e.
-    eve parameters and hidden states.
-    At the same time, Eve have a nature support for building spiking neural 
-    network via spiking attribute.
+
+    A natural extension of :class:`nn.Module`.
+    The main features of Eve is:
+        1. torch_parameters(): returns the parameters optimized with gradient
+        2. eve_parameters(): returns the parameters upgraded with observation
+        3. all the eve_parameters is :class:`nn.Prameter` whose name ended with `_eve`.
+        3. eve_parameters.requires_grad indicates whether this parameter needed upgrade
+        4. eve_parameters.grad stores the observation of this parameter.
+        5. zero_obs() will clear the grad, i.e. observation of eve_parameters.
+        6. requires_upgrade_() will set the requires_grad of eve_parameters.
+        7. hidden_states(): returns the buffer, whose name is ended with `_hid`.
+        8. all hidden states will reset by :meth:`reset`.
+        9. all hidden states will not be saved along with weights.
+        10. spiking attribute indicate the Eve in spiking or non-spiking mode.
     """
 
-    # indicate spiking mode or non-spiking mode.
-    # in non-spiking mode, we can used this model as a general deep learning model.
-    # Default: False
+    # indicates spiking mode or non-spiking mode.
+    # In non-spiking mode, the forward process of Eve is exactly the same with
+    # Module. In spiking mode, some layer's behavior will be changed to fit
+    # the spiking signals of features.
+    # Sometimes, you can implement :meth:`spiking_forward()` and
+    # :meth:`non_spiking_forward()` to handle different behavior of layers.
+    # Default :meth:`forward()` function has been rewrite to call these two
+    # functions depending on spiking signal automatically.
     spiking: bool
 
     def __init__(self):
         super(Eve, self).__init__()
 
+        # keep the same behavior with Module default.
         self.spiking = False
-        self._eve_parameters = OrderedDict()
 
-        # register an forward hook to calculate the observation states
-        self.register_forward_hook(Eve._attach_obs_to_eve_parameters)
-
-    def register_eve_parameter(self, name: str, param: Union[EveParameter,
+    def register_eve_parameter(self, name: str, param: Union[Parameter,
                                                              None]) -> None:
-        """Adds an eve parameter to the module.
-
-        The eve parameter can be accessed as an attribute using given name.
-
-        Args:
-            name (str): name of the eve parameter. The eve parameter
-                can be accessed from this module using the given name.
-            param (EveParameter): eve parameter to be added to the module.
-
-        .. note:: 
-
-            :class:`EveParamter` will not be fecthed by :meth:`self.parameters()`, 
-            but will occure in :meth:`self.state_dict()`. 
-            We provide :meth:`self.eve_parameters()` and :meth:`self.named_eve_parameters()`
-            to fetch them.
+        """Adds an eve parameter to the module. 
         
-        Example::
+        See :meth:`self.register_parameter()` for more details.
 
-            >>> self.register_eve_parameter("voltage", EveParameter(torch.randn(feat_in)))
-            >>> # Or 
-            >>> self.voltage = EveParameter(torch.randn(feat_in)) # which is more convenient
+        .. note::
 
+            eve parameter's name must be ended with `_eve`. All the parameter, 
+            whose name is not ended with `_eve`, will be thought as torch parameter.
         """
-        if "_eve_parameters" not in self.__dict__:
-            raise AttributeError(
-                "cannot assign eve parameter before Eve.__init__() call")
-        elif not isinstance(name, torch._six.string_classes):  # pylint: disable=no-member
-            raise TypeError("eve parameter name should be a string. "
-                            "Got {}".format(torch.typename(name)))
-        elif "." in name:
-            raise KeyError("eve parameter name can't contain \".\"")
-        elif name == "":
-            raise KeyError("eve parameter name can't be empty string.")
-        elif hasattr(self, name) and name not in self._eve_parameters:
-            raise KeyError("attribute '{}' already exists".format(name))
-
-        if param is None:
-            self._eve_parameters[name] = None
-        elif not isinstance(param, EveParameter):
-            raise TypeError("connot assign '{}' object to eve parameter '{}'"
-                            "(EveParameter or None required)".format(
-                                torch.typename(param), name))
-        else:
-            self._eve_parameters[name] = param
-
-    def register_upgrade_fn(self, name: str, fn: callable):
-        """register a upgrade_fn to specified eve parameters.
-
-        Args:
-            name (str): the name of eve parameters.
-            fn (callable): the upgrade function registers to specified 
-                eve parameters.
-
-        The fn is better looks like:
-            
-            >>> def fn(x, y=None, z=None):
-            >>>     ...
-            >>>     # update on x
-
-            x is the eve parameter itself, y is action, z is observation.
-            you can modified x in-place according to action or observation or 
-            a predefined relus.
-        """
-        if isinstance(self.__getattr__(name), EveParameter):
-            self.__getattr__(name).register_upgrade_fn(fn)
-        else:
-            raise KeyError(f"{name} is not a eve parameter")
+        assert name.endswith("_eve"), f"{name} must be ended with `_eve`"
+        self.register_parameter(name, param)
 
     def register_hidden_state(self, name: str, tensor: Union[Tensor,
                                                              None]) -> None:
-        """Register a buffer as hidden state to the module.
+        """Registers a hidden state to the module. 
+        
+        See :meth:`self.register_buffer` for more details.
 
-        The hidden state will not be saved along with weights and will be cleared
-        while self.reset() called.
+        .. note::
 
-        The hidden state is a special buffer variable which ends with a _hid postfix.
+            hidden state's name must be ended with `_hid`. All the buffer, 
+            whose name is not ended with `_hid`, will be thought as buffer.
         """
-        assert name.endswith("_hid"), "hidden state name must end with `_hid`"
-
+        assert name.endswith("_hid"), f"{name} must be ended with `_hid`"
+        # all hidden state will not be saved along with weights.
+        # so, keep persistent = False.
         self.register_buffer(name, tensor, persistent=False)
 
-    def _apply(self, fn) -> T:
-        for module in self.children():
-            module._apply(fn)
-
-        def compute_should_use_set_data(tensor, tensor_applied):
-            if torch._has_compatible_shallow_copy_type(tensor, tensor_applied):  # pylint: disable=no-member
-                # If the new tensor has compatible tensor type as the existing tensor,
-                # the current behavior is to change the tensor in-place using `.data =`,
-                # and the future behavior is to overwrite the existing tensor. However,
-                # changing the current behavior is a BC-breaking change, and we want it
-                # to happen in future releases. So for now we introduce the
-                # `torch.__future__.get_overwrite_module_params_on_conversion()`
-                # global flag to let the user control whether they want the future
-                # behavior of overwriting the existing tensor or not.
-                return not torch.__future__.get_overwrite_module_params_on_conversion(
-                )
-            else:
-                return False
-
-        for key, param in self._parameters.items():
-            if param is not None:
-                # Tensors stored in modules are graph leaves, and we don't want to
-                # track autograd history of `param_applied`, so we have to use
-                # `with torch.no_grad():`
-                with torch.no_grad():
-                    param_applied = fn(param)
-                should_use_set_data = compute_should_use_set_data(
-                    param, param_applied)
-                if should_use_set_data:
-                    param.data = param_applied
-                else:
-                    assert isinstance(param, Parameter)
-                    assert param.is_leaf
-                    self._parameters[key] = Parameter(param_applied,
-                                                      param.requires_grad)
-
-                if param.grad is not None:
-                    with torch.no_grad():
-                        grad_applied = fn(param.grad)
-                    should_use_set_data = compute_should_use_set_data(
-                        param.grad, grad_applied)
-                    if should_use_set_data:
-                        param.grad.data = grad_applied
-                    else:
-                        assert param.grad.is_leaf
-                        self._parameters[
-                            key].grad = grad_applied.requires_grad_(
-                                param.grad.requires_grad)
-
-        for key, buf in self._buffers.items():
-            if buf is not None:
-                self._buffers[key] = fn(buf)
-
-        for key, param in self._eve_parameters.items():
-            if param is not None:
-                # Tensors stored in modules are graph leaves, and we don't want to
-                # track autograd history of `param_applied`, so we have to use
-                # `with torch.no_grad():`
-                with torch.no_grad():
-                    param_applied = fn(param)
-                should_use_set_data = compute_should_use_set_data(
-                    param, param_applied)
-                if should_use_set_data:
-                    param.data = param_applied
-                else:
-                    assert isinstance(param, EveParameter)
-                    assert param.is_leaf
-                    self._eve_parameters[key] = EveParameter(
-                        param_applied, param.requires_upgrading)
-
-                if param.obs is not None:
-                    with torch.no_grad():
-                        obs_applied = fn(param.obs)
-                    should_use_set_data = compute_should_use_set_data(
-                        param.obs, obs_applied)
-                    if should_use_set_data:
-                        param.obs.data = obs_applied
-                    else:
-                        assert param.obs.is_leaf
-                        self._eve_parameters[
-                            key].obs = obs_applied.requires_grad_(
-                                param.obs.requires_grad)
-
-        return self
-
-    def __getattr__(self, name: str) -> Union[Tensor, T]:
-        if "_eve_parameters" in self.__dict__:
-            _eve_parameters = self.__dict__["_eve_parameters"]
-            if name in _eve_parameters:
-                return _eve_parameters[name]
-        if '_parameters' in self.__dict__:
-            _parameters = self.__dict__['_parameters']
-            if name in _parameters:
-                return _parameters[name]
-        if '_buffers' in self.__dict__:
-            _buffers = self.__dict__['_buffers']
-            if name in _buffers:
-                return _buffers[name]
-        if '_modules' in self.__dict__:
-            modules = self.__dict__['_modules']
-            if name in modules:
-                return modules[name]
-        raise ModuleAttributeError("'{}' object has no attribute '{}'".format(
-            type(self).__name__, name))
-
-    def __setattr__(self, name: str, value: Union[Tensor, "Module"]) -> None:
-        """Parameter, Module, EveParameter is superior than hidden state, buffer.
-        """
-        def remove_from(*dicts_or_sets):
-            for d in dicts_or_sets:
-                if name in d:
-                    if isinstance(d, dict):
-                        del d[name]
-                    else:
-                        d.discard(name)
-
-        params = self.__dict__.get('_parameters')
-        if isinstance(value, Parameter):
-            if params is None:
-                raise AttributeError(
-                    "cannot assign parameters before Module.__init__() call")
-            remove_from(self.__dict__, self._buffers, self._modules,
-                        self._non_persistent_buffers_set, self._eve_parameters)
-            self.register_parameter(name, value)
-            return
-        elif params is not None and name in params:
-            if value is not None:
-                raise TypeError("cannot assign '{}' as parameter '{}' "
-                                "(torch.nn.Parameter or None expected)".format(
-                                    torch.typename(value), name))
-            self.register_parameter(name, value)
-            return
-
-        modules = self.__dict__.get('_modules')
-        if isinstance(value, Module):
-            if modules is None:
-                raise AttributeError(
-                    "cannot assign module before Module.__init__() call")
-            remove_from(self.__dict__, self._parameters, self._buffers,
-                        self._non_persistent_buffers_set, self._eve_parameters)
-            modules[name] = value
-            return
-        elif modules is not None and name in modules:
-            if value is not None:
-                raise TypeError("cannot assign '{}' as child module '{}' "
-                                "(torch.nn.Module or None expected)".format(
-                                    torch.typename(value), name))
-            modules[name] = value
-            return
-
-        eve_parameters = self.__dict__.get('_eve_parameters')
-        if isinstance(value, EveParameter):
-            if eve_parameters is None:
-                raise AttributeError(
-                    "cannot assign eve parameters before Eve.__init__() call")
-            remove_from(self.__dict__, self._buffers, self._modules,
-                        self._non_persistent_buffers_set, self._eve_parameters)
-            self.register_eve_parameter(name, value)
-            return
-        elif eve_parameters is not None and name in eve_parameters:
-            if value is not None:
-                raise TypeError("cannot assign '{}' as eve parameter '{}' "
-                                "(EveParameter or None expected)".format(
-                                    torch.typename(value), name))
-            eve_parameters[name] = value
-            return
-
-        buffers = self.__dict__.get('_buffers')
-        if buffers is not None and name in buffers:
-            if value is not None and not isinstance(value, torch.Tensor):
-                raise TypeError("cannot assign '{}' as buffer '{}' "
-                                "(torch.Tensor or None expected)".format(
-                                    torch.typename(value), name))
-            buffers[name] = value
-            return
-
-        object.__setattr__(self, name, value)
-
-    def __delattr__(self, name):
-        if name in self._parameters:
-            del self._parameters[name]
-        elif name in self._buffers:
-            del self._buffers[name]
-            self._non_persistent_buffers_set.discard(name)
-        elif name in self._modules:
-            del self._modules[name]
-        elif name in self._eve_parameters:
-            del self._eve_parameters[name]
-        else:
-            object.__delattr__(self, name)
-
-    def _save_to_state_dict(self, destination, prefix, keep_vars) -> None:
-        r"""Saves module state to `destination` dictionary, containing a state
-        of the module, but not its descendants. This is called on every
-        submodule in :meth:`~torch.nn.Module.state_dict`.
-
-        In rare cases, subclasses can achieve class-specific behavior by
-        overriding this method with custom logic.
-
-        Arguments:
-            destination (dict): a dict where state will be stored
-            prefix (str): the prefix for parameters and buffers used in this
-                module
-        """
-        for name, param in self._parameters.items():
-            if param is not None:
-                destination[prefix +
-                            name] = param if keep_vars else param.detach()
-        for name, buf in self._buffers.items():
-            if buf is not None and name not in self._non_persistent_buffers_set:
-                destination[prefix + name] = buf if keep_vars else buf.detach()
-        for name, param in self._eve_parameters.items():
-            if param is not None:
-                destination[prefix +
-                            name] = param if keep_vars else param.detach()
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys,
-                              error_msgs) -> None:
-        r"""Copies parameters and buffers from :attr:`state_dict` into only
-        this module, but not its descendants. This is called on every submodule
-        in :meth:`~torch.nn.Module.load_state_dict`. Metadata saved for this
-        module in input :attr:`state_dict` is provided as :attr:`local_metadata`.
-        For state dicts without metadata, :attr:`local_metadata` is empty.
-        Subclasses can achieve class-specific backward compatible loading using
-        the version number at `local_metadata.get("version", None)`.
-
-        .. note::
-            :attr:`state_dict` is not the same object as the input
-            :attr:`state_dict` to :meth:`~torch.nn.Module.load_state_dict`. So
-            it can be modified.
-
-        Args:
-            state_dict (dict): a dict containing parameters and
-                persistent buffers.
-            prefix (str): the prefix for parameters and buffers used in this
-                module
-            local_metadata (dict): a dict containing the metadata for this module.
-                See
-            strict (bool): whether to strictly enforce that the keys in
-                :attr:`state_dict` with :attr:`prefix` match the names of
-                parameters and buffers in this module
-            missing_keys (list of str): if ``strict=True``, add missing keys to
-                this list
-            unexpected_keys (list of str): if ``strict=True``, add unexpected
-                keys to this list
-            error_msgs (list of str): error messages should be added to this
-                list, and will be reported together in
-                :meth:`~torch.nn.Module.load_state_dict`
-
-        .. note::
-
-            If you want to load a pretrained model from nn.Module but not 
-            eve.Eve, you can use :meth:`eve.utils.load_weight_from_legacy_checkpoint`
-            to convert the legacy model to eve model.
-        """
-        for hook in self._load_state_dict_pre_hooks.values():
-            hook(state_dict, prefix, local_metadata, strict, missing_keys,
-                 unexpected_keys, error_msgs)
-
-        persistent_buffers = {
-            k: v
-            for k, v in self._buffers.items()
-            if k not in self._non_persistent_buffers_set
-        }
-
-        local_name_params = itertools.chain(self._parameters.items(),
-                                            persistent_buffers.items(),
-                                            self._eve_parameters.items())
-        local_state = {k: v for k, v in local_name_params if v is not None}
-
-        for name, param in local_state.items():
-            key = prefix + name
-            if key in state_dict:
-                input_param = state_dict[key]
-
-                # Backward compatibility: loading 1-dim tensor from 0.3.* to version 0.4+
-                if len(param.shape) == 0 and len(input_param.shape) == 1:
-                    input_param = input_param[0]
-
-                if input_param.shape != param.shape:
-                    # local shape should match the one in checkpoint
-                    error_msgs.append(
-                        'size mismatch for {}: copying a param with shape {} from checkpoint, '
-                        'the shape in current model is {}.'.format(
-                            key, input_param.shape, param.shape))
-                    continue
-
-                try:
-                    with torch.no_grad():
-                        param.copy_(input_param)
-                except Exception as ex:
-                    error_msgs.append(
-                        'While copying the parameter named "{}", '
-                        'whose dimensions in the model are {} and '
-                        'whose dimensions in the checkpoint are {}, '
-                        'an exception occurred : {}.'.format(
-                            key, param.size(), input_param.size(), ex.args))
-            elif strict:
-                missing_keys.append(key)
-
-        if strict:
-            for key in state_dict.keys():
-                if key.startswith(prefix):
-                    input_name = key[len(prefix):]
-                    input_name = input_name.split(
-                        '.', 1)[0]  # get the name of param/buffer/child
-                    if input_name not in self._modules and input_name not in local_state:
-                        unexpected_keys.append(key)
-
-    def eve_parameters(self, recurse: bool = True) -> Iterator[EveParameter]:
-        """Returns an iterator over module eve parameters.
-
-        This is tipically passes to an upgrader.
-
-        Args:
-            recurse (bool): if ``True``, then yields eve parameters of this module
-                and all submodules. Otherwise, yields only eve parameters that
-                are direct members of this module. Default: ``True``.
+    def eve_parameters(self, recurse: bool = True) -> Iterator[Parameter]:
+        """Returns an iterator over module eve parameters. 
         
-        Yields:
-            EveParameter: module eve parameter.
-        
-        Example::
-
-            >>> for param in model.eve_parameters():
-            >>>     print(type(param), param.size())
+        See :meth:`self.parameters()` for more details.
         """
         for _, param in self.named_eve_parameters(recurse=recurse):
             yield param
+
+    def register_upgrade_fn(self, key: Any, fn: Callable) -> None:
+        """Register an upgrade fn to eve.cores.eve.upgrade_fn dict.
+
+        The upgrade_fn will be used in :class:`eve.Upgrader`.
+        It should takes (param, action, obs), and modified param via in-place 
+        operation.
+        """
+        if key in upgrade_fn:
+            raise KeyError("{} already registered.".format(
+                torch.typename(key)))
+        upgrade_fn[key] = fn
 
     def named_eve_parameters(
             self,
             prefix: str = "",
             recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
-        """Returns an iterator over module eve parameters, yielding both 
-        the name of the eve parameter as well as the eve parameter itself.
+        """Returns an iterator over module eve parameters, yielding both the
+        name of the eve parameter as well as the eve parameter itself.
 
-        Args:
-            prefix (str): prefix to prepend to all eve parameter names.
-            recurse (bool): if True, then yields eve parameters of this module 
-                and all submodules. Otherwise, yields only eve parameters that
-                are direct members of this module.
-        
-        Yields:
-            (string, EveParameter): Tuple containing the name and eve parameter.
-        
-        Example::
-
-            >>> for name, param in self.named_eve_parameters():
-            >>>     if name in ["voltage"]:
-            >>>         print(param.size())
+        See :meth:`self.named_parameters()` for more details.
         """
-        gen = self._named_members(
-            lambda m: dict().items()
-            if not isinstance(m, Eve) else m._eve_parameters.items(),
-            prefix=prefix,
-            recurse=recurse)
-        for elem in gen:
-            yield elem
+        for name, param in self.named_parameters(prefix, recurse):
+            if name.endswith("_eve"):
+                yield name, param
 
-    def eve_parameters_list(
+    def torch_parameters(self, recurse: bool = True) -> Iterator[Parameter]:
+        """Returns an iterator over module torch parameters.
+
+        See :meth:`self.parameters()` for more details.
+
+        .. note::
+
+            In any case, if you want to use a optimizer to update the weights,
+            use this function instead of :meth:`self.parameters()`.
+            The latter will returned all parameters, including eve parameters, 
+            which may cause errors while training.
+        """
+        for _, param in self.named_torch_parameters(recurse=recurse):
+            yield param
+
+    def named_torch_parameters(
             self,
             prefix: str = "",
-            recurse: bool = True) -> List[Dict[str, EveParameter]]:
-        """Returns an list over module eve parameters, which is useful to 
-        specified a kind of eve parameters via specified name.
+            recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
+        """Returns an iterator over module torch parameters, yielding both the 
+        name of the torch parameter as well as the torch parameter itself.
 
-        The returned list looks like:
-
-            >>> [{
-            >>>  "params": voltage_threshold,
-            >>>  "type": "voltage_threshold"}, 
-            >>> {"params": bit_width, 
-            >>>  "type": "bit_width",
-            >>> }]
-
-        which can be directly passed to :class:`eve.Upgrader`.
+        See :meth:`self.named_parameters()` for more details.
         """
-        # fetch all eve parameters
-        # NOTE: use OrderedDict!!!
-        eve_parameters_dict = OrderedDict()
-        for k, v in self.named_eve_parameters(prefix, recurse):
-            # NOTE: we judge different kind of eve parameters according to
-            # the last phase separated by dot
-            k = k.split(".")[-1]
-            if k in eve_parameters_dict:
-                eve_parameters_dict[k].append(v)
-            else:
-                eve_parameters_dict[k] = [v]
+        for name, param in self.named_parameters(prefix, recurse):
+            if not name.endswith("_eve"):
+                yield name, param
 
-        params_list = []
-        for k, v in eve_parameters_dict.items():
-            params_list.append({"params": v, "type": k})
-        return params_list
-
-    def hidden_states(self, recurse: bool = True) -> Iterable[Tensor]:
+    def hidden_states(self, recurse: bool = True) -> Iterator[Tensor]:
         """Returns an iterator over module hidden states.
 
-        Args:
-            recurse (bool): if True, then yields hidden states of this module
-                and all submodules. Otherwise, yields only hidden states that 
-                are direct members of this module.
-        
-        Yields:
-            torch.Tensor: module hidden states.
-        
-        Example:
-
-            >>> for hid in model.hidden_states():
-            >>>     print(type(hid), hid.size())
+        See :meth:`self.buffers()` for more details.
         """
-        for _, hid in self.named_hidden_states(recurse=recurse):
-            yield hid
+        for _, buf in self.named_hidden_states(recurse=recurse):
+            yield buf
 
     def named_hidden_states(
             self,
             prefix: str = "",
             recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
-        """Returns an iterator over module hidden states, yielding both the name
-        of the hidden states as well as the hidden state itself.
+        """Returns an iterator over module hidden states, yielding both the 
+        name of the hidden states as well as the hidden state itself.
 
-        Args:
-            preifx (str): prefix to prepend to all hidden state names.
-            recurse (bool): if True, then yields hidden states of this module
-                and all submodules. Otherwise, yields only hidden states that
-                are direct members of this module.
-
-        Yields:
-            (string, torch.Tensor): Tuple containing the name and hidden states.
-
-        Example::
-
-            >>> for name, hid in self.named_hidden_states():
-            >>>     if name in ["voltage"]:
-            >>>         print(hid.size())
+        See :meth:`self.named_buffers()` for more details.
         """
-        for name, hid in self.named_buffers():
+        for name, buf in self.named_buffers(prefix, recurse):
             if name.endswith("_hid"):
-                yield name, hid
+                yield name, buf
 
-    def spike(self: T, mode: bool = True) -> T:
-        """Sets the module in spiking mode.
+    def spike(self, mode: bool = True):
+        """Sets the module in spiking or non-spiking mode.
 
-        This has any effect only on certain modules.
+        In spiking mode, self.spiking_forward will be called.
+        In non-spiking mode, self.non_spiking_foward will be called.
 
         Args:
-            mode (bool): whether to set spiking mode (``True``) or non-spiking
-                mode (``False``). Default: ``True``.
-        
-        Returns:
-            Eve: self
+            mode (bool): whether to set spiking mode (``True``) or 
+                non-spiking mode (``False``).
         """
         self.spiking = mode
         for module in self.children():
@@ -595,24 +174,16 @@ class Eve(Module):
                 module.spike(mode)
         return self
 
-    def non_spike(self: T) -> T:
-        """Sets the module in non-spiking mode.
-
-        This has any effect only on certain modules. 
-
-        This is equivalent with :meth:`self.spike(False)`.
-
-        Returns:
-            Eve: self
+    def non_spike(self):
+        """Sets the module to non-spiking mode.
         """
         return self.spike(False)
 
     def _reset(self, set_to_none: bool = False) -> None:
-        """Resets the hidden states of this layer to ``None`` or zeros.
+        """Resets the hidden states of module to ``None`` or zeros.
 
         Args:
-            set_to_none (bool): instead of setting to zero, set the hidden states 
-                to ``None``.
+            set_to_none: instead of setting to zero, set the hidden states to none.
         """
         for name, hid in self.named_hidden_states():
             if set_to_none:
@@ -621,44 +192,26 @@ class Eve(Module):
                 hid.detach().zero_()
 
     def reset(self, set_to_none: bool = False) -> None:
-        """Sets hidden states of all modules to zero or None.
+        """Sets hidden states of all modules to ``None`` or zeros.
 
         Args:
-            set_to_none (bool): instead of setting to zero, set the hidden states
-                to None. This is helpful while different batch size occurred.
+            set_to_none: instead of setting to zero, set the hidden states to none.
         """
-        # call sub modules to reset function
         for module in self.modules():
             if isinstance(module, Eve):
                 module._reset(set_to_none)
 
-    def requires_upgrading_(self: T, requires_upgrading: bool = True) -> T:
-        """Change if upgrading should record observation states on eve 
-        parameters in this module.
-
-        This method sets the eve parameters' :attr:`requires_upgrading`.
-
-        This method is helpful for freezing part of the module for finetuning
-        or traning parts of a model individually.
-
-        Args:
-            requires_upgrading (bool): whether upgrading should record observation
-                states on eve parameters in this module. Default: True.
-        
-        Retruns:
-            Eve: self
+    def requires_upgrade_(self, requires_upgrade: bool = True):
+        """Change if upgrade should record observation states on eve parameters'
+        grad attribute in this module.
         """
         for p in self.eve_parameters():
-            p.requires_upgrading_(requires_upgrading)
+            p.requires_grad_(requires_upgrade)
         return self
 
     def zero_obs(self, set_to_none: bool = True) -> None:
-        """Sets obs of all model eve parameters to zers. See similar function
-        under :class:`eve.Upgrader` for more context. Default to None
-
-        Args:
-            set_to_none (bool): instead of setting to zero, set the obs to None.
-                See :meth:`eve.Upgrader` for more details. 
+        """Sets grad, i.e. observation, of all model eve parameters to zeros. 
+        See similar function under :class:`eve.Upgrader` for more context.
         """
         if getattr(self, "_is_replica", False):
             warnings.warn(
@@ -667,48 +220,53 @@ class Eve(Module):
                 "module.")
 
         for p in self.eve_parameters():
-            if p.obs is not None:
+            if p.grad is not None:
                 if set_to_none:
-                    p.obs = None
+                    p.grad = None
                 else:
-                    p.obs.detach().zero_()
+                    if p.grad.grad_fn is not None:
+                        p.grad.detach_()
+                    else:
+                        p.grad.requires_grad_(False)
+                    p.grad.zero_()
 
-    @staticmethod
-    def _attach_obs_to_eve_parameters(cls, input: Tensor,
-                                      result: Tensor) -> None:
-        """Attaches pre-calculated obs of current layer to eve parameters.
+    def zero_grad(self, set_to_none: bool = False) -> None:
+        r"""Sets gradients of all torch parameters to zero. See similar function
+        under :class:`torch.optim.Optimizer` for more context.
 
-        This function will be register as  a forward hook of this module.
-
-        If you want to use :meth:`Upgrader.step()` to upgrade the eve parameters, 
-        you should attach a :meth:`upgrade_fn()` to eve parameters.
+        Arguments:
+            set_to_none (bool): instead of setting to zero, set the grads to None.
+                See :meth:`torch.optim.Optimizer.zero_grad` for details.
         """
-        pass
+        if getattr(self, '_is_replica', False):
+            warnings.warn(
+                "Calling .zero_grad() from a module created with nn.DataParallel() has no effect. "
+                "The parameters are copied (in a differentiable manner) from the original module. "
+                "This means they are not leaf nodes in autograd and so don't accumulate gradients. "
+                "If you need gradients in your forward method, consider using autograd.grad instead."
+            )
 
-    def __dir__(self):
-        module_attrs = dir(self.__class__)
-        attrs = list(self.__dict__.keys())
-        parameters = list(self._parameters.keys())
-        eve_parameters = list(self._eve_parameters.keys())
-        modules = list(self._modules.keys())
-        buffers = list(self._buffers.keys())
-        keys = module_attrs + attrs + parameters + eve_parameters + modules + buffers
+        for p in self.torch_parameters():
+            if p.grad is not None:
+                if set_to_none:
+                    p.grad = None
+                else:
+                    if p.grad.grad_fn is not None:
+                        p.grad.detach_()
+                    else:
+                        p.grad.requires_grad_(False)
+                    p.grad.zero_()
 
-        # Eliminate attrs that are not legal Python variable names
-        keys = [key for key in keys if not key[0].isdigit()]
+    @abstractmethod
+    def spiking_forward(self, *args, **kwargs):
+        raise NotImplementedError
 
-        return sorted(keys)
+    @abstractmethod
+    def non_spiking_forward(self, *args, **kwargs):
+        raise NotImplementedError
 
-    def _replicate_for_data_parallel(self):
-        replica = self.__new__(type(self))
-        replica.__dict__ = self.__dict__.copy()
-
-        # replicas do not have parameters and eve parameters themselves,
-        # the replicas reference the original module.
-        replica._parameters = OrderedDict()
-        replica._eve_parameters = OrderedDict()
-        replica._buffers = replica._buffers.copy()
-        replica._modules = replica._modules.copy()
-        replica._is_replica = True
-
-        return replica
+    def forward(self, *args, **kwargs):
+        if self.spiking:
+            return self.spiking_forward(*args, **kwargs)
+        else:
+            return self.non_spiking_forward(*args, **kwargs)

@@ -9,7 +9,7 @@ from torch import Tensor
 from torch.autograd import Function, Variable
 from torch.nn import Parameter
 
-from eve.cores.eve import Eve, EveParameter
+from eve.cores.eve import Eve
 from eve.cores.state import State
 from eve.cores.utils import _align_dims
 
@@ -28,7 +28,7 @@ class Node(Eve):
             not generate a valid spiking signal.
         time_independent (bool): if ``True``, we will detach membrane voltage
             from last time. Default: ``True``.
-        requires_upgrading (bool): if ``True``, the voltage_threshold will be added to
+        requires_upgrade (bool): if ``True``, the voltage_threshold will be added to
             eve parameters, which can be upgraded. Default: ``False``.
     
     .. note::
@@ -46,43 +46,40 @@ class Node(Eve):
 
     neurons: int  # the number of neurons in this layer
     filter_type: str  # the type of kernels in previous layers
-    requires_upgrading: bool  # whether add voltage_threshold to eve parameters.
+    requires_upgrade: bool  # whether add voltage_threshold to eve parameters.
 
     def __init__(
         self,
         state: State = None,
         voltage_threshold: float = 0.5,
         time_independent: bool = True,
-        requires_upgrading: bool = False,
+        requires_upgrade: bool = False,
     ):
         super(Node, self).__init__()
 
         self.neurons = state.neurons
         self.filter_type = state.filter_type
         self.time_independent = time_independent
-        self.requires_upgrading = requires_upgrading
+        self.requires_upgrade = requires_upgrade
         self.state = state
 
         # register voltage_threshold
         voltage_threshold = torch.Tensor([voltage_threshold] * self.neurons)
         voltage_threshold = _align_dims(self.filter_type, voltage_threshold)
 
-        self.voltage_threshold = EveParameter(
-            voltage_threshold, requires_upgrading=requires_upgrading)
+        self.register_eve_parameter(
+            "voltage_threshold_eve",
+            Parameter(voltage_threshold, requires_grad=requires_upgrade))
 
-        def upgrade_fn(x, y=None, z=None):
-            if y is not None:
+        def upgrade_fn(param, action=None, obs=None):
+            if action is None:
                 # directly take the action
-                x.zero_().add_(y.view_as(x))
+                param.zero_().add_(action.view_as(param))
             else:
                 # keep x unchanged.
                 pass
 
-        # directly call eve parameters' functions
-        self.voltage_threshold.register_upgrade_fn(upgrade_fn)
-        # or
-        # self.register_upgrade_fn("voltage_threshold", upgrade_fn)
-        # is also fine.
+        self.register_upgrade_fn(self.voltage_threshold_eve, upgrade_fn)
 
         # register voltage as hidden state, which will reset every time.
         self.register_hidden_state("voltage_hid", None)
@@ -111,7 +108,7 @@ class Node(Eve):
             which is 
             :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
         """
-        if not cls.requires_upgrading:
+        if not cls.requires_upgrade:
             return
 
         l1_norm = cls.state.l1_norm  # [neurons, ]
@@ -122,12 +119,12 @@ class Node(Eve):
         # do not apply to sub-module or other module. so, set resurse=False.
         for k, v in cls.named_eve_parameters(recurse=False):
             # only attach to the eve parameters needed upgrading.
-            if v is None or not v.requires_upgrading:
+            if v is None or not v.requires_grad:
                 continue
-            elif v.obs is not None and v.obs.shape == obs.shape:
-                v.obs.mul_(0.5).add_(obs, alpha=0.5)
-            elif v.obs is None:
-                v.obs = obs.detach().clone()
+            elif v.grad is not None and v.grad.shape == obs.shape:
+                v.grad.mul_(0.5).add_(obs, alpha=0.5)
+            elif v.grad is None:
+                v.grad = obs.detach().clone()
             else:
                 raise ValueError("Cannot assign {} to {}".format(
                     torch.typename(obs), k))
@@ -136,17 +133,6 @@ class Node(Eve):
         """Resets current layer's hidden state to None.
         """
         super()._reset(set_to_none=True)
-
-    @abstractmethod
-    def node(self, x: Tensor) -> Tensor:
-        """defines different node behavious.
-
-        You should pay attention to spiking and non-spiking mode.
-        """
-        raise NotImplementedError
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self.node(x)
 
 
 def heaviside(x: Tensor) -> Tensor:
@@ -227,20 +213,19 @@ class IfNode(Node):
         
         In non-spiking mode, IFNode is equal to a ReLU Function.
     """
-    def node(self, dv: Tensor) -> Tensor:
-        if self.spiking:
-            if self.voltage_hid is not None and self.voltage_hid.shape == dv.shape:
-                voltage = (self.voltage_hid if not self.time_independent else
-                           self.voltage_hid.detach())
-            else:
-                voltage = torch.zeros_like(dv)
-
-            self.voltage_hid, output = if_fire().apply(voltage, dv,
-                                                       self.voltage_threshold)
+    def spiking_forward(self, dv: Tensor) -> Tensor:
+        if self.voltage_hid is not None and self.voltage_hid.shape == dv.shape:
+            voltage = (self.voltage_hid if not self.time_independent else
+                       self.voltage_hid.detach())
         else:
-            output = F.relu(dv)
+            voltage = torch.zeros_like(dv)
 
+        self.voltage_hid, output = if_fire().apply(voltage, dv,
+                                                   self.voltage_threshold_eve)
         return output
+
+    def non_spiking_forward(self, x: Tensor) -> Tensor:
+        return F.relu(x)
 
 
 class LifNode(Node):
@@ -256,16 +241,17 @@ class LifNode(Node):
             raise ValueError("tau must be positive")
         self.tau = tau
 
-    def node(self, dv: Tensor) -> Tensor:
-        if self.spiking:
-            if self.voltage_hid is not None and self.voltage_hid.shape == dv.shape:
-                voltage = (self.voltage_hid if not self.time_independent else
-                           self.voltage_hid.detach())
-            else:
-                voltage = torch.zeros_like(dv)
-
-            self.voltage_hid, output = lif_fire().apply(
-                voltage, dv, self.voltage_threshold, self.tau)
+    def spiking_forward(self, dv: Tensor) -> Tensor:
+        if self.voltage_hid is not None and self.voltage_hid.shape == dv.shape:
+            voltage = (self.voltage_hid if not self.time_independent else
+                       self.voltage_hid.detach())
         else:
-            output = F.leaky_relu(dv)
+            voltage = torch.zeros_like(dv)
+
+        self.voltage_hid, output = lif_fire().apply(voltage, dv,
+                                                    self.voltage_threshold_eve,
+                                                    self.tau)
         return output
+
+    def non_spiking_forward(self, x: Tensor) -> Tensor:
+        return F.leaky_relu(x)

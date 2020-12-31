@@ -36,28 +36,17 @@ class Encoder(Eve):
         for name, _ in self.named_hidden_states():
             self.__setattr__(name, None)
 
-    def forward(self, x: Tensor) -> Tensor:
-        """Encode x to spikes.
-
-        The x will only be used at first time forward, until the reset is called.
-        """
-        if self.spiking:
-            return self.encode(x).float()
-        else:
-            return x
-
-    @abstractmethod
-    def encode(self, x: Tensor) -> Tensor:
-        raise NotImplementedError("encode is not implemented yet")
+    def non_spiking_forward(self, x: Tensor) -> Tensor:
+        return x
 
 
 class RateEncoder(Encoder):
     """Just return the input as encoding trains.
     """
-    def encode(self, x: Tensor) -> Tensor:
+    def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_hid is None:
             self.raw_input_hid = x
-        return self.raw_input_hid
+        return self.raw_input_hid.float()
 
 
 class IntervalEncoder(Encoder):
@@ -75,7 +64,7 @@ class IntervalEncoder(Encoder):
                 f"interval_steps ({self.interval_steps}) should not be larger than max_timesteps ({self.max_timesteps})."
             )
 
-    def encode(self, x: Tensor) -> Tensor:
+    def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_hid is None:
             self.index = 0
             self.raw_input_hid = x
@@ -86,7 +75,7 @@ class IntervalEncoder(Encoder):
         self.index += 1
         self.index %= self.interval_steps
 
-        return output
+        return output.float()
 
 
 class LatencyEncoder(Encoder):
@@ -100,7 +89,7 @@ class LatencyEncoder(Encoder):
         if self.encoder_type == "log":
             self.alpha = math.exp(self.max_timesteps - 1) - 1
 
-    def encode(self, x: Tensor) -> Tensor:
+    def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_hid is None:
             if self.encoder_type == "log":
                 spike_time = (self.max_timesteps - 1 -
@@ -109,21 +98,22 @@ class LatencyEncoder(Encoder):
                 spike_time = ((self.max_timesteps - 1) *
                               (1 - x)).round().long()
 
-            self.raw_input_hid = F.one_hot(spike_time,
-                                       num_classes=self.max_timesteps).bool()
+            self.raw_input_hid = F.one_hot(
+                spike_time, num_classes=self.max_timesteps).bool()
 
             self.index = 0
         output = self.raw_input_hid[..., self.index]
         self.index += 1
         self.index %= self.max_timesteps
 
-        return output
+        return output.float()
 
 
 class PoissonEncoder(Encoder):
     """Widely used in spiking neuronal network.
     """
-    def encode(self, x: Tensor) -> Tensor:
+    def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_hid is None:
             self.raw_input_hid = x
-        return torch.rand_like(self.raw_input_hid).le(self.raw_input_hid)
+        return torch.rand_like(self.raw_input_hid).le(
+            self.raw_input_hid).float()

@@ -20,14 +20,6 @@ eve.cores.eve module
    :undoc-members:
    :show-inheritance:
 
-eve.cores.eve\_parameter module
--------------------------------
-
-.. automodule:: eve.cores.eve_parameter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 eve.cores.layers module
 -----------------------
 

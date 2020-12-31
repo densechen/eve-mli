@@ -6,9 +6,10 @@ from itertools import chain
 from typing import Any, Dict, List, Union
 
 import torch
-from eve.cores.eve import EveParameter
 from torch import Tensor
 from torch._six import container_abcs
+from eve.cores.eve import upgrade_fn
+from torch.nn import Parameter
 
 
 class _RequiredParameter(object):
@@ -25,7 +26,7 @@ class Upgrader(object):
     r"""Base class for all upgrader.
 
     .. warning::
-        EveParameters need to be specified as collections that have a
+        Parameters need to be specified as collections that have a
         deterministic ordering that is consistent between runs. 
         Examples of objects that don't satisfy those properties are sets and
         iterators over values of dictionaries.
@@ -198,12 +199,17 @@ class Upgrader(object):
         """
         for group in self.param_groups:
             for p in group['params']:
-                if p.obs is not None:
+                if p.grad is not None:
                     if set_to_none:
-                        p.obs = None
+                        p.grad = None
                     else:
-                        p.obs.zero_()
+                        if p.grad.grad_fn is not None:
+                            p.grad.detach_()
+                        else:
+                            p.grad.requires_grad_(False)
+                        p.grad.zero_()
 
+    @torch.no_grad()
     def step(self, closure=None):
         r"""Performs a single upgrade step (parameter update).
 
@@ -219,11 +225,11 @@ class Upgrader(object):
         for group in self.param_groups:
             for p in group["params"]:
                 # sometimes p.obs can be None, but still need to be upgraded.
-                # if p.obs is None or not p.requires_upgrading:
-                #     continue
-                if not p.requires_upgrading:
+                if not p.requires_grad:
                     continue
-                p.upgrade_fn(p, z=p.obs)
+                # NOTE: all upgrade_fn is (param, action, obs)
+                upgrade_fn[p](param=p, obs=p.grad)
+
         return loss
 
     def add_param_group(self, param_group):
@@ -283,7 +289,7 @@ class Upgrader(object):
 
         self.param_groups.append(param_group)
 
-    def eve_parameters(self) -> List[EveParameter]:
+    def eve_parameters(self) -> List[Parameter]:
         """Yields the eve parameters in all groups at the same steps.
 
         This is useful while delivering eve parameters to an reinforcement
@@ -292,56 +298,18 @@ class Upgrader(object):
 
         The StopIteration Exception should be handled by calling.
         """
-        # No longer needed.
-        # params = []
-        # obs_min = []
-        # obs_max = []
-        # for group in self.param_groups:
-        #     params.append(group['params'])
-        #     for p in group['params']:
-        #         if p.obs is not None:
-        #             # obs is in [neurons, states] format.
-        #             # we need to calculate the min and max for each states
-        #             # but not neurons. In other word, all neurons share the
-        #             # same min and max value, even in neuron wise mode.
-        #             if len(obs_min) == 0 and len(obs_max) == 0:
-        #                 obs_max_, _ = torch.max(p.obs, dim=0, keepdim=True)
-        #                 obs_min_, _ = torch.min(p.obs, dim=0, keepdim=True)
-        #                 # add following line to avoid only one params
-        #                 obs_max = torch.zeros_like(obs_max_)
-        #                 obs_min = torch.zeros_like(obs_min_)
-        #             else:
-        #                 obs_max_, _ = torch.max(p.obs, dim=0, keepdim=True)
-        #                 obs_min_, _ = torch.min(p.obs, dim=0, keepdim=True)
-
-        #             obs_max = torch.max(torch.cat([obs_max, obs_max_], dim=0),
-        #                                 dim=0,
-        #                                 keepdim=True)[0]
-        #             obs_min = torch.min(torch.cat([obs_min, obs_min_], dim=0),
-        #                                 dim=0,
-        #                                 keepdim=True)[0]
-
-        # for v in zip(*params):
-        #     # do normalization for each variable's observation states
-        #     # the obs will be modified if we finetune the model every time
-        #     # but, we think it is fine to use the pre-calculated min-max to
-        #     # do the normalization operation.
-        #     if len(obs_min) and len(obs_max):
-        #         for v_ in v:
-        #             v_.obs.add_(-obs_min).div_((obs_max - obs_min + 1e-8))  # pylint: disable=invalid-unary-operand-type
-        #     yield v
-
         for group in self.param_groups:
             eve_param = group['params']
             for v in eve_param:
-                if v.obs is not None and v.requires_upgrading:
+                if v.grad is not None and v.requires_grad:
                     yield v
 
-    def take_action(self, params: EveParameter, action: Tensor) -> None:
+    @torch.no_grad()
+    def take_action(self, params: Parameter, action: Tensor) -> None:
         """Take the action from agent and apply to params.
 
         Args:
-            params (EveParameter): the eve parameter list to be upgraded.
+            params (Parameter): the eve parameter list to be upgraded.
                 The order of the eve parameter is consistent with the order
                 in action.
             action (Tensor): action is either in [0, 1] or [-1, 1]. Otherwise, 
@@ -352,13 +320,4 @@ class Upgrader(object):
         defination order in QModule. If in neuron-wise mode, action is specified for
         each neurons, otherwise, an action to a layer.
         """
-        # no longer needed
-        # if len(params) != len(action):
-        #     raise ValueError(
-        #         "the number of eve parameters is not the same with"
-        #         "actions. Excepted {}, got {}".format(len(params),
-        #                                               len(action)))
-        # # Call upgrade_fn to take action
-        # for p, a in zip(params, action):
-        #     p.upgrade_fn(p, y=a)
-        params.upgrade_fn(params, y=action)
+        upgrade_fn[params](param=params, action=action)

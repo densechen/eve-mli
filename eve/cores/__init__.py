@@ -1,6 +1,6 @@
 from .encoder import (IntervalEncoder, LatencyEncoder, PoissonEncoder,
                       RateEncoder)
-from .eve import Eve, EveParameter
+from .eve import Eve, upgrade_fn
 from .layers import Cell, Dropout, Dropout2d
 from .node import IfNode, LifNode, Node
 from .quan import LlsqQuan, LsqQuan, Quan, SteQuan
@@ -24,7 +24,6 @@ __encoder__ = {
 
 __all__ = [
     "Eve",
-    "EveParameter",
     "LifNode",
     "IfNode",
     "Node",
@@ -39,7 +38,6 @@ __all__ = [
     "Dropout",
     "Dropout2d",
     "Cell",
-    # "fetch_static_obs",
-    # "static_obs",
     "State",
+    "upgrade_fn",
 ]
