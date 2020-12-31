@@ -28,7 +28,7 @@ class Encoder(Eve):
 
         self.max_timesteps = max_timesteps
 
-        self.register_hidden_state("raw_input", None)
+        self.register_hidden_state("raw_input_hid", None)
 
     def _reset(self, set_to_none: bool = False) -> None:
         """Sets to None.
@@ -55,9 +55,9 @@ class RateEncoder(Encoder):
     """Just return the input as encoding trains.
     """
     def encode(self, x: Tensor) -> Tensor:
-        if self.raw_input is None:
-            self.raw_input = x
-        return self.raw_input
+        if self.raw_input_hid is None:
+            self.raw_input_hid = x
+        return self.raw_input_hid
 
 
 class IntervalEncoder(Encoder):
@@ -76,13 +76,13 @@ class IntervalEncoder(Encoder):
             )
 
     def encode(self, x: Tensor) -> Tensor:
-        if self.raw_input is None:
+        if self.raw_input_hid is None:
             self.index = 0
-            self.raw_input = x
+            self.raw_input_hid = x
         if self.index == 0:
-            output = torch.ones_like(self.raw_input)
+            output = torch.ones_like(self.raw_input_hid)
         else:
-            output = torch.zeros_like(self.raw_input)
+            output = torch.zeros_like(self.raw_input_hid)
         self.index += 1
         self.index %= self.interval_steps
 
@@ -101,7 +101,7 @@ class LatencyEncoder(Encoder):
             self.alpha = math.exp(self.max_timesteps - 1) - 1
 
     def encode(self, x: Tensor) -> Tensor:
-        if self.raw_input is None:
+        if self.raw_input_hid is None:
             if self.encoder_type == "log":
                 spike_time = (self.max_timesteps - 1 -
                               torch.log(self.alpha * x + 1)).round().long()
@@ -109,11 +109,11 @@ class LatencyEncoder(Encoder):
                 spike_time = ((self.max_timesteps - 1) *
                               (1 - x)).round().long()
 
-            self.raw_input = F.one_hot(spike_time,
+            self.raw_input_hid = F.one_hot(spike_time,
                                        num_classes=self.max_timesteps).bool()
 
             self.index = 0
-        output = self.raw_input[..., self.index]
+        output = self.raw_input_hid[..., self.index]
         self.index += 1
         self.index %= self.max_timesteps
 
@@ -124,6 +124,6 @@ class PoissonEncoder(Encoder):
     """Widely used in spiking neuronal network.
     """
     def encode(self, x: Tensor) -> Tensor:
-        if self.raw_input is None:
-            self.raw_input = x
-        return torch.rand_like(self.raw_input).le(self.raw_input)
+        if self.raw_input_hid is None:
+            self.raw_input_hid = x
+        return torch.rand_like(self.raw_input_hid).le(self.raw_input_hid)

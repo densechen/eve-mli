@@ -85,7 +85,7 @@ class Node(Eve):
         # is also fine.
 
         # register voltage as hidden state, which will reset every time.
-        self.register_hidden_state("voltage", None)
+        self.register_hidden_state("voltage_hid", None)
 
         # register an forward hook to calculate the observation states
         self.register_forward_hook(Node._attach_obs_to_eve_parameters)
@@ -111,7 +111,7 @@ class Node(Eve):
             which is 
             :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
         """
-        if not cls.requires_upgrading: 
+        if not cls.requires_upgrading:
             return
 
         l1_norm = cls.state.l1_norm  # [neurons, ]
@@ -229,14 +229,14 @@ class IfNode(Node):
     """
     def node(self, dv: Tensor) -> Tensor:
         if self.spiking:
-            if self.voltage is not None and self.voltage.shape == dv.shape:
-                voltage = (self.voltage if not self.time_independent else
-                           self.voltage.detach())
+            if self.voltage_hid is not None and self.voltage_hid.shape == dv.shape:
+                voltage = (self.voltage_hid if not self.time_independent else
+                           self.voltage_hid.detach())
             else:
                 voltage = torch.zeros_like(dv)
 
-            self.voltage, output = if_fire().apply(voltage, dv,
-                                                   self.voltage_threshold)
+            self.voltage_hid, output = if_fire().apply(voltage, dv,
+                                                       self.voltage_threshold)
         else:
             output = F.relu(dv)
 
@@ -258,15 +258,14 @@ class LifNode(Node):
 
     def node(self, dv: Tensor) -> Tensor:
         if self.spiking:
-            if self.voltage is not None and self.voltage.shape == dv.shape:
-                voltage = (self.voltage if not self.time_independent else
-                           self.voltage.detach())
+            if self.voltage_hid is not None and self.voltage_hid.shape == dv.shape:
+                voltage = (self.voltage_hid if not self.time_independent else
+                           self.voltage_hid.detach())
             else:
                 voltage = torch.zeros_like(dv)
 
-            self.voltage, output = lif_fire().apply(voltage, dv,
-                                                    self.voltage_threshold,
-                                                    self.tau)
+            self.voltage_hid, output = lif_fire().apply(
+                voltage, dv, self.voltage_threshold, self.tau)
         else:
             output = F.leaky_relu(dv)
         return output
