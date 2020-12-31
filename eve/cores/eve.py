@@ -94,7 +94,12 @@ class Eve(Module):
         if key in upgrade_fn:
             raise KeyError("{} already registered.".format(
                 torch.typename(key)))
-        upgrade_fn[key] = fn
+
+        # make sure the fn can accept (param, action, obs) format params.
+        def wrapper(param, action=None, obs=None):
+            fn(param, action, obs)
+
+        upgrade_fn[key] = wrapper
 
     def named_eve_parameters(
             self,
