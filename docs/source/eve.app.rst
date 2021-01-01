@@ -12,17 +12,6 @@ Subpackages
    eve.app.imagenet
    eve.app.mnist
 
-Submodules
-----------
-
-eve.app.trainer module
-----------------------
-
-.. automodule:: eve.app.trainer
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

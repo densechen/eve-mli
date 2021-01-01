@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from typing import List
 
+
 # pylint: disable=no-member
 class State(object):
     """The class contains various states computing methods.
@@ -118,10 +119,19 @@ class State(object):
         else:
             raise NotImplementedError
 
-    def kl_div(self, x: List[Tensor], quan: Tensor):
-        dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[self.filter_type]
-        return F.kl_div(x[0], quan, reduction="none").mean(dim, keepdim=False)
+    @property
+    def kl_div(self):
+        return self._kl_div
 
-    def fire_rate(self, x: Tensor, fire: Tensor):
+    def kl_div_fn(self, x: List[Tensor], quan: Tensor):
         dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[self.filter_type]
-        return (fire > 0.0).float().mean(dim, keepdim=False)
+        self._kl_div = F.kl_div(x[0], quan,
+                                reduction="none").mean(dim, keepdim=False)
+
+    @property
+    def fire_rate(self):
+        return self._fire_rate
+
+    def fire_rate_fn(self, x: Tensor, fire: Tensor):
+        dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[self.filter_type]
+        self._fire_rate = (fire > 0.0).float().mean(dim, keepdim=False)

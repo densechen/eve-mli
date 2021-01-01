@@ -80,51 +80,11 @@ class Quan(Eve):
         alpha = _align_dims(self.filter_type, alpha)
         self.alpha = Parameter(alpha, requires_grad=True)
 
-        # register an forward hook to calculate the observation states
-        self.register_forward_hook(Quan._attach_obs_to_eve_parameters)
-
-    @staticmethod
-    def _attach_obs_to_eve_parameters(cls, input: Tensor,
-                                      output: Tensor) -> None:
-        r"""Attaches static and dynamic observation states to eve parameters.
-        
-        This function will be register as a forward hook automatically.
-        This function cannot modified both input and output values.
-    
-        Args:
-            input (Tensor): the input of this layer.
-            output (Tensor): the result of this layer.
-
-        .. note::
-
-            At spiking neural network, the network will be repeat many times, 
-            and the observation states will be changed at every time. It need 
-            a simple but effect method to average the observation states over time.
-            Here, we adapt an move exp average strategy to the observation,
-            which is 
-            :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
-        """
-        if not cls.requires_upgrade:
-            return
-
-        l1_norm = cls.state.l1_norm  # [neurons, ]
-        kl_div = cls.state.kl_div(input, output)  # [neurons, ]
-
-        obs = torch.stack([l1_norm, kl_div], dim=-1)  # [neurons, states]
-
-        # NOTE: observation states is special for current layer eve parameters.
-        # do not apply to sub-module or other module. so, set resurse=False.
-        for k, v in cls.named_eve_parameters(recurse=False):
-            # only attach to the eve parameters needed upgrading.
-            if v is None or not v.requires_grad:
-                continue
-            elif v.grad is not None and v.grad.shape == obs.shape:
-                v.grad.mul_(0.5).add_(obs, alpha=0.5)
-            elif v.grad is None:
-                v.grad = obs.detach().clone()
-            else:
-                raise ValueError("Cannot assign {} to {}".format(
-                    torch.typename(obs), k))
+    def obs(self):
+        if not self.requires_upgrade:
+            return None
+        else:
+            return torch.stack([self.state.l1_norm, self.state.kl_div], dim=-1)
 
     def _reset(self, set_to_none: bool = False) -> None:
         """Resets current layer's hidden state to None.
@@ -138,7 +98,12 @@ class Quan(Eve):
         raise NotImplementedError
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.quan(x)
+        quan = self.quan(x)
+
+        # compute static obs
+        self.state.kl_div_fn(x, quan)
+
+        return quan
 
 
 def quantize(input: Tensor,

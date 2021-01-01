@@ -15,19 +15,17 @@ from torchvision.datasets import ImageNet
 
 
 class ImageNetEve(ClsEve):
-    def prepare_data(self):
+    def prepare_data(self, data_root):
         # FIXME: check this code
         train_dataset = ImageNet(
-            root=self.data_kwargs["root"],
+            root=data_root,
             split="train",
             download=False,
             transform=transforms.Compose([
-                transforms.RandomSizedCrop(max(
-                    self.data_kwargs["input_size"])),
+                transforms.RandomSizedCrop(0),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=self.data_kwargs["mean"],
-                                     std=self.data_kwargs["std"])
+                transforms.Normalize(mean=0, std=0)
             ]),
         )
         self.train_dataset, self.valid_dataset = random_split(
@@ -35,14 +33,13 @@ class ImageNetEve(ClsEve):
             [len(train_dataset) * 0.01,
              len(train_dataset) * 0.99])
         self.test_dataset = ImageNet(
-            root=self.data_kwargs["root"],
+            root=data_root,
             split="val",
             download=False,
             transform=transforms.Compose([
-                transforms.CenterCrop(max(self.data_kwargs["input_size"])),
+                transforms.CenterCrop(0),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=self.data_kwargs["mean"],
-                                     std=self.data_kwargs["std"])
+                transforms.Normalize(mean=0, std=0)
             ]),
         )
 
@@ -68,6 +65,7 @@ class ImageNetEve(ClsEve):
                 50 * len(self.train_dataset), 100 * len(self.train_dataset)
             ],
             gamma=0.1)
+
     @property
     def train_dataloader(self):
         return torch.utils.data.DataLoader(

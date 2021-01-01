@@ -27,7 +27,8 @@ import torch.nn as nn
 
 # NOTE: import the env, and automatically register the env to global gym.envs.
 # FIXME: move envs to trainer.
-import eve.rl.envs
+import eve
+import eve.app
 
 from eve.rl.utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
 from eve.rl.utils.hyperparams_opt import HYPERPARAMS_SAMPLER

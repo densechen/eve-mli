@@ -11,7 +11,6 @@ Subpackages
    eve.rl.common
    eve.rl.ddpg
    eve.rl.dqn
-   eve.rl.envs
    eve.rl.her
    eve.rl.ppo
    eve.rl.sac

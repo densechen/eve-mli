@@ -16,7 +16,7 @@ from torch import Tensor
 import gym
 
 
-class mnist(eve.cores.Eve):
+class mnist(ClsEve):
     def __init__(
         self,
         node: str = "IfNode",
@@ -64,26 +64,25 @@ class mnist(eve.cores.Eve):
         encoder = self.encoder(x)
         conv = self.conv(encoder)
         cdt1 = self.cdt1(conv)
-        cdt1 = torch.flatten(cdt1, 1)
+        cdt1 = torch.flatten(cdt1, 1)  # pylint: disable=no-member
         linear = self.linear(cdt1)
         return linear
 
     def non_spiking_forward(self, x: Tensor) -> Tensor:
         return self.spiking_forward(x)
 
-    def prepare_data(self):
-        train_dataset = MNIST(root=self.data_kwargs["root"],
+    def prepare_data(self, data_root):
+        train_dataset = MNIST(root=data_root,
                               train=True,
                               download=True,
                               transform=transforms.ToTensor())
-        test_dataset = MNIST(root=self.data_kwargs["root"],
+        test_dataset = MNIST(root=data_root,
                              train=False,
                              download=True,
                              transform=transforms.ToTensor())
         self.train_dataset, self.valid_dataset = random_split(
             train_dataset, [55000, 5000])
         self.test_dataset = test_dataset
-
 
     @property
     def max_neurons(self):
@@ -111,7 +110,6 @@ class mnist(eve.cores.Eve):
             dtype=np.float32,
         )
 
-
     @property
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -124,7 +122,7 @@ class mnist(eve.cores.Eve):
     @property
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.test_dataloader,
+            self.test_dataset,
             batch_size=128,
             shuffle=False,
             num_workers=4,
@@ -133,7 +131,7 @@ class mnist(eve.cores.Eve):
     @property
     def valid_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.valid_dataloader,
+            self.valid_dataset,
             batch_size=128,
             shuffle=False,
             num_workers=4,
@@ -163,6 +161,62 @@ class mnist(eve.cores.Eve):
             gamma=0.1)
 
 
-
 class mnist_trainer(BaseTrainer):
-    pass
+    def __init__(
+            self,
+            eve_net_kwargs: dict = {
+                "node": "IfNode",
+                "node_kwargs": {
+                    "voltage_threshold": 0.5,
+                    "time_independent": True,
+                    "requires_upgrade": True,
+                },
+                "quan": "SteQuan",
+                "quan_kwargs": {
+                    "max_bit_width": 8,
+                    "requires_upgrade": True,
+                },
+                "encoder": "RateEncoder",
+                "encoder_kwargs": {
+                    "timesteps": 1,
+                }
+            },
+            max_bits: int = 8,
+            root_dir: str = ".",
+            data_root: str = ".",
+            pretrained: str = None,
+            device: str = "auto"):
+        super().__init__(mnist, eve_net_kwargs, max_bits, root_dir, data_root,
+                         pretrained, device)
+
+
+# register trainer here.
+from gym.envs.registration import register
+register(id="mnist-v0",
+         entry_point=mnist_trainer,
+         max_episode_steps=200,
+         reward_threshold=25.0,
+         kwargs={
+             "eve_net_kwargs": {
+                 "node": "IfNode",
+                 "node_kwargs": {
+                     "voltage_threshold": 0.5,
+                     "time_independent": True,
+                     "requires_upgrade": True,
+                 },
+                 "quan": "SteQuan",
+                 "quan_kwargs": {
+                     "max_bit_width": 8,
+                     "requires_upgrade": True,
+                 },
+                 "encoder": "RateEncoder",
+                 "encoder_kwargs": {
+                     "timesteps": 1,
+                 }
+             },
+             "max_bits": 8,
+             "root_dir": ".",
+             "data_root": ".",
+             "pretrained": None,
+             "device": "auto",
+         })

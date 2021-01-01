@@ -87,52 +87,26 @@ class Node(Eve):
         # register an forward hook to calculate the observation states
         self.register_forward_hook(Node._attach_obs_to_eve_parameters)
 
-    @staticmethod
-    def _attach_obs_to_eve_parameters(cls, input: Tensor,
-                                      output: Tensor) -> None:
-        r"""Attaches static and dynamic observation states to eve parameters.
-        
-        This function will be register as a forward hook automatically.
-        This function cannot modified both input and output values.
-
-        Args:
-            input (Tensor): the input of this layer.
-            output (Tensor): the result of this layer.
-
-        .. note::
-
-            At spiking neural network, the network will be repeat many times, 
-            and the observation states will be changed at every time. It need 
-            a simple but effect method to average the observation states over time.
-            Here, we adapt an move exp average strategy to the observation,
-            which is 
-            :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
-        """
-        if not cls.requires_upgrade:
-            return
-
-        l1_norm = cls.state.l1_norm  # [neurons, ]
-        fire_rate = cls.state.fire_rate(input, output)  # [neurons, ]
-        obs = torch.stack([l1_norm, fire_rate], dim=-1)  # [neurons, states]
-
-        # NOTE: observation states is special for current layer eve parameters.
-        # do not apply to sub-module or other module. so, set resurse=False.
-        for k, v in cls.named_eve_parameters(recurse=False):
-            # only attach to the eve parameters needed upgrading.
-            if v is None or not v.requires_grad:
-                continue
-            elif v.grad is not None and v.grad.shape == obs.shape:
-                v.grad.mul_(0.5).add_(obs, alpha=0.5)
-            elif v.grad is None:
-                v.grad = obs.detach().clone()
-            else:
-                raise ValueError("Cannot assign {} to {}".format(
-                    torch.typename(obs), k))
+    def obs(self):
+        if not self.requires_upgrade or not self.spiking:
+            return None
+        else:
+            return torch.stack([self.state.l1_norm, self.state.fire_rate],
+                               dim=-1)
 
     def _reset(self, set_to_none: bool = False) -> None:
         """Resets current layer's hidden state to None.
         """
         super()._reset(set_to_none=True)
+
+    def forward(self, x: Tensor) -> Tensor:
+        if self.spiking:
+            fire = self.spiking_forward(x)
+            # compute observation states
+            self.state.fire_rate_fn(x, fire)
+            return fire
+        else:
+            return self.non_spiking_forward(x)
 
 
 def heaviside(x: Tensor) -> Tensor:

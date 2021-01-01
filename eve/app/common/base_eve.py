@@ -110,7 +110,7 @@ class BaseEve(eve.cores.Eve, ABC):
         if self.spiking:
             res = [
                 self.spiking_forward(*args, **kwargs)
-                for _ in range(self.timesteps)
+                for _ in range(self.encoder.timesteps)
             ]
             return torch.stack(res, dim=0).mean(dim=0)  # pylint: disable=no-member
         else:

@@ -54,7 +54,8 @@ The project remains in development. We encourage more volunteers to come togethe
 - Depart from stable_baselines3
   - the framework of stable-baselines3 is not well suited for eve-mli to design a flexible LSTM network, and the wrapper of gym.env is not clear enough for eve-mli. We are now trying to use a more tiny and simplified code to implement the RL training.
   - We have merged stable_baselines3 into eve-mli now.
-  - We are planing to rewrite the trainer class of eve-mli to make it suitable for rl training evironment naturally.
+  - We are planing to rewrite the trainer class of eve-mli to make it suitable for rl training evironment naturally --> finished.
   - An RNN framework of policies network is also on the way.
 - Add hardware speed up support to eve-mli
   - currently, eve-Mali is purely based on python code, in the future, we will use tools like TVM to improve the performance.
+- A more detailed user guid is on the way.

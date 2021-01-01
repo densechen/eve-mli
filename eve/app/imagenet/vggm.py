@@ -8,9 +8,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
 import eve
 import eve.cores
-from eve.app.imagenet.imagenet import ImageNetEve
-from torchvision import transforms
-from torchvision.datasets import ImageNet
+from eve.app.imagenet.imagenet import ImageNetEve, ImageNetTrainer
 import numpy as np
 from torch import Tensor
 import gym
@@ -206,3 +204,71 @@ class vggm(ImageNetEve):
             shape=(self.max_neurons, self.max_states),
             dtype=np.float32,
         )
+
+
+class ImageNetVggmTrainer(ImageNetTrainer):
+    def __init__(
+            self,
+            eve_net_kwargs: dict = {
+                "node": "IfNode",
+                "node_kwargs": {
+                    "voltage_threshold": 0.5,
+                    "time_independent": True,
+                    "requires_upgrade": True,
+                },
+                "quan": "SteQuan",
+                "quan_kwargs": {
+                    "max_bit_width": 8,
+                    "requires_upgrade": True,
+                },
+                "encoder": "RateEncoder",
+                "encoder_kwargs": {
+                    "timesteps": 1,
+                }
+            },
+            max_bits: int = 8,
+            root_dir: str = ".",
+            data_root: str = ".",
+            pretrained: str = None,
+            device: str = "auto"):
+        super().__init__(vggm, eve_net_kwargs, max_bits, root_dir, data_root, pretrained,
+                         device)
+
+    def load_pretrained(self):
+        load_flag = super().load_pretrained()
+        if not load_flag:
+            print(f"download the pretrained from {self.eve_net.model_urls}.")
+            print(
+                f"then, use {self.eve_net.key_map} to load pretrained models.")
+
+
+# register trainer here.
+from gym.envs.registration import register
+register(id="imagenetvggm-v0",
+         entry_point=ImageNetVggmTrainer,
+         max_episode_steps=200,
+         reward_threshold=25.0,
+         kwargs={
+             "eve_net_kwargs": {
+                 "node": "IfNode",
+                 "node_kwargs": {
+                     "voltage_threshold": 0.5,
+                     "time_independent": True,
+                     "requires_upgrade": True,
+                 },
+                 "quan": "SteQuan",
+                 "quan_kwargs": {
+                     "max_bit_width": 8,
+                     "requires_upgrade": True,
+                 },
+                 "encoder": "RateEncoder",
+                 "encoder_kwargs": {
+                     "timesteps": 1,
+                 }
+             },
+             "max_bits": 8,
+             "root_dir": ".",
+             "data_root":  ".",
+             "pretrained": None,
+             "device": "auto",
+         })

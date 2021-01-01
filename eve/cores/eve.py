@@ -45,6 +45,8 @@ class Eve(Module):
 
         # keep the same behavior with Module default.
         self.spiking = False
+        # register an forward hook to attach the observation states
+        self.register_forward_hook(Eve._attach_obs_to_eve_parameters)
 
     def register_eve_parameter(self, name: str, param: Union[Parameter,
                                                              None]) -> None:
@@ -225,15 +227,11 @@ class Eve(Module):
                 "module.")
 
         for p in self.eve_parameters():
-            if p.grad is not None:
+            if hasattr(p, "obs"):
                 if set_to_none:
-                    p.grad = None
+                    p.obs = None
                 else:
-                    if p.grad.grad_fn is not None:
-                        p.grad.detach_()
-                    else:
-                        p.grad.requires_grad_(False)
-                    p.grad.zero_()
+                    p.obs.zero_()
 
     def zero_grad(self, set_to_none: bool = False) -> None:
         r"""Sets gradients of all torch parameters to zero. See similar function
@@ -275,3 +273,47 @@ class Eve(Module):
             return self.spiking_forward(*args, **kwargs)
         else:
             return self.non_spiking_forward(*args, **kwargs)
+
+    def obs(self):
+        return None
+
+    @staticmethod
+    @torch.no_grad()
+    def _attach_obs_to_eve_parameters(cls, input: Tensor,
+                                      output: Tensor) -> None:
+        r"""Attaches static and dynamic observation states to eve parameters.
+        
+        This function will be register as a forward hook automatically.
+        This function cannot modified both input and output values.
+    
+        Args:
+            input (Tensor): the input of this layer.
+            output (Tensor): the result of this layer.
+
+        .. note::
+
+            At spiking neural network, the network will be repeat many times, 
+            and the observation states will be changed at every time. It need 
+            a simple but effect method to average the observation states over time.
+            Here, we adapt an move exp average strategy to the observation,
+            which is 
+            :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
+        """
+        obs = cls.obs()
+        if obs is None:
+            return
+        # NOTE: observation states is special for current layer eve parameters.
+        # do not apply to sub-module or other module. so, set resurse=False.
+        for k, v in cls.named_eve_parameters(recurse=False):
+            # only attach to the eve parameters needed upgrading.
+            if v is None or not v.requires_grad:
+                continue
+            elif hasattr(
+                    v,
+                    'obs') and v.obs is not None and v.obs.shape == obs.shape:
+                v.obs.mul_(0.5).add_(obs, alpha=0.5)
+            elif not hasattr(v, 'obs') or v.obs is None:
+                v.obs = obs.detach().clone()
+            else:
+                raise ValueError("Cannot assign {} to {}".format(
+                    torch.typename(obs), k))

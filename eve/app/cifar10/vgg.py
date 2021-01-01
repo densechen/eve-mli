@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from eve.app.cifar10.cifar10 import Cifar10Eve
+from eve.app.cifar10.cifar10 import Cifar10Eve, Cifar10Trainer
 from torch import Tensor
 
 
@@ -182,3 +182,71 @@ class vgg(Cifar10Eve):
             shape=(self.max_neurons, self.max_states),
             dtype=np.float32,
         )
+
+
+class Cifar10VggTrainer(Cifar10Trainer):
+    def __init__(
+            self,
+            eve_net_kwargs: dict = {
+                "node": "IfNode",
+                "node_kwargs": {
+                    "voltage_threshold": 0.5,
+                    "time_independent": True,
+                    "requires_upgrade": True,
+                },
+                "quan": "SteQuan",
+                "quan_kwargs": {
+                    "max_bit_width": 8,
+                    "requires_upgrade": True,
+                },
+                "encoder": "RateEncoder",
+                "encoder_kwargs": {
+                    "timesteps": 1,
+                }
+            },
+            max_bits: int = 8,
+            root_dir: str = ".",
+            data_root: str = ".",
+            pretrained: str = None,
+            device: str = "auto"):
+        super().__init__(vgg, eve_net_kwargs, max_bits, root_dir, data_root,
+                         pretrained, device)
+
+    def load_pretrained(self):
+        load_flag = super().load_pretrained()
+        if not load_flag:
+            print(f"download the pretrained from {self.eve_net.model_urls}.")
+            print(
+                f"then, use {self.eve_net.key_map} to load pretrained models.")
+
+
+# register trainer here.
+from gym.envs.registration import register
+register(id="cifar10vgg-v0",
+         entry_point=Cifar10VggTrainer,
+         max_episode_steps=200,
+         reward_threshold=25.0,
+         kwargs={
+             "eve_net_kwargs": {
+                 "node": "IfNode",
+                 "node_kwargs": {
+                     "voltage_threshold": 0.5,
+                     "time_independent": True,
+                     "requires_upgrade": True,
+                 },
+                 "quan": "SteQuan",
+                 "quan_kwargs": {
+                     "max_bit_width": 8,
+                     "requires_upgrade": True,
+                 },
+                 "encoder": "RateEncoder",
+                 "encoder_kwargs": {
+                     "timesteps": 1,
+                 }
+             },
+             "max_bits": 8,
+             "root_dir": ".",
+             "data_root": ".",
+             "pretrained": None,
+             "device": "auto",
+         })

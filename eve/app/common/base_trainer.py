@@ -1,5 +1,5 @@
 """Abstract base class for DL algorithms."""
-
+import os
 import io
 import pathlib
 import time
@@ -29,17 +29,15 @@ class BaseTrainer(gym.Env, ABC):
     The base of DL algorithms.
 
     Args:
-        eve_net (Eve): Eve object.
-        eve_base (Eve): the base eve used by this method
-        learning_rate (float, Schedule): learning rate for the optimizer, 
-            it can be a function of the current progress remaining (from 1 to 0).
-        tensorboard_log (str): the log location for tensorboard (if None, no logging)
-        verbose (0, 1, 2): the verbosity level: 0 none, 1 training information,
-            2 debug
+        eve_net: base eve object.
+        eve_net_kwargs: the arguments deliver to eve_net.
+        max_bits: the max bits used in quan, the baseline is calculated under this setting.
+        root_dir: all files will be saved under root dir.
+        data_root: the path to load dataset.
+        pretrained: the path to load pretrained models.
         device (str): device on which the code should run.
             By default, it will try to use a Cuda compatible device and fallback
             to cpu if it is not possible.
-        seed: seed for the pseudo random generators.
     """
     # eve_net will define the network architecture and load dataset at the same time.
     eve_net: BaseEve
@@ -73,13 +71,16 @@ class BaseTrainer(gym.Env, ABC):
         eve_net,
         eve_net_kwargs: dict = {},
         max_bits: int = 8,
-        root_path: Optional[str] = None,
+        root_dir: Optional[str] = ".",
+        data_root: str = ".",
+        pretrained: str = "",
         device: Union[th.device, str] = "auto",
     ):
-        self.eve_net = eve_net(**eve_net_kwargs)
-
         self.device = get_device(device)
         print(f"Using {self.device} device")
+
+        self.eve_net = eve_net(**eve_net_kwargs).to(self.device)
+        self.eve_net.prepare_data(data_root)
 
         self.optimizer = self.eve_net.configure_optimizers()
         self.upgrader = self.eve_net.configure_upgraders()
@@ -93,37 +94,57 @@ class BaseTrainer(gym.Env, ABC):
 
         self.max_bits = max_bits
 
-    def save_torch_params(self):
-        pass
+        self.pretrained = pretrained
+        self.checkpoint = os.path.join(root_dir, "ckpt.pth")
+        self.root_dir = root_dir
 
-    def save_eve_params(self):
-        pass
+        # load pretrained model
+        load_flag = self.load_pretrained()
+        # NOTE: you should load the pretrained model first then set the max bits
+        # otherwise, the pretrained model may contains a different max bits,
+        # which is not you wanted.
+        self.set_max_bits()
 
-    def load_torch_params(self):
-        pass
+        # test the model to get baseline acc
+        if load_flag:
+            self.baseline_acc = self.test_one_epoch()["acc"]
+        else:
+            self.baseline_acc = 0.0
+        print(f"set baseline acc as {self.baseline_acc}")
 
-    def load_eve_params(self):
-        pass
+        # save the initial model to checkpoint
+        self.save_checkpoint()
 
-    def reset_torch_params(self):
-        pass
+    def load_checkpoint(self) -> bool:
+        try:
+            self.eve_net.load_state_dict(
+                th.load(self.checkpoint,
+                        map_location=self.device)["state_dict"])
+            return True
+        except Exception as e:
+            print(f"load checkpoint {self.checkpoint} failed.")
+            print(e)
+            return False
 
-    def reset_eve_params(self):
-        pass
+    def save_checkpoint(self):
+        th.save({"state_dict": self.eve_net.state_dict()}, self.checkpoint)
 
-    @property
-    def torch_key_map(self):
-        pass
+    def set_max_bits(self):
+        for k, v in self.eve_net.named_eve_parameters():
+            if k.split(".")[-1].startswith("bit_width"):
+                v.data.fill_(self.max_bits)
+        print(f"bit_width reset to {self.max_bits}.")
 
-    @property
-    def eve_key_map(self):
-        pass
-
-    def save_params(self):
-        pass
-
-    def load_params(self):
-        pass
+    def load_pretrained(self) -> bool:
+        try:
+            self.eve_net.load_state_dict(
+                th.load(self.pretrained,
+                        map_location=self.device)["state_dict"])
+            return True
+        except Exception as e:
+            print(f"load pretrained {self.pretrained} failed.")
+            print(e)
+            return False
 
     @property
     def train_dataloader(self) -> th.utils.data.DataLoader:
@@ -254,13 +275,13 @@ class BaseTrainer(gym.Env, ABC):
     def observation_space(self) -> gym.spaces.Space:
         return self.eve_net.observation_space
 
-    def tack_action(self, action: np.ndarray) -> None:
-        action = torch.as_tensor(action, device=self.device)
+    def take_action(self, action: np.ndarray) -> None:
+        action = th.as_tensor(action, device=self.device)
 
         action = action[:self._last_eve_obs.numel()].view_as(
             self._last_eve_obs)
 
-        self.upgrader.tack_action(self._last_eve_obs, action)
+        self.upgrader.take_action(self._last_eve_obs, action)
 
     def reward(self) -> float:
         self.upgrader.zero_obs()
@@ -268,8 +289,10 @@ class BaseTrainer(gym.Env, ABC):
 
         rate = self._last_eve_obs.sum() / (self._last_eve_obs.numel() *
                                            self.max_bits)
+        rate = tensor_dict_to_numpy_dict({"rate": rate})["rate"]
 
-        return info["acc"] - rate * 0.1
+        # reward is current_acc - baseline_acc
+        return info["acc"] - self.baseline_acc - rate * 0.1
 
     def fetch_obs(self) -> np.ndarray:
         if self._obs_gen is None:
@@ -284,7 +307,7 @@ class BaseTrainer(gym.Env, ABC):
 
         if eve_obs is not None:
             # pad obs to [max_neurons, max_states]
-            obs = eve_obs.grad
+            obs = eve_obs.obs
             neurons, states = obs.shape
             padding = [
                 0,
@@ -304,16 +327,14 @@ class BaseTrainer(gym.Env, ABC):
             action: the action applied to network.
         
         Returns:
-            observation (np.ndarray): agent's observation states for current 
-                trainer. [neurons times n] or [1 times n].
+            observation (np.ndarray): agent's observation states for current trainer. [neurons times n] or [1 times n].
             reward (float): amout of reward returned after previous action.
-            done (bool): whether the episode has ended, in which case further
-                step() calls will return undefined results.
-            info (dict): contains auxiliary diagnostic information (helpful for
-                debugging and sometimes learning).
+            done (bool): whether the episode has ended, in which case further step() calls will return undefined results.
+            info (dict): contains auxiliary diagnostic information (helpful for debugging and sometimes learning).
+
         """
         # take action
-        self.tack_action(action)
+        self.take_action(action)
 
         # obtain reward
         reward = self.reward()
@@ -333,12 +354,13 @@ class BaseTrainer(gym.Env, ABC):
         garbage collected or when the program exits.
         """
         # load best model first
-        self.load()
+        self.load_checkpoint()
 
         info = self.test_one_epoch()
         if info["acc"] > self.baseline_acc:
-            self.save()
+            self.save_checkpoint()
         print(f"baseline: {self.baseline_acc}, finetune: {info['acc']}")
+        print(f"save checkpoint to {self.checkpoint}")
 
     def seed(self, seed: Optional[int] = None) -> None:
         """
@@ -363,14 +385,11 @@ class BaseTrainer(gym.Env, ABC):
         info = self.valid_one_epoch()
         if info["acc"] > self.baseline_acc:
             self.baseline_acc = info["acc"]
-
             # save the model
-            # TODO
-            self.save()
+            self.save_checkpoint()
         else:
             # reload last model
-            # TODO
-            self.load()
+            self.load_checkpoint()
 
         self.upgrader.zero_obs()
         self.train_one_step()

@@ -199,15 +199,11 @@ class Upgrader(object):
         """
         for group in self.param_groups:
             for p in group['params']:
-                if p.grad is not None:
+                if hasattr(p, "obs"):
                     if set_to_none:
-                        p.grad = None
+                        p.obs = None
                     else:
-                        if p.grad.grad_fn is not None:
-                            p.grad.detach_()
-                        else:
-                            p.grad.requires_grad_(False)
-                        p.grad.zero_()
+                        p.obs.zero_()
 
     @torch.no_grad()
     def step(self, closure=None):
@@ -228,7 +224,10 @@ class Upgrader(object):
                 if not p.requires_grad:
                     continue
                 # NOTE: all upgrade_fn is (param, action, obs)
-                upgrade_fn[p](param=p, obs=p.grad)
+                elif not hasattr(p, "obs"):
+                    upgrade_fn[p](param=p)
+                else:
+                    upgrade_fn[p](param=p, obs=p.obs)
 
         return loss
 
@@ -301,7 +300,7 @@ class Upgrader(object):
         for group in self.param_groups:
             eve_param = group['params']
             for v in eve_param:
-                if v.grad is not None and v.requires_grad:
+                if hasattr(v, 'obs') and v.obs is not None and v.requires_grad:
                     yield v
 
     @torch.no_grad()
