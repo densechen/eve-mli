@@ -2,13 +2,10 @@
 python setup.py sdist bdist_wheel
 python -m twine upload dist/*
 '''
-import setuptools
-import glob
 import os
 
-from setuptools import find_packages
-from setuptools import setup
-import sys
+from setuptools import find_packages, setup
+
 from eve import __version__
 
 with open("requires.txt", "r", encoding="utf-8") as fh:

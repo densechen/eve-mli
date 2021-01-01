@@ -16,17 +16,17 @@ class Encoder(Eve):
     """Base class of different encoders.
 
     Args:
-        max_timesteps (int): the length of spiking trains.
+        timesteps (int): the length of spiking trains.
 
     .. note:: 
         Only take effect under spiking mode. In non-spiking mode, it returns input directly.
     """
-    def __init__(self, max_timesteps: int = 1):
+    def __init__(self, timesteps: int = 1):
         super().__init__()
 
-        assert max_timesteps >= 1
+        assert timesteps >= 1
 
-        self.max_timesteps = max_timesteps
+        self.timesteps = timesteps
 
         self.register_hidden_state("raw_input_hid", None)
 
@@ -50,18 +50,18 @@ class RateEncoder(Encoder):
 
 
 class IntervalEncoder(Encoder):
-    def __init__(self, interval_steps, max_timesteps):
-        """In this encoder, max_timesteps is only used to make sure the spiking times.
-        the total spiking times is max_timesteps // interval_steps.
+    def __init__(self, interval_steps, timesteps):
+        """In this encoder, timesteps is only used to make sure the spiking times.
+        the total spiking times is timesteps // interval_steps.
 
         Useless in most cases.
         """
-        super(IntervalEncoder, self).__init__(max_timesteps)
+        super(IntervalEncoder, self).__init__(timesteps)
         self.interval_steps = interval_steps
 
-        if interval_steps > max_timesteps:
+        if interval_steps > timesteps:
             raise ValueError(
-                f"interval_steps ({self.interval_steps}) should not be larger than max_timesteps ({self.max_timesteps})."
+                f"interval_steps ({self.interval_steps}) should not be larger than timesteps ({self.timesteps})."
             )
 
     def spiking_forward(self, x: Tensor) -> Tensor:
@@ -87,24 +87,24 @@ class LatencyEncoder(Encoder):
 
         self.encoder_type = encoder_type
         if self.encoder_type == "log":
-            self.alpha = math.exp(self.max_timesteps - 1) - 1
+            self.alpha = math.exp(self.timesteps - 1) - 1
 
     def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_hid is None:
             if self.encoder_type == "log":
-                spike_time = (self.max_timesteps - 1 -
+                spike_time = (self.timesteps - 1 -
                               torch.log(self.alpha * x + 1)).round().long()
             elif self.encoder_type == "linear":
-                spike_time = ((self.max_timesteps - 1) *
+                spike_time = ((self.timesteps - 1) *
                               (1 - x)).round().long()
 
             self.raw_input_hid = F.one_hot(
-                spike_time, num_classes=self.max_timesteps).bool()
+                spike_time, num_classes=self.timesteps).bool()
 
             self.index = 0
         output = self.raw_input_hid[..., self.index]
         self.index += 1
-        self.index %= self.max_timesteps
+        self.index %= self.timesteps
 
         return output.float()
 

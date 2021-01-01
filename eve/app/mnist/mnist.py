@@ -7,23 +7,33 @@ import eve.cores
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from eve.app.trainer import ClsNet, Trainer
+from eve.app.common import ClsEve, BaseTrainer
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
-from gym import spaces
 import numpy as np
+from torch import Tensor
+import gym
 
 
-class Net(eve.cores.Eve):
+class mnist(eve.cores.Eve):
     def __init__(
         self,
         node: str = "IfNode",
-        node_kwargs: Dict[str, Any] = {},
+        node_kwargs: Dict[str, Any] = {
+            "voltage_threshold": 0.5,
+            "time_independent": True,
+            "requires_upgrade": True,
+        },
         quan: str = "SteQuan",
-        quan_kwargs: Dict[str, Any] = {},
+        quan_kwargs: Dict[str, Any] = {
+            "max_bit_width": 8,
+            "requires_upgrade": True,
+        },
         encoder: str = "RateEncoder",
-        encoder_kwargs: Dict[str, Any] = {},
+        encoder_kwargs: Dict[str, Any] = {
+            "timesteps": 1,
+        },
     ):
         super().__init__()
 
@@ -50,7 +60,7 @@ class Net(eve.cores.Eve):
 
         self.linear = nn.Linear(14 * 14 * 3, 10)
 
-    def forward(self, x):
+    def spiking_forward(self, x: Tensor) -> Tensor:
         encoder = self.encoder(x)
         conv = self.conv(encoder)
         cdt1 = self.cdt1(conv)
@@ -58,17 +68,8 @@ class Net(eve.cores.Eve):
         linear = self.linear(cdt1)
         return linear
 
-
-class EveMnist(ClsNet):
-    def __init__(
-        self,
-        max_timesteps: int = 1,
-        net_arch_kwargs: Dict[str, Any] = {},
-        optimizer_kwargs: Dict[str, Any] = {},
-        data_kwargs: Dict[str, Any] = {},
-    ):
-        super().__init__(Net, max_timesteps, net_arch_kwargs, optimizer_kwargs,
-                         data_kwargs)
+    def non_spiking_forward(self, x: Tensor) -> Tensor:
+        return self.spiking_forward(x)
 
     def prepare_data(self):
         train_dataset = MNIST(root=self.data_kwargs["root"],
@@ -83,28 +84,85 @@ class EveMnist(ClsNet):
             train_dataset, [55000, 5000])
         self.test_dataset = test_dataset
 
+
     @property
     def max_neurons(self):
-        """Set this property while defining network
-        """
         return 3
 
     @property
-    def max_diff_states(self):
-        """Set this property while defining network
-        """
+    def max_states(self):
         return 2
 
+    @property
+    def action_space(self) -> gym.spaces.Space:
+        return gym.spaces.Box(
+            low=0.0,
+            high=1.0,
+            shape=(self.max_neurons, ),
+            dtype=np.float32,
+        )
 
-class TrainerMnist(Trainer):
-    def __init__(self,
-                 checkpoint_path: str,
-                 max_timesteps: int = 1,
-                 net_arch_kwargs: Dict[str, Any] = {},
-                 optimizer_kwargs: Dict[str, Any] = {},
-                 data_kwargs: Dict[str, Any] = {},
-                 upgrader_kwargs: Dict[str, Any] = {},
-                 **kwargs):
-        super().__init__(EveMnist, checkpoint_path, max_timesteps,
-                         net_arch_kwargs, optimizer_kwargs, data_kwargs,
-                         upgrader_kwargs, **kwargs)
+    @property
+    def observation_space(self) -> gym.spaces.Space:
+        return gym.spaces.Box(
+            low=-1.0,
+            high=1.0,
+            shape=(self.max_neurons, self.max_states),
+            dtype=np.float32,
+        )
+
+
+    @property
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset,
+            batch_size=128,
+            shuffle=True,
+            num_workers=4,
+        )
+
+    @property
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.test_dataloader,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
+        )
+
+    @property
+    def valid_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.valid_dataloader,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
+        )
+
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+        return torch.optim.Adam(
+            self.torch_parameters(),
+            lr=1e-3,
+            betas=[0.9, 0.999],
+            eps=1e-8,
+            weight_decay=1e-6,
+            amsgrad=False,
+        )
+
+    def configure_upgraders(self) -> eve.upgrade.Upgrader:
+        return eve.upgrade.Upgrader(self.eve_parameters(), )
+
+    def configure_lr_scheduler(
+        self, optimizer: torch.optim.Optimizer
+    ) -> torch.optim.lr_scheduler._LRScheduler:
+        return torch.optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[
+                50 * len(self.train_dataset), 100 * len(self.train_dataset)
+            ],
+            gamma=0.1)
+
+
+
+class mnist_trainer(BaseTrainer):
+    pass

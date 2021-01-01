@@ -1,152 +1,134 @@
-import os
 from typing import Any, Dict, List, Type
-from warnings import warn
 
 import eve
 import eve.cores
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from eve.app.cifar10.cifar10 import EveCifar10, TrainerCifar10
-from gym import spaces
-from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
-model_urls = {
-    'vgg7':
-    'https://github.com/rhhc/zxd_releases/releases/download/Re/cifar10-vggsmall-zxd-93.4-8943fa3.pth',
-}
-key_map = {
-    'task_module.clssifier.bias': 'classifier.bias',
-    'task_module.clssifier.weight': 'classifier.weight',
-    'task_module.conv1.0.weight': 'features.0.weight',
-    'task_module.conv1.1.bias': 'features.1.bias',
-    'task_module.conv1.1.num_batches_tracked':
-    'features.1.num_batches_tracked',
-    'task_module.conv1.1.running_mean': 'features.1.running_mean',
-    'task_module.conv1.1.running_var': 'features.1.running_var',
-    'task_module.conv1.1.weight': 'features.1.weight',
-    'task_module.conv2.0.weight': 'features.3.weight',
-    'task_module.conv2.1.bias': 'features.4.bias',
-    'task_module.conv2.1.num_batches_tracked':
-    'features.4.num_batches_tracked',
-    'task_module.conv2.1.running_mean': 'features.4.running_mean',
-    'task_module.conv2.1.running_var': 'features.4.running_var',
-    'task_module.conv2.1.weight': 'features.4.weight',
-    'task_module.conv3.1.weight': 'features.7.weight',
-    'task_module.conv3.2.bias': 'features.8.bias',
-    'task_module.conv3.2.num_batches_tracked':
-    'features.8.num_batches_tracked',
-    'task_module.conv3.2.running_mean': 'features.8.running_mean',
-    'task_module.conv3.2.running_var': 'features.8.running_var',
-    'task_module.conv3.2.weight': 'features.8.weight',
-    'task_module.conv4.0.weight': 'features.10.weight',
-    'task_module.conv4.1.bias': 'features.11.bias',
-    'task_module.conv4.1.num_batches_tracked':
-    'features.11.num_batches_tracked',
-    'task_module.conv4.1.running_mean': 'features.11.running_mean',
-    'task_module.conv4.1.running_var': 'features.11.running_var',
-    'task_module.conv4.1.weight': 'features.11.weight',
-    'task_module.conv5.1.weight': 'features.14.weight',
-    'task_module.conv5.2.bias': 'features.15.bias',
-    'task_module.conv5.2.num_batches_tracked':
-    'features.15.num_batches_tracked',
-    'task_module.conv5.2.running_mean': 'features.15.running_mean',
-    'task_module.conv5.2.running_var': 'features.15.running_var',
-    'task_module.conv5.2.weight': 'features.15.weight',
-    'task_module.conv6.0.weight': 'features.17.weight',
-    'task_module.conv6.1.bias': 'features.18.bias',
-    'task_module.conv6.1.num_batches_tracked':
-    'features.18.num_batches_tracked',
-    'task_module.conv6.1.running_mean': 'features.18.running_mean',
-    'task_module.conv6.1.running_var': 'features.18.running_var',
-    'task_module.conv6.1.weight': 'features.18.weight',
-}
+from eve.app.cifar10.cifar10 import Cifar10Eve
+from torch import Tensor
 
 
-class Vgg(eve.cores.Eve):
+class vgg(Cifar10Eve):
+    model_urls = {
+        'vgg7':
+        'https://github.com/rhhc/zxd_releases/releases/download/Re/cifar10-vggsmall-zxd-93.4-8943fa3.pth',
+    }
+    key_map = {
+        'clssifier.bias': 'classifier.bias',
+        'clssifier.weight': 'classifier.weight',
+        'conv1.0.weight': 'features.0.weight',
+        'conv1.1.bias': 'features.1.bias',
+        'conv1.1.num_batches_tracked': 'features.1.num_batches_tracked',
+        'conv1.1.running_mean': 'features.1.running_mean',
+        'conv1.1.running_var': 'features.1.running_var',
+        'conv1.1.weight': 'features.1.weight',
+        'conv2.0.weight': 'features.3.weight',
+        'conv2.1.bias': 'features.4.bias',
+        'conv2.1.num_batches_tracked': 'features.4.num_batches_tracked',
+        'conv2.1.running_mean': 'features.4.running_mean',
+        'conv2.1.running_var': 'features.4.running_var',
+        'conv2.1.weight': 'features.4.weight',
+        'conv3.1.weight': 'features.7.weight',
+        'conv3.2.bias': 'features.8.bias',
+        'conv3.2.num_batches_tracked': 'features.8.num_batches_tracked',
+        'conv3.2.running_mean': 'features.8.running_mean',
+        'conv3.2.running_var': 'features.8.running_var',
+        'conv3.2.weight': 'features.8.weight',
+        'conv4.0.weight': 'features.10.weight',
+        'conv4.1.bias': 'features.11.bias',
+        'conv4.1.num_batches_tracked': 'features.11.num_batches_tracked',
+        'conv4.1.running_mean': 'features.11.running_mean',
+        'conv4.1.running_var': 'features.11.running_var',
+        'conv4.1.weight': 'features.11.weight',
+        'conv5.1.weight': 'features.14.weight',
+        'conv5.2.bias': 'features.15.bias',
+        'conv5.2.num_batches_tracked': 'features.15.num_batches_tracked',
+        'conv5.2.running_mean': 'features.15.running_mean',
+        'conv5.2.running_var': 'features.15.running_var',
+        'conv5.2.weight': 'features.15.weight',
+        'conv6.0.weight': 'features.17.weight',
+        'conv6.1.bias': 'features.18.bias',
+        'conv6.1.num_batches_tracked': 'features.18.num_batches_tracked',
+        'conv6.1.running_mean': 'features.18.running_mean',
+        'conv6.1.running_var': 'features.18.running_var',
+        'conv6.1.weight': 'features.18.weight',
+    }
+
     def __init__(
         self,
         node: str = "IfNode",
-        node_kwargs: Dict[str, Any] = {},
+        node_kwargs: Dict[str, Any] = {
+            "voltage_threshold": 0.5,
+            "time_independent": True,
+            "requires_upgrade": True,
+        },
         quan: str = "SteQuan",
-        quan_kwargs: Dict[str, Any] = {},
+        quan_kwargs: Dict[str, Any] = {
+            "max_bit_width": 8,
+            "requires_upgrade": True,
+        },
         encoder: str = "RateEncoder",
-        encoder_kwargs: Dict[str, Any] = {},
+        encoder_kwargs: Dict[str, Any] = {
+            "timesteps": 1,
+        },
     ):
-        super(Vgg, self).__init__()
-
+        super().__init__()
         node = getattr(eve.cores, node)
         quan = getattr(eve.cores, quan)
         encoder = getattr(eve.cores, encoder)
 
         self.encoder = encoder(**encoder_kwargs)
 
+        def build_cdt(state):
+            return nn.Sequential(
+                node(state=state, **node_kwargs),
+                quan(state=state, **quan_kwargs),
+            )
+
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(128),
         )
-        state = eve.cores.State(self.conv1)
-        self.cdt1 = nn.Sequential(
-            node(state=state, **node_kwargs),
-            quan(state=state, **quan_kwargs),
-        )
+        self.cdt1 = build_cdt(eve.cores.State(self.conv1))
 
         self.conv2 = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(128),
         )
-        state = eve.cores.State(self.conv2)
-        self.cdt2 = nn.Sequential(
-            node(state=state, **node_kwargs),
-            quan(state=state, **quan_kwargs),
-        )
+        self.cdt2 = build_cdt(eve.cores.State(self.conv2))
 
         self.conv3 = nn.Sequential(
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(256),
         )
-        state = eve.cores.State(self.conv3)
-        self.cdt3 = nn.Sequential(
-            node(state=state, **node_kwargs),
-            quan(state=state, **quan_kwargs),
-        )
+        self.cdt3 = build_cdt(eve.cores.State(self.conv3))
 
         self.conv4 = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(256),
         )
-        state = eve.cores.State(self.conv4)
-        self.cdt4 = nn.Sequential(
-            node(state=state, **node_kwargs),
-            quan(state=state, **quan_kwargs),
-        )
+        self.cdt4 = build_cdt(eve.cores.State(self.conv4))
 
         self.conv5 = nn.Sequential(
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(256, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512),
         )
-        state = eve.cores.State(self.conv5)
-        self.cdt5 = nn.Sequential(
-            node(state=state, **node_kwargs),
-            quan(state=state, **quan_kwargs),
-        )
+        self.cdt5 = build_cdt(eve.cores.State(self.conv5))
 
         self.conv6 = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(512),
         )
-        state = eve.cores.State(self.conv6)
-        self.cdt6 = nn.Sequential(
-            node(state=state, **node_kwargs),
-            quan(state=state, **quan_kwargs),
-        )
+        self.cdt6 = build_cdt(eve.cores.State(self.conv6))
 
         self.clssifier = nn.Linear(512 * 16, 10)
 
-    def forward(self, x):
+    def spiking_forward(self, x: Tensor) -> Tensor:
         encoder = self.encoder(x)
 
         conv1 = self.conv1(encoder)
@@ -172,20 +154,31 @@ class Vgg(eve.cores.Eve):
 
         return self.clssifier(cdt6)
 
+    def non_spiking_forward(self, x: Tensor) -> Tensor:
+        return self.spiking_forward(x)
 
-class EveCifar10Vgg(EveCifar10):
-    net = Vgg
     @property
     def max_neurons(self):
-        """Set this property while defining network
-        """
         return 512
 
     @property
-    def max_diff_states(self):
-        """Set this property while defining network
-        """
+    def max_states(self):
         return 2
 
-class TrainerCifar10Vgg(TrainerCifar10):
-    eve_cifar10 = EveCifar10Vgg
+    @property
+    def action_space(self) -> gym.spaces.Space:
+        return gym.spaces.Box(
+            low=0.0,
+            high=1.0,
+            shape=(self.max_neurons, ),
+            dtype=np.float32,
+        )
+
+    @property
+    def observation_space(self) -> gym.spaces.Space:
+        return gym.spaces.Box(
+            low=-1.0,
+            high=1.0,
+            shape=(self.max_neurons, self.max_states),
+            dtype=np.float32,
+        )

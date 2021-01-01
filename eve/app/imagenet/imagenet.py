@@ -7,27 +7,14 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from eve.app.trainer import ClsNet, Trainer
+from eve.app.common import ClsEve, BaseTrainer
 from gym import spaces
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import ImageNet
 
 
-class EveImageNet(ClsNet):
-    net = None
-
-    def __init__(
-        self,
-        max_timesteps: int = 1,
-        net_arch_kwargs: Dict[str, Any] = {},
-        optimizer_kwargs: Dict[str, Any] = {},
-        data_kwargs: Dict[str, Any] = {},
-    ):
-        assert self.net, "Valid network strcuture. {}".format(self.net)
-        super().__init__(self.net, max_timesteps, net_arch_kwargs,
-                         optimizer_kwargs, data_kwargs)
-
+class ImageNetEve(ClsEve):
     def prepare_data(self):
         # FIXME: check this code
         train_dataset = ImageNet(
@@ -59,19 +46,55 @@ class EveImageNet(ClsNet):
             ]),
         )
 
-class TrainerImageNet(Trainer):
-    eve_image_net = None
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+        return torch.optim.Adam(
+            self.torch_parameters(),
+            lr=1e-3,
+            betas=[0.9, 0.999],
+            eps=1e-8,
+            weight_decay=1e-6,
+            amsgrad=False,
+        )
 
-    def __init__(self,
-                 checkpoint_path: str,
-                 max_timesteps: int = 1,
-                 net_arch_kwargs: Dict[str, Any] = {},
-                 optimizer_kwargs: Dict[str, Any] = {},
-                 data_kwargs: Dict[str, Any] = {},
-                 upgrader_kwargs: Dict[str, Any] = {},
-                 **kwargs):
-        assert self.eve_image_net, "Invalid eve net work structure. {}".format(
-            self.eve_image_net)
-        super().__init__(self.eve_image_net, checkpoint_path, max_timesteps,
-                         net_arch_kwargs, optimizer_kwargs, data_kwargs,
-                         upgrader_kwargs, **kwargs)
+    def configure_upgraders(self) -> eve.upgrade.Upgrader:
+        return eve.upgrade.Upgrader(self.eve_parameters(), )
+
+    def configure_lr_scheduler(
+        self, optimizer: torch.optim.Optimizer
+    ) -> torch.optim.lr_scheduler._LRScheduler:
+        return torch.optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[
+                50 * len(self.train_dataset), 100 * len(self.train_dataset)
+            ],
+            gamma=0.1)
+    @property
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset,
+            batch_size=128,
+            shuffle=True,
+            num_workers=4,
+        )
+
+    @property
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.test_dataloader,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
+        )
+
+    @property
+    def valid_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.valid_dataloader,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
+        )
+
+
+class ImageNetTrainer(BaseTrainer):
+    pass

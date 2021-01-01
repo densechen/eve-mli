@@ -17,17 +17,17 @@ class Eve(Module):
 
     A natural extension of :class:`nn.Module`.
     The main features of Eve is:
-        1. torch_parameters(): returns the parameters optimized with gradient
-        2. eve_parameters(): returns the parameters upgraded with observation
-        3. all the eve_parameters is :class:`nn.Prameter` whose name ended with `_eve`.
-        3. eve_parameters.requires_grad indicates whether this parameter needed upgrade
-        4. eve_parameters.grad stores the observation of this parameter.
-        5. zero_obs() will clear the grad, i.e. observation of eve_parameters.
-        6. requires_upgrade_() will set the requires_grad of eve_parameters.
-        7. hidden_states(): returns the buffer, whose name is ended with `_hid`.
-        8. all hidden states will reset by :meth:`reset`.
-        9. all hidden states will not be saved along with weights.
-        10. spiking attribute indicate the Eve in spiking or non-spiking mode.
+        torch_parameters(): returns the parameters optimized with gradient
+        eve_parameters(): returns the parameters upgraded with observation
+        all the eve_parameters is :class:`nn.Prameter` whose name ended with `_eve`.
+        eve_parameters.requires_grad indicates whether this parameter needed upgrade
+        eve_parameters.grad stores the observation of this parameter.
+        zero_obs() will clear the grad, i.e. observation of eve_parameters.
+        requires_upgrade_() will set the requires_grad of eve_parameters.
+        hidden_states(): returns the buffer, whose name is ended with `_hid`.
+        all hidden states will reset by :meth:`reset`.
+        all hidden states will not be saved along with weights.
+        spiking attribute indicate the Eve in spiking or non-spiking mode.
     """
 
     # indicates spiking mode or non-spiking mode.
