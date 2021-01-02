@@ -95,24 +95,6 @@ class mnist(ClsEve):
         return 8
 
     @property
-    def action_space(self) -> gym.spaces.Space:
-        return gym.spaces.Box(
-            low=0.0,
-            high=1.0,
-            shape=(self.max_neurons, ),
-            dtype=np.float32,
-        )
-
-    @property
-    def observation_space(self) -> gym.spaces.Space:
-        return gym.spaces.Box(
-            low=-1.0,
-            high=1.0,
-            shape=(self.max_neurons, self.max_states),
-            dtype=np.float32,
-        )
-
-    @property
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
             self.train_dataset,

@@ -12,6 +12,7 @@ from eve.app.imagenet.imagenet import ImageNetEve, ImageNetTrainer
 from gym import spaces
 from torch import Tensor
 import gym
+from eve.app.common.eve_space import EveBox
 
 
 class AlexNet(ImageNetEve):
@@ -153,24 +154,6 @@ class AlexNet(ImageNetEve):
     @property
     def max_states(self):
         return 8
-
-    @property
-    def action_space(self) -> gym.spaces.Space:
-        return gym.spaces.Box(
-            low=0.0,
-            high=1.0,
-            shape=(self.max_neurons, ),
-            dtype=np.float32,
-        )
-
-    @property
-    def observation_space(self) -> gym.spaces.Space:
-        return gym.spaces.Box(
-            low=-1.0,
-            high=1.0,
-            shape=(self.max_neurons, self.max_states),
-            dtype=np.float32,
-        )
 
 
 class ImageNetAlexNetTrainer(ImageNetTrainer):

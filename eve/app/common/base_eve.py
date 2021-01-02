@@ -16,7 +16,8 @@ from eve.cores.eve import Eve
 from eve.upgrade import Upgrader
 from gym import spaces
 from torch import Tensor
-
+import gym
+from eve.app.common.eve_space import EveBox
 
 class BaseEve(eve.cores.Eve, ABC):
     """Defines a unified interface for different tasks.
@@ -152,3 +153,30 @@ class ClsEve(BaseEve):
             "loss": F.cross_entropy(y_hat, y),
             "acc": self._top_one_accuracy(y_hat, y),
         }
+
+
+    @property
+    def action_space(self) -> gym.spaces.Space:
+        return EveBox(
+            low=0.0,
+            high=1.0,
+            neurons=self.max_neurons,
+            states=self.max_states,
+            eve_shape=(self.max_neurons, 1),
+            shape=(1, ),
+            dtype=np.float32,
+        )
+
+    @property
+    def observation_space(self) -> gym.spaces.Space:
+        return EveBox(
+            low=np.array([0, 0, 0, 0, 0, 0, 0, -10]),
+            high=np.array([1, 1, 1, 1, 1, 1, 1, 10]),
+            static_obs_num=6,
+            dynamic_obs_num=2,
+            neurons=self.max_neurons,
+            states=self.max_states,
+            eve_shape=(self.max_neurons, self.max_states),
+            shape=(self.max_states, ),
+            dtype=np.float32,
+        )

@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from eve.app.cifar10.cifar10 import Cifar10Eve, Cifar10Trainer
 from torch import Tensor
+from eve.app.common.eve_space import EveBox
 
 
 class vgg(Cifar10Eve):
@@ -167,37 +168,6 @@ class vgg(Cifar10Eve):
     @property
     def max_states(self):
         return 8
-
-    @property
-    def action_space(self) -> gym.spaces.Space:
-        action_space = gym.spaces.Box(
-            low=0.0,
-            high=1.0,
-            shape=(1, ),
-            dtype=np.float32,
-        )
-        action_space.max_neurons = self.max_neurons
-        action_space.max_states = self.max_states
-        action_space.eve_shape = (self.max_neurons, 1)
-        return action_space
-
-    @property
-    def observation_space(self) -> gym.spaces.Space:
-        observation_space = gym.spaces.Box(
-            low=-1.0,
-            high=1.0,
-            shape=(self.max_states, ),  # used for network defination
-            dtype=np.float32,
-        )
-        # add extra Arguments
-        observation_space.static_obs_num = 6
-        observation_space.dynamic_obs_num = 2
-        observation_space.max_neurons = self.max_neurons
-        observation_space.max_states = self.max_states
-        observation_space.eve_shape = (
-            self.max_neurons, self.max_states
-        )  # used for env wraper, if none, shape will be used.
-        return observation_space
 
 
 class Cifar10VggTrainer(Cifar10Trainer):
