@@ -67,7 +67,6 @@ class State(object):
 
         # record self layer index
         self.layer_index = copy.deepcopy(State.layer_index)
-        print("Layer index {}".format(self.layer_index))
 
         # update global layer index
         State.layer_index += 1

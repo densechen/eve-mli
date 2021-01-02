@@ -67,6 +67,8 @@ class BaseTrainer(gym.Env, ABC):
     # the baseline acc used for computing reward
     baseline_acc: float
     fintune_acc: float
+    # cache the finetune model in RAM to speed up reloading
+    finetune_model_param_buf: dict
 
     def __init__(
         self,
@@ -116,11 +118,18 @@ class BaseTrainer(gym.Env, ABC):
         print(f"set baseline acc as {self.baseline_acc}")
         self.fintune_acc = copy.deepcopy(self.baseline_acc)
 
-        # save the initial model to checkpoint
-        self.save_checkpoint()
+        # cache the initial model to RAM
+        self.cache_checkpoint_to_RAM()
 
         self.steps = 0
         self.eval_steps = eval_steps
+
+    def cache_checkpoint_to_RAM(self):
+        self.finetune_model_param_buf = copy.deepcopy(
+            self.eve_net.state_dict())
+
+    def load_cached_checkpoint_from_RAM(self):
+        self.eve_net.load_state_dict(self.finetune_model_param_buf)
 
     def load_checkpoint(self) -> bool:
         try:
@@ -143,6 +152,10 @@ class BaseTrainer(gym.Env, ABC):
         print(f"bit_width reset to {self.max_bits}.")
 
     def load_pretrained(self) -> bool:
+        """loads pretained model.
+        Returns:
+            a flag to indicate sucess or not.
+        """
         try:
             self.eve_net.load_state_dict(
                 th.load(self.pretrained,
@@ -366,7 +379,7 @@ class BaseTrainer(gym.Env, ABC):
         garbage collected or when the program exits.
         """
         # load best model first
-        self.load_checkpoint()
+        self.load_cached_checkpoint_from_RAM()
 
         info = self.test_one_epoch()
         if info["acc"] > self.baseline_acc:
@@ -402,9 +415,9 @@ class BaseTrainer(gym.Env, ABC):
             if info["acc"] > self.fintune_acc:
                 self.fintune_acc = info["acc"]
                 # save the model
-                self.save_checkpoint()
+                self.cache_checkpoint_to_RAM()
 
-        self.load_checkpoint()
+        self.load_cached_checkpoint_from_RAM()
 
         self.upgrader.zero_obs()
         self.train_one_step()

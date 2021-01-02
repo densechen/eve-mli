@@ -38,7 +38,7 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
     """
     ckpt = torch.load(legacy_checkpoint, map_location=map_location)
     if "state_dict" not in ckpt:
-        print(f"{legacy_checkpoint} does not contains a 'state_dict' key"
+        print(f"{legacy_checkpoint} does not contains a 'state_dict' key "
               "try to take the whole checkpoint as state_dict.")
     else:
         ckpt = ckpt["state_dict"]

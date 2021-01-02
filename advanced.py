@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--algo",
     help="RL Algorithm used to NAS searching.",
-    default="ppo",
+    default="ddpg",
     type=str,
     required=False,
     choices=list(ALGOS.keys()),
@@ -27,7 +27,7 @@ parser.add_argument(
     help="The environment used to wrapper trainer."
     "Different environments will apply different"
     "reward functions and interactive steps.",
-    default="mnist-v0",
+    default="cifar10vgg-v0",
     type=str,
     required=False,
 )
@@ -215,7 +215,7 @@ args.env_kwargs = dict(
     root_dir="/media/densechen/data/code/eve-mli/examples/logs",
     data_root="/media/densechen/data/dataset",
     pretrained=
-    "/media/densechen/data/code/eve-mli/examples/checkpoint/mnist.pth",
+    "/media/densechen/data/code/eve-mli/examples/checkpoint/eve-cifar10-vggsmall-zxd-93.4-8943fa3.pth",
     device="auto",
     eval_steps=1000,
 )

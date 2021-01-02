@@ -238,13 +238,13 @@ class ImageNetVggmTrainer(ImageNetTrainer):
         super().__init__(vggm, eve_net_kwargs, max_bits, root_dir, data_root,
                          pretrained, device)
 
-    def load_pretrained(self):
+    def load_pretrained(self) -> bool:
         load_flag = super().load_pretrained()
         if not load_flag:
             print(f"download the pretrained from {self.eve_net.model_urls}.")
             print(
                 f"then, use {self.eve_net.key_map} to load pretrained models.")
-
+        return load_flag
 
 # register trainer here.
 from gym.envs.registration import register

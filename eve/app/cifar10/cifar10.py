@@ -69,7 +69,7 @@ class Cifar10Eve(ClsEve):
     @property
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.test_dataloader,
+            self.test_dataset,
             batch_size=128,
             shuffle=False,
             num_workers=4,
@@ -78,7 +78,7 @@ class Cifar10Eve(ClsEve):
     @property
     def valid_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.valid_dataloader,
+            self.valid_dataset,
             batch_size=128,
             shuffle=False,
             num_workers=4,

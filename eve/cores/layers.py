@@ -17,7 +17,7 @@ class Dropout(Eve):
         if p < 0 or p > 1:
             raise ValueError("p must be in (0, 1)")
 
-        self.register_hidden_state("mask", None)
+        self.register_hidden_state("mask_hid", None)
         self.p = p
 
     def _reset(self, set_to_none: bool = False) -> None:
@@ -31,14 +31,14 @@ class Dropout(Eve):
     def drop_mask(self, x: Tensor):
         """Generates a new drop mask.
         """
-        if self.mask is None:
-            self.mask = F.dropout(torch.ones_like(x),
+        if self.mask_hid is None:
+            self.mask_hid = F.dropout(torch.ones_like(x),
                                   self.p,
                                   training=self.training)
 
     def spiking_forward(self, x: Tensor) -> Tensor:
         self.drop_mask(x)
-        return x * self.mask
+        return x * self.mask_hid
 
     def non_spiking_forward(self, x: Tensor) -> Tensor:
         return F.dropout(x, self.p, training=self.training)
@@ -49,8 +49,8 @@ class Dropout2d(Dropout):
         super().__init__(p)
 
     def drop_mask(self, x: Tensor):
-        if self.mask is None:
-            self.mask = F.dropout2d(torch.ones_like(x),
+        if self.mask_hid is None:
+            self.mask_hid = F.dropout2d(torch.ones_like(x),
                                     self.p,
                                     training=self.training)
 
