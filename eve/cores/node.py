@@ -91,7 +91,16 @@ class Node(Eve):
         if not self.requires_upgrade or not self.spiking:
             return None
         else:
-            return torch.stack([self.state.l1_norm, self.state.fire_rate],
+            return torch.stack([
+                self.state.k,
+                self.state.feat_out,
+                self.state.feat_in,
+                self.state.kernel_size,
+                self.state.stride,
+                self.state.param_num,
+                self.state.l1_norm,
+                self.state.fire_rate,
+            ],
                                dim=-1)
 
     def _reset(self, set_to_none: bool = False) -> None:

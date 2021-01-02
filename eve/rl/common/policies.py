@@ -9,6 +9,7 @@ import gym
 import numpy as np
 import torch as th
 from torch import nn
+from eve.cores import Eve
 
 from eve.rl.common.distributions import (
     BernoulliDistribution,
@@ -28,7 +29,7 @@ from eve.rl.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 # pylint: disable=no-member
 
 
-class BaseModel(nn.Module, ABC):
+class BaseModel(Eve, ABC):
     """
     The base model object: makes predictions in response to observations.
 
@@ -661,6 +662,7 @@ class ActorCriticPolicy(BasePolicy):
         log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)
         return values, log_prob, distribution.entropy()
+
 
 class ContinuousCritic(BaseModel):
     """

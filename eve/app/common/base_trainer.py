@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import (Any, Dict, Generator, Iterable, List, Optional, Tuple,
                     Type, Union)
-
+import copy
 import eve
 import gym
 import numpy as np
@@ -38,6 +38,7 @@ class BaseTrainer(gym.Env, ABC):
         device (str): device on which the code should run.
             By default, it will try to use a Cuda compatible device and fallback
             to cpu if it is not possible.
+        eval_steps (int): evaluation steps
     """
     # eve_net will define the network architecture and load dataset at the same time.
     eve_net: BaseEve
@@ -65,6 +66,7 @@ class BaseTrainer(gym.Env, ABC):
 
     # the baseline acc used for computing reward
     baseline_acc: float
+    fintune_acc: float
 
     def __init__(
         self,
@@ -75,6 +77,7 @@ class BaseTrainer(gym.Env, ABC):
         data_root: str = ".",
         pretrained: str = "",
         device: Union[th.device, str] = "auto",
+        eval_steps: int = 100,
     ):
         self.device = get_device(device)
         print(f"Using {self.device} device")
@@ -111,9 +114,13 @@ class BaseTrainer(gym.Env, ABC):
         else:
             self.baseline_acc = 0.0
         print(f"set baseline acc as {self.baseline_acc}")
+        self.fintune_acc = copy.deepcopy(self.baseline_acc)
 
         # save the initial model to checkpoint
         self.save_checkpoint()
+
+        self.steps = 0
+        self.eval_steps = eval_steps
 
     def load_checkpoint(self) -> bool:
         try:
@@ -294,7 +301,7 @@ class BaseTrainer(gym.Env, ABC):
         # reward is current_acc - baseline_acc
         return info["acc"] - self.baseline_acc - rate * 0.1
 
-    def fetch_obs(self) -> List[np.ndarray, float, float]:
+    def fetch_obs(self) -> List[np.ndarray]:
         """
         Returns:
             an obs state as np.ndarray, which has been paaded to [max_neurons, max_states],
@@ -321,9 +328,9 @@ class BaseTrainer(gym.Env, ABC):
                 self.eve_net.max_neurons - neurons,
             ]
             obs = F.pad(obs, pad=padding)
-            return obs.cpu().numpy().astype(np.float32), neurons, states
+            return obs.cpu().numpy().astype(np.float32)
         else:
-            return None, None, None
+            return None
 
     def step(self, action: np.ndarray):
         """Takes in an action, returns a new observation states.
@@ -345,17 +352,12 @@ class BaseTrainer(gym.Env, ABC):
         reward = self.reward()
 
         # current_obs
-        obs, neurons, states = self.fetch_obs()
-
-        info = {
-            "neurons": neurons,
-            "states": states,
-        }
+        obs = self.fetch_obs()
 
         if obs is not None:
-            return obs, reward, False, info
+            return obs, reward, False, {}
         else:
-            return obs, reward, True, info
+            return obs, reward, True, {}
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
@@ -392,14 +394,17 @@ class BaseTrainer(gym.Env, ABC):
             obs: np.ndarray, the initial observation of trainer.
         """
         # do a fast valid
-        info = self.valid_one_epoch()
-        if info["acc"] > self.baseline_acc:
-            self.baseline_acc = info["acc"]
-            # save the model
-            self.save_checkpoint()
-        else:
-            # reload last model
-            self.load_checkpoint()
+        self.steps += 1
+        if self.steps % self.eval_steps == 0:
+            self.steps = 0
+            # eval model
+            info = self.valid_one_epoch()
+            if info["acc"] > self.fintune_acc:
+                self.fintune_acc = info["acc"]
+                # save the model
+                self.save_checkpoint()
+
+        self.load_checkpoint()
 
         self.upgrader.zero_obs()
         self.train_one_step()

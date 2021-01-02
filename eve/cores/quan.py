@@ -84,7 +84,17 @@ class Quan(Eve):
         if not self.requires_upgrade:
             return None
         else:
-            return torch.stack([self.state.l1_norm, self.state.kl_div], dim=-1)
+            return torch.stack([
+                self.state.k,
+                self.state.feat_out,
+                self.state.feat_in,
+                self.state.kernel_size,
+                self.state.stride,
+                self.state.param_num,
+                self.state.l1_norm,
+                self.state.kl_div,
+            ],
+                               dim=-1)
 
     def _reset(self, set_to_none: bool = False) -> None:
         """Resets current layer's hidden state to None.

@@ -76,6 +76,9 @@ class vgg(Cifar10Eve):
         },
     ):
         super().__init__()
+        # reset the global state
+        eve.cores.State.reset_global_state()
+
         node = getattr(eve.cores, node)
         quan = getattr(eve.cores, quan)
         encoder = getattr(eve.cores, encoder)
@@ -163,7 +166,7 @@ class vgg(Cifar10Eve):
 
     @property
     def max_states(self):
-        return 2
+        return 8
 
     @property
     def action_space(self) -> gym.spaces.Space:
@@ -186,29 +189,31 @@ class vgg(Cifar10Eve):
 
 class Cifar10VggTrainer(Cifar10Trainer):
     def __init__(
-            self,
-            eve_net_kwargs: dict = {
-                "node": "IfNode",
-                "node_kwargs": {
-                    "voltage_threshold": 0.5,
-                    "time_independent": True,
-                    "requires_upgrade": True,
-                },
-                "quan": "SteQuan",
-                "quan_kwargs": {
-                    "max_bit_width": 8,
-                    "requires_upgrade": True,
-                },
-                "encoder": "RateEncoder",
-                "encoder_kwargs": {
-                    "timesteps": 1,
-                }
+        self,
+        eve_net_kwargs: dict = {
+            "node": "IfNode",
+            "node_kwargs": {
+                "voltage_threshold": 0.5,
+                "time_independent": True,
+                "requires_upgrade": True,
             },
-            max_bits: int = 8,
-            root_dir: str = ".",
-            data_root: str = ".",
-            pretrained: str = None,
-            device: str = "auto"):
+            "quan": "SteQuan",
+            "quan_kwargs": {
+                "max_bit_width": 8,
+                "requires_upgrade": True,
+            },
+            "encoder": "RateEncoder",
+            "encoder_kwargs": {
+                "timesteps": 1,
+            }
+        },
+        max_bits: int = 8,
+        root_dir: str = ".",
+        data_root: str = ".",
+        pretrained: str = None,
+        device: str = "auto",
+        eval_steps: int = 100,
+    ):
         super().__init__(vgg, eve_net_kwargs, max_bits, root_dir, data_root,
                          pretrained, device)
 
@@ -249,4 +254,5 @@ register(id="cifar10vgg-v0",
              "data_root": ".",
              "pretrained": None,
              "device": "auto",
+             "eval_steps": 100,
          })
