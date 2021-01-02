@@ -231,6 +231,8 @@ class ExperimentManager(object):
         if len(self.callbacks) > 0:
             kwargs["callback"] = self.callbacks
 
+        # model.learn(self.n_timesteps, **kwargs)
+
         try:
             model.learn(self.n_timesteps, **kwargs)
         except KeyboardInterrupt:

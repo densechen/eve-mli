@@ -57,7 +57,10 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
     :return:
     """
     if isinstance(observation_space, spaces.Box):
-        return observation_space.shape
+        if hasattr(observation_space, "eve_shape"):
+            return observation_space.eve_shape
+        else:
+            return observation_space.shape
     elif isinstance(observation_space, spaces.Discrete):
         # Observation is an int
         return (1, )

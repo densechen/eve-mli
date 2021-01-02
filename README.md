@@ -59,3 +59,4 @@ The project remains in development. We encourage more volunteers to come togethe
 - Add hardware speed up support to eve-mli
   - currently, eve-Mali is purely based on python code, in the future, we will use tools like TVM to improve the performance.
 - A more detailed user guid is on the way.
+- Go though rl code.

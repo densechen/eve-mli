@@ -41,9 +41,14 @@ class FlattenExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.Space):
         super(FlattenExtractor,
               self).__init__(observation_space,
-                             get_flattened_obs_dim(observation_space))
-        self.flatten = nn.Flatten()
-
+                             get_flattened_obs_dim(observation_space)) 
+        # flatten start in dim 2. 
+        # the input is [batch_size, neurons, states]
+        if hasattr(observation_space, "eve_shape"):
+            self.flatten = nn.Flatten(2)
+        else:
+            self.flatten = nn.Flatten(1)
+    
     def forward(self, observations: th.Tensor) -> th.Tensor:
         return self.flatten(observations)
 

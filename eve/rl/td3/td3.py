@@ -155,10 +155,17 @@ class TD3(OffPolicyAlgorithm):
                 # Compute the next Q-values: min over all critics targets
                 next_q_values = th.cat(self.critic_target(
                     replay_data.next_observations, next_actions),
-                                       dim=1)
-                next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
-                target_q_values = replay_data.rewards + (
-                    1 - replay_data.dones) * self.gamma * next_q_values
+                                       dim=-1)
+                next_q_values, _ = th.min(next_q_values, dim=-1, keepdim=True)
+
+                # make it suit for eve
+                if replay_data.rewards.dim() < next_q_values.dim():
+                    rewards = replay_data.rewards.unsqueeze(1)
+                if replay_data.dones.dim() < next_q_values.dim():
+                    dones = replay_data.dones.unsqueeze(1)
+
+                target_q_values = rewards + (
+                    1 - dones) * self.gamma * next_q_values
 
             # Get current Q-values estimates for each critic network
             current_q_values = self.critic(replay_data.observations,

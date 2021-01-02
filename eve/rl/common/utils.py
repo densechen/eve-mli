@@ -229,7 +229,15 @@ def is_vectorized_observation(observation: np.ndarray,
     :return: whether the given observation is vectorized or not
     """
     if isinstance(observation_space, gym.spaces.Box):
-        if observation.shape == observation_space.shape:
+        # make adaptive to eve format
+        if hasattr(observation_space, 'eve_shape'
+                   ) and observation_space.eve_shape == observation.shape:
+            return False
+        elif hasattr(
+                observation_space, 'eve_shape'
+        ) and observation_space.eve_shape == observation.shape[1:]:
+            return True
+        elif observation.shape == observation_space.shape:
             return False
         elif observation.shape[1:] == observation_space.shape:
             return True

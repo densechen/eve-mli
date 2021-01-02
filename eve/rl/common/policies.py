@@ -153,7 +153,7 @@ class BaseModel(Eve, ABC):
         :return:"""
         for param in self.parameters():
             return param.device
-        return get_device("cpu")
+        return get_device("auto")
 
     def save(self, path: str) -> None:
         """
@@ -286,8 +286,11 @@ class BasePolicy(BaseModel):
         vectorized_env = is_vectorized_observation(observation,
                                                    self.observation_space)
 
-        observation = observation.reshape((-1, ) +
-                                          self.observation_space.shape)
+        shape = self.observation_space.shape if not hasattr(
+            self.observation_space,
+            "eve_shape") else self.observation_space.eve_shape
+
+        observation = observation.reshape((-1, ) + shape)
 
         observation = th.as_tensor(observation).to(self.device)
         with th.no_grad():
@@ -727,7 +730,7 @@ class ContinuousCritic(BaseModel):
         # when the features_extractor is shared with the actor
         with th.set_grad_enabled(not self.share_features_extractor):
             features = self.extract_features(obs)
-        qvalue_input = th.cat([features, actions], dim=1)
+        qvalue_input = th.cat([features, actions], dim=-1)
         return tuple(q_net(qvalue_input) for q_net in self.q_networks)
 
     def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
@@ -738,7 +741,7 @@ class ContinuousCritic(BaseModel):
         """
         with th.no_grad():
             features = self.extract_features(obs)
-        return self.q_networks[0](th.cat([features, actions], dim=1))
+        return self.q_networks[0](th.cat([features, actions], dim=-1))
 
 
 def create_sde_features_extractor(

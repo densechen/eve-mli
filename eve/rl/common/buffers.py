@@ -128,7 +128,7 @@ class BaseBuffer(ABC):
         :return:
         """
         if copy:
-            return th.tensor(array).to(self.device) # pylint: disable=not-callable
+            return th.tensor(array).to(self.device)  # pylint: disable=not-callable
         return th.as_tensor(array).to(self.device)
 
     @staticmethod
@@ -195,9 +195,14 @@ class ReplayBuffer(BaseBuffer):
             self.next_observations = np.zeros(
                 (self.buffer_size, self.n_envs) + self.obs_shape,
                 dtype=observation_space.dtype)
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim),
-            dtype=action_space.dtype)
+        if hasattr(self.action_space, "eve_shape"):
+            action_shape = (
+                self.buffer_size,
+                self.n_envs,
+            ) + self.action_space.eve_shape
+        else:
+            action_shape = (self.buffer_size, self.n_envs, self.action_dim)
+        self.actions = np.zeros(action_shape, dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs),
                                 dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs),
@@ -332,8 +337,15 @@ class RolloutBuffer(BaseBuffer):
     def reset(self) -> None:
         self.observations = np.zeros(
             (self.buffer_size, self.n_envs) + self.obs_shape, dtype=np.float32)
+        if hasattr(self.action_space, "eve_shape"):
+            action_shape = (
+                self.buffer_size,
+                self.n_envs,
+            ) + self.action_space.eve_shape
+        else:
+            action_shape = (self.buffer_size, self.n_envs, self.action_dim)
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+            (self.buffer_size, self.n_envs, action_shape), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs),
                                 dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs),

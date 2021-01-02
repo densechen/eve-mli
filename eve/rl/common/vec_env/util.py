@@ -81,6 +81,11 @@ def obs_space_info(
     dtypes = {}
     for key, box in subspaces.items():
         keys.append(key)
-        shapes[key] = box.shape
+        # add support to specified shape
+        if hasattr(box, "eve_shape"):
+            shapes[key] = box.eve_shape
+        else:
+            shapes[key] = box.shape
+
         dtypes[key] = box.dtype
     return keys, shapes, dtypes

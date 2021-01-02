@@ -22,6 +22,7 @@ from eve.rl.common.utils import (get_device, get_schedule_fn, set_random_seed,
 from torch.optim.lr_scheduler import _LRScheduler
 import torch.nn.functional as F
 
+
 # pylint: disable=no-member
 class BaseTrainer(gym.Env, ABC):
     """
@@ -367,9 +368,9 @@ class BaseTrainer(gym.Env, ABC):
         obs = self.fetch_obs()
 
         if obs is not None:
-            return obs, reward, False, {}
+            return obs, reward, False, {"max_neurons": 1}
         else:
-            return obs, reward, True, {}
+            return obs, reward, True, {"max_neurons": 1}
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
@@ -422,5 +423,3 @@ class BaseTrainer(gym.Env, ABC):
         self.upgrader.zero_obs()
         self.train_one_step()
         return self.fetch_obs()
-
-
