@@ -8,16 +8,15 @@ from typing import List
 from eve.cores.utils import _align_dims
 import copy
 
-
 # pylint: disable=no-member
 # pylint: disable=not-callable
 class State(object):
     """The class contains various states computing methods.
 
-    We can classify different states into two categories, inner and outter.
+    We can classify different states into two categories, inner and outer.
     The inner state is computed without the necessary of other input data, 
     and will be decorated with @property.
-    The outter one is computed depend on the input data, and a callable
+    The outer one is computed depend on the input data, and a callable
     function is designed to implement it.
 
     Args:
@@ -29,7 +28,7 @@ class State(object):
     .. note::
 
         Do not succeed :class:`nn.Module` or :class:`cores.Eve`, any parameter 
-        of this class is a copy of other existing module and only used for 
+        of this class is a copy of another existing module and only used for 
         computing related object state. The weight of input module cannot be 
         modified in this layer.
         All the state is with shape [neurons,]
@@ -233,3 +232,5 @@ class State(object):
     def fire_rate_fn(self, x: Tensor, fire: Tensor):
         dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[self.filter_type]
         self._fire_rate = (fire > 0.0).float().mean(dim, keepdim=False)
+
+

@@ -11,7 +11,6 @@ from torch.nn import Module, Parameter
 
 upgrade_fn = OrderedDict()
 
-
 class Eve(Module):
     """Base class for Eve.
 
@@ -90,7 +89,7 @@ class Eve(Module):
         """Register an upgrade fn to eve.cores.eve.upgrade_fn dict.
 
         The upgrade_fn will be used in :class:`eve.Upgrader`.
-        It should takes (param, action, obs), and modified param via in-place 
+        It should take (param, action, obs), and modified param via in-place 
         operation.
         """
         if key in upgrade_fn:
@@ -125,7 +124,7 @@ class Eve(Module):
 
             In any case, if you want to use a optimizer to update the weights,
             use this function instead of :meth:`self.parameters()`.
-            The latter will returned all parameters, including eve parameters, 
+            The latter will return all parameters, including eve parameters, 
             which may cause errors while training.
         """
         for _, param in self.named_torch_parameters(recurse=recurse):
@@ -284,7 +283,7 @@ class Eve(Module):
         r"""Attaches static and dynamic observation states to eve parameters.
         
         This function will be register as a forward hook automatically.
-        This function cannot modified both input and output values.
+        This function cannot modify both input and output values.
     
         Args:
             input (Tensor): the input of this layer.
@@ -293,17 +292,17 @@ class Eve(Module):
         .. note::
 
             At spiking neural network, the network will be repeat many times, 
-            and the observation states will be changed at every time. It need 
+            and the observation states will be changed at every time. It needs 
             a simple but effect method to average the observation states over time.
-            Here, we adapt an move exp average strategy to the observation,
+            Here, we adapt a move exp average strategy to the observation,
             which is 
             :math:`\text{obs}_{t} = \text{obs}_{t-1} \times 0.5 + \text{obs}_{t} \times 0.5`
         """
         obs = cls.obs()
         if obs is None:
             return
-        # NOTE: observation states is special for current layer eve parameters.
-        # do not apply to sub-module or other module. so, set resurse=False.
+        # NOTE: observation states are special for current layer eve parameters.
+        # do not apply to sub-module or another module. so, set recurse=False.
         for k, v in cls.named_eve_parameters(recurse=False):
             # only attach to the eve parameters needed upgrading.
             if v is None or not v.requires_grad:
@@ -317,3 +316,4 @@ class Eve(Module):
             else:
                 raise ValueError("Cannot assign {} to {}".format(
                     torch.typename(obs), k))
+

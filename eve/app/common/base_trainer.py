@@ -22,7 +22,6 @@ from eve.rl.common.utils import (get_device, get_schedule_fn, set_random_seed,
 from torch.optim.lr_scheduler import _LRScheduler
 import torch.nn.functional as F
 
-
 # pylint: disable=no-member
 class BaseTrainer(gym.Env, ABC):
     """
@@ -106,7 +105,7 @@ class BaseTrainer(gym.Env, ABC):
         # load pretrained model
         load_flag = self.load_pretrained()
         # NOTE: you should load the pretrained model first then set the max bits
-        # otherwise, the pretrained model may contains a different max bits,
+        # otherwise, the pretrained model may contains a different max bit,
         # which is not you wanted.
         self.set_max_bits()
 
@@ -152,9 +151,9 @@ class BaseTrainer(gym.Env, ABC):
         print(f"bit_width reset to {self.max_bits}.")
 
     def load_pretrained(self) -> bool:
-        """loads pretained model.
+        """loads pertained model.
         Returns:
-            a flag to indicate sucess or not.
+            a flag to indicate success or not.
         """
         try:
             self.eve_net.load_state_dict(
@@ -317,7 +316,7 @@ class BaseTrainer(gym.Env, ABC):
     def fetch_obs(self) -> List[np.ndarray]:
         """
         Returns:
-            an obs state as np.ndarray, which has been paaded to [max_neurons, max_states],
+            an obs state as np.ndarray, which has been padded to [max_neurons, max_states],
             the actually neurons and states of this obs.
         """
         if self._obs_gen is None:
@@ -346,14 +345,14 @@ class BaseTrainer(gym.Env, ABC):
             return None
 
     def step(self, action: np.ndarray):
-        """Takes in an action, returns a new observation states.
+        """Takes in an action, returns a new observation state.
 
         Args:
             action: the action applied to network.
         
         Returns:
             observation (np.ndarray): agent's observation states for current trainer. [neurons times n] or [1 times n].
-            reward (float): amout of reward returned after previous action.
+            reward (float): amount of reward returned after previous action.
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results.
             info (dict): contains auxiliary diagnostic information (helpful for debugging and sometimes learning).
 
@@ -422,3 +421,5 @@ class BaseTrainer(gym.Env, ABC):
         self.upgrader.zero_obs()
         self.train_one_step()
         return self.fetch_obs()
+
+

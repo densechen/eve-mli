@@ -1,14 +1,15 @@
 """Defines utils for dealing with legacy usage for Eve, such as load weight 
 from torch module.
 """
+from collections import OrderedDict
+from pprint import pprint
+from typing import Union
+
 import eve
 import eve.cores
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pprint import pprint
-from collections import OrderedDict
-from typing import Union
 
 
 def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
@@ -20,9 +21,9 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
 
     Args:
         m (eve.cores.Eve): the Eve model converted from legacy model.
-            NOTE: the parameter defined order must keep the same with lagecy one.
+            NOTE: the parameter defined order must keep the same with legacy one.
         legacy_checkpoint (str): the legacy model path. must contain the key "state_dict".
-        eve_checkpoint (str): the new checkpoint to save coverted model weight.
+        eve_checkpoint (str): the new checkpoint to save converted model weight.
             must contains the key "state_dict".
         key_map (OrderedDict or str): eve_ckpt[k] = legacy_ckpt[key_map[k]]
             key_map[k] not in legacy_ckpt, just skip.
@@ -47,7 +48,7 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
     m_state_dict = m.state_dict()
 
     if key_map is None:
-        print("Please specify a kep map between eve and legacy.\n"
+        print("Please specify a key map between eve and legacy.\n"
               "You should pick up the paired key in eve and legacy "
               "and build a dict like: {'eve_key': 'legacy_key'}, "
               "then directly skip the unpaired one.\n"
@@ -73,3 +74,4 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
     # save it so that next time, you can directly load checkpoint from it.
     torch.save({"state_dict": m.state_dict()}, eve_checkpoint)
     print(f"new checkpoint has been saved in {eve_checkpoint}.")
+

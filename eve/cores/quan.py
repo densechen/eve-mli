@@ -13,7 +13,6 @@ from eve.cores.eve import Eve
 from eve.cores.state import State
 from eve.cores.utils import _align_dims
 
-
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 class Quan(Eve):
@@ -115,7 +114,6 @@ class Quan(Eve):
 
         return quan
 
-
 def quantize(input: Tensor,
              alpha: Tensor,
              zero_point: Tensor,
@@ -128,10 +126,8 @@ def quantize(input: Tensor,
     output = torch.where(output > positive, positive, output)
     return output
 
-
 def dequantize(input: Tensor, alpha: Tensor, zero_point: Tensor) -> Tensor:
     return (input - zero_point) * alpha
-
 
 class ste(Function):
     """SurrogateFunction 
@@ -148,7 +144,6 @@ class ste(Function):
     @staticmethod
     def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
         return grad_output, None, None
-
 
 class lsq(Function):
     """
@@ -194,7 +189,6 @@ class lsq(Function):
         # HACK: alpha must be positive.
         return grad_x, grad_alpha, None
 
-
 def ln_error(x: Tensor, alpha: Tensor, bit_width: Tensor,
              regular: str) -> Tensor:
     quan_x = quantize(x, alpha, torch.zeros_like(alpha), 2**bit_width - 1,
@@ -210,7 +204,6 @@ def ln_error(x: Tensor, alpha: Tensor, bit_width: Tensor,
         if dims == 1:
             error = error.mean(dim=i, keepdim=True)
     return error
-
 
 def update_running_alpha(error: Tensor, lower_error: Tensor,
                          upper_error: Tensor) -> List[Tensor]:
@@ -234,7 +227,6 @@ def update_running_alpha(error: Tensor, lower_error: Tensor,
     b = ((g1 == 0) * (g2 == 0) == 1) + ((g1 * (g2 == 0) * (g3 == 0)) > 0) > 0
     s = (((g1 * g2) > 0) + ((g1 * (g2 == 0) * g3) > 0)) > 0
     return b, s
-
 
 class llsq(Function):
     """
@@ -282,7 +274,6 @@ class llsq(Function):
         # HACK: alpha must be positive.
         return grad_output, grad_alpha, None, None
 
-
 class SteQuan(Quan):
     """SteQuan.
     
@@ -300,7 +291,6 @@ class SteQuan(Quan):
 
         return ste().apply(x, self.alpha, self.bit_width_eve)
 
-
 class LsqQuan(Quan):
     """LsqQuan.
 
@@ -312,7 +302,6 @@ class LsqQuan(Quan):
 
     def quan(self, x: Tensor) -> Tensor:
         return lsq().apply(x, self.alpha, self.bit_width_eve)
-
 
 class LlsqQuan(Quan):
     """LlsqQuan
@@ -326,3 +315,5 @@ class LlsqQuan(Quan):
     def quan(self, x: Tensor) -> Tensor:
         return llsq().apply(x, self.alpha, self.bit_width_eve,
                             self.kwargs.get("regular", "l2"))
+
+

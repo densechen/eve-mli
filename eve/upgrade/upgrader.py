@@ -11,15 +11,12 @@ from torch._six import container_abcs
 from eve.cores.eve import upgrade_fn
 from torch.nn import Parameter
 
-
 class _RequiredParameter(object):
-    """Singleton class representing a required parameter for a Upgrader."""
+    """Singleton class representing a required parameter for an Upgrader."""
     def __repr__(self):
         return "<required parameter>"
 
-
 required = _RequiredParameter()
-
 
 # pylint: disable=no-member
 class Upgrader(object):
@@ -291,7 +288,7 @@ class Upgrader(object):
     def eve_parameters(self) -> List[Parameter]:
         """Yields the eve parameters in all groups at the same steps.
 
-        This is useful while delivering eve parameters to an reinforcement
+        This is useful while delivering eve parameters to a reinforcement
         learning environment, which is convenient for upgrading specified 
         eve parameters.
 
@@ -317,6 +314,7 @@ class Upgrader(object):
 
         In this case, the action order must keep the same with the eve parameter
         defination order in QModule. If in neuron-wise mode, action is specified for
-        each neurons, otherwise, an action to a layer.
+        each neuron, otherwise, an action to a layer.
         """
         upgrade_fn[params](param=params, action=action)
+

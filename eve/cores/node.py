@@ -13,7 +13,6 @@ from eve.cores.eve import Eve
 from eve.cores.state import State
 from eve.cores.utils import _align_dims
 
-
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 class Node(Eve):
@@ -33,7 +32,7 @@ class Node(Eve):
     
     .. note::
         
-        The voltage_threshold have a greate influence on the fire rate of
+        The voltage_threshold have a great influence on the fire rate of
         neurons. Ensure a suitable fire rate will make spiking network easier to
         train. 
         Different with many existing tools designed for spiking neural network,
@@ -117,18 +116,16 @@ class Node(Eve):
         else:
             return self.non_spiking_forward(x)
 
-
 def heaviside(x: Tensor) -> Tensor:
     r"""The heaviside function."""
     return torch.ge(x, 0.).to(x)
-
 
 class if_fire(Function):
     """fire and reset membrane voltage.
 
     Different with traditional spiking neural network, which fires will emit 1,
-    QuanSpike will emit a voltage and deliver it to Quan for further process.
-    We can make sure that, when the bit width of Quan equals to 1, QuanSpike
+    eve will emit a voltage and deliver it to Quan for further process.
+    We can make sure that, when the bit width of Quan equals to 1, eve
     will act the same as spiking neural network for that any value large than 0 
     will be emitted 1 in the Quan.
     """
@@ -153,13 +150,12 @@ class if_fire(Function):
                  dv_grad: Tensor) -> List[Union[Tensor, None]]:
         return voltage_grad, dv_grad, None
 
-
 class lif_fire(Function):
     """fire and reset membrane voltage.
 
     Different with traditional spiking neural network, which fires will emit 1,
-    QuanSpike will emit a voltage and deliver it to Quan for further process.
-    We can make sure that, when the bit width of Quan equals to 1, QuanSpike
+    eve will emit a voltage and deliver it to Quan for further process.
+    We can make sure that, when the bit width of Quan equals to 1, eve
     will act the same as spiking neural network for that any value large than 0 
     will be emitted 1 in the Quan.
     """
@@ -188,7 +184,6 @@ class lif_fire(Function):
 
         return voltage_grad, dv_grad, None, None
 
-
 class IfNode(Node):
     """Implementation of IFNode.
 
@@ -209,7 +204,6 @@ class IfNode(Node):
 
     def non_spiking_forward(self, x: Tensor) -> Tensor:
         return F.relu(x)
-
 
 class LifNode(Node):
     """Implementation of LIFNode.
@@ -238,3 +232,4 @@ class LifNode(Node):
 
     def non_spiking_forward(self, x: Tensor) -> Tensor:
         return F.leaky_relu(x)
+
