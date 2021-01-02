@@ -416,7 +416,8 @@ class BaseTrainer(gym.Env, ABC):
                 # save the model
                 self.cache_checkpoint_to_RAM()
 
-        self.load_cached_checkpoint_from_RAM()
+            # reset model to last best one.
+            self.load_cached_checkpoint_from_RAM()
 
         self.upgrader.zero_obs()
         self.train_one_step()
