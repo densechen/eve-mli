@@ -294,7 +294,12 @@ class BaseTrainer(gym.Env, ABC):
         # reward is current_acc - baseline_acc
         return info["acc"] - self.baseline_acc - rate * 0.1
 
-    def fetch_obs(self) -> np.ndarray:
+    def fetch_obs(self) -> List[np.ndarray, float, float]:
+        """
+        Returns:
+            an obs state as np.ndarray, which has been paaded to [max_neurons, max_states],
+            the actually neurons and states of this obs.
+        """
         if self._obs_gen is None:
             self._obs_gen = self.upgrader.eve_parameters()
 
@@ -316,9 +321,9 @@ class BaseTrainer(gym.Env, ABC):
                 self.eve_net.max_neurons - neurons,
             ]
             obs = F.pad(obs, pad=padding)
-            return obs.cpu().numpy().astype(np.float32)
+            return obs.cpu().numpy().astype(np.float32), neurons, states
         else:
-            return None
+            return None, None, None
 
     def step(self, action: np.ndarray):
         """Takes in an action, returns a new observation states.
@@ -340,12 +345,17 @@ class BaseTrainer(gym.Env, ABC):
         reward = self.reward()
 
         # current_obs
-        obs = self.fetch_obs()
+        obs, neurons, states = self.fetch_obs()
+
+        info = {
+            "neurons": neurons,
+            "states": states,
+        }
 
         if obs is not None:
-            return obs, reward, False, {}
+            return obs, reward, False, info
         else:
-            return obs, reward, True, {}
+            return obs, reward, True, info
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
