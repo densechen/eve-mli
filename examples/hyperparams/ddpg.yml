@@ -3,7 +3,7 @@ mnist-v0:
   n_timesteps: !!float 1e6
   policy: 'MlpPolicy'
   gamma: 0.98
-  buffer_size: 0
+  buffer_size: 2000
   learning_starts: 1000
   noise_type: 'normal'
   noise_std: 0.1

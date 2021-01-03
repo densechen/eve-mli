@@ -23,12 +23,10 @@ class mnist(ClsEve):
         node_kwargs: Dict[str, Any] = {
             "voltage_threshold": 0.5,
             "time_independent": True,
-            "requires_upgrade": True,
         },
         quan: str = "SteQuan",
         quan_kwargs: Dict[str, Any] = {
-            "max_bit_width": 8,
-            "requires_upgrade": True,
+            "max_bits": 8,
         },
         encoder: str = "RateEncoder",
         encoder_kwargs: Dict[str, Any] = {
@@ -94,56 +92,6 @@ class mnist(ClsEve):
     def max_states(self):
         return 8
 
-    @property
-    def train_dataloader(self):
-        return torch.utils.data.DataLoader(
-            self.train_dataset,
-            batch_size=128,
-            shuffle=True,
-            num_workers=4,
-        )
-
-    @property
-    def test_dataloader(self):
-        return torch.utils.data.DataLoader(
-            self.test_dataset,
-            batch_size=128,
-            shuffle=False,
-            num_workers=4,
-        )
-
-    @property
-    def valid_dataloader(self):
-        return torch.utils.data.DataLoader(
-            self.valid_dataset,
-            batch_size=128,
-            shuffle=False,
-            num_workers=4,
-        )
-
-    def configure_optimizers(self) -> torch.optim.Optimizer:
-        return torch.optim.Adam(
-            self.torch_parameters(),
-            lr=1e-3,
-            betas=[0.9, 0.999],
-            eps=1e-8,
-            weight_decay=1e-6,
-            amsgrad=False,
-        )
-
-    def configure_upgraders(self) -> eve.upgrade.Upgrader:
-        return eve.upgrade.Upgrader(self.eve_parameters(), )
-
-    def configure_lr_scheduler(
-        self, optimizer: torch.optim.Optimizer
-    ) -> torch.optim.lr_scheduler._LRScheduler:
-        return torch.optim.lr_scheduler.MultiStepLR(
-            optimizer,
-            milestones=[
-                50 * len(self.train_dataset), 100 * len(self.train_dataset)
-            ],
-            gamma=0.1)
-
 
 class mnist_trainer(BaseTrainer):
     def __init__(
@@ -153,27 +101,32 @@ class mnist_trainer(BaseTrainer):
             "node_kwargs": {
                 "voltage_threshold": 0.5,
                 "time_independent": True,
-                "requires_upgrade": True,
             },
             "quan": "SteQuan",
             "quan_kwargs": {
-                "max_bit_width": 8,
-                "requires_upgrade": True,
+                "max_bits": 8,
             },
             "encoder": "RateEncoder",
             "encoder_kwargs": {
                 "timesteps": 1,
             }
         },
-        max_bits: int = 8,
+        upgrader_kwargs: dict = {
+            "eve_name": "bit_width_eve",
+            "init_value": {
+                "bit_width_eve": 1.0,
+                "voltage_threshold_eve": 0.5,
+            },
+            "spiking_mode": False,
+        },
         root_dir: str = ".",
         data_root: str = ".",
         pretrained: str = None,
         device: str = "auto",
         eval_steps: int = 100,
     ):
-        super().__init__(mnist, eve_net_kwargs, max_bits, root_dir, data_root,
-                         pretrained, device)
+        super().__init__(mnist, eve_net_kwargs, upgrader_kwargs, root_dir, data_root,
+                         pretrained, device, eval_steps)
 
 
 # register trainer here.
@@ -188,19 +141,24 @@ register(id="mnist-v0",
                  "node_kwargs": {
                      "voltage_threshold": 0.5,
                      "time_independent": True,
-                     "requires_upgrade": True,
                  },
                  "quan": "SteQuan",
                  "quan_kwargs": {
-                     "max_bit_width": 8,
-                     "requires_upgrade": True,
+                     "max_bits": 8,
                  },
                  "encoder": "RateEncoder",
                  "encoder_kwargs": {
                      "timesteps": 1,
                  }
              },
-             "max_bits": 8,
+             "upgrader_kwargs": {
+                 "eve_name": "bit_width_eve",
+                 "init_value": {
+                     "bit_width_eve": 1.0,
+                     "voltage_threshold_eve": 0.5,
+                 },
+                 "spiking_mode": False,
+             },
              "root_dir": ".",
              "data_root": ".",
              "pretrained": None,

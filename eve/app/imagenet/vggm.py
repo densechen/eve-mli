@@ -2,17 +2,18 @@ import os
 from typing import Any, Dict, List, Type
 from warnings import warn
 
+import eve
+import eve.cores
+import gym
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, random_split
-import eve
-import eve.cores
-from eve.app.imagenet.imagenet import ImageNetEve, ImageNetTrainer
-import numpy as np
-from torch import Tensor
-import gym
 from eve.app.common.eve_space import EveBox
+from eve.app.imagenet.imagenet import ImageNetEve, ImageNetTrainer
+from torch import Tensor
+from torch.utils.data import DataLoader, random_split
+
 
 class SpatialCrossMapLRN(eve.cores.Eve):
     def __init__(self,
@@ -81,12 +82,10 @@ class vggm(ImageNetEve):
         node_kwargs: Dict[str, Any] = {
             "voltage_threshold": 0.5,
             "time_independent": True,
-            "requires_upgrade": True,
         },
         quan: str = "SteQuan",
         quan_kwargs: Dict[str, Any] = {
-            "max_bit_width": 8,
-            "requires_upgrade": True,
+            "max_bits": 8,
         },
         encoder: str = "RateEncoder",
         encoder_kwargs: Dict[str, Any] = {
@@ -189,6 +188,7 @@ class vggm(ImageNetEve):
     def max_states(self):
         return 8
 
+
 class ImageNetVggmTrainer(ImageNetTrainer):
     def __init__(
         self,
@@ -197,27 +197,32 @@ class ImageNetVggmTrainer(ImageNetTrainer):
             "node_kwargs": {
                 "voltage_threshold": 0.5,
                 "time_independent": True,
-                "requires_upgrade": True,
             },
             "quan": "SteQuan",
             "quan_kwargs": {
-                "max_bit_width": 8,
-                "requires_upgrade": True,
+                "max_bits": 8,
             },
             "encoder": "RateEncoder",
             "encoder_kwargs": {
                 "timesteps": 1,
             }
         },
-        max_bits: int = 8,
+        upgrader_kwargs: dict = {
+            "eve_name": "bit_width_eve",
+            "init_value": {
+                "bit_width_eve": 1.0,
+                "voltage_threshold_eve": 0.5,
+            },
+            "spiking_mode": False,
+        },
         root_dir: str = ".",
         data_root: str = ".",
         pretrained: str = None,
         device: str = "auto",
         eval_steps: int = 100,
     ):
-        super().__init__(vggm, eve_net_kwargs, max_bits, root_dir, data_root,
-                         pretrained, device)
+        super().__init__(vggm, eve_net_kwargs, upgrader_kwargs, root_dir,
+                         data_root, pretrained, device, eval_steps)
 
     def load_pretrained(self) -> bool:
         load_flag = super().load_pretrained()
@@ -227,8 +232,10 @@ class ImageNetVggmTrainer(ImageNetTrainer):
                 f"then, use {self.eve_net.key_map} to load pretrained models.")
         return load_flag
 
+
 # register trainer here.
 from gym.envs.registration import register
+
 register(id="imagenetvggm-v0",
          entry_point=ImageNetVggmTrainer,
          max_episode_steps=200,
@@ -239,19 +246,24 @@ register(id="imagenetvggm-v0",
                  "node_kwargs": {
                      "voltage_threshold": 0.5,
                      "time_independent": True,
-                     "requires_upgrade": True,
                  },
                  "quan": "SteQuan",
                  "quan_kwargs": {
-                     "max_bit_width": 8,
-                     "requires_upgrade": True,
+                     "max_bits": 8,
                  },
                  "encoder": "RateEncoder",
                  "encoder_kwargs": {
                      "timesteps": 1,
                  }
              },
-             "max_bits": 8,
+             "upgrader_kwargs": {
+                 "eve_name": "bit_width_eve",
+                 "init_value": {
+                     "bit_width_eve": 1.0,
+                     "voltage_threshold_eve": 0.5,
+                 },
+                 "spiking_mode": False,
+             },
              "root_dir": ".",
              "data_root": ".",
              "pretrained": None,

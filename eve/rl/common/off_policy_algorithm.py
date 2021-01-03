@@ -307,6 +307,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if self.num_timesteps < learning_starts and not (
                 self.use_sde and self.use_sde_at_warmup):
             # Warmup phase
+            # add support to eve
             unscaled_action = np.array([self.action_space.sample()])
         else:
             # Note: when using continuous actions,

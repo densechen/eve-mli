@@ -74,7 +74,7 @@ class BaseTrainer(gym.Env, ABC):
         self,
         eve_net,
         eve_net_kwargs: dict = {},
-        max_bits: int = 8,
+        upgrader_kwargs: dict = {},
         root_dir: Optional[str] = ".",
         data_root: str = ".",
         pretrained: str = "",
@@ -85,10 +85,17 @@ class BaseTrainer(gym.Env, ABC):
         print(f"Using {self.device} device")
 
         self.eve_net = eve_net(**eve_net_kwargs).to(self.device)
+        self.pretrained = pretrained
+        self.checkpoint = os.path.join(root_dir, "ckpt.pth")
+        self.root_dir = root_dir
+
+        # load pretrained model
+        load_flag = self.load_pretrained()
+
         self.eve_net.prepare_data(data_root)
 
         self.optimizer = self.eve_net.configure_optimizers()
-        self.upgrader = self.eve_net.configure_upgraders()
+        self.upgrader = self.eve_net.configure_upgraders(**upgrader_kwargs)
         self.lr_scheduler = self.eve_net.configure_lr_scheduler(self.optimizer)
 
         # set default value to None
@@ -97,26 +104,13 @@ class BaseTrainer(gym.Env, ABC):
         self._valid_one_step_gen = None
         self._obs_gen = None
 
-        self.max_bits = max_bits
-
-        self.pretrained = pretrained
-        self.checkpoint = os.path.join(root_dir, "ckpt.pth")
-        self.root_dir = root_dir
-
-        # load pretrained model
-        load_flag = self.load_pretrained()
-        # NOTE: you should load the pretrained model first then set the max bits
-        # otherwise, the pretrained model may contains a different max bit,
-        # which is not you wanted.
-        self.set_max_bits()
-
         # test the model to get baseline acc
         if load_flag:
             self.baseline_acc = self.test_one_epoch()["acc"]
         else:
             self.baseline_acc = 0.0
         print(f"set baseline acc as {self.baseline_acc}")
-        self.fintune_acc = copy.deepcopy(self.baseline_acc)
+        self.fintune_acc = 0.0
 
         # cache the initial model to RAM
         self.cache_checkpoint_to_RAM()
@@ -144,12 +138,6 @@ class BaseTrainer(gym.Env, ABC):
 
     def save_checkpoint(self):
         th.save({"state_dict": self.eve_net.state_dict()}, self.checkpoint)
-
-    def set_max_bits(self):
-        for k, v in self.eve_net.named_eve_parameters():
-            if k.split(".")[-1].startswith("bit_width"):
-                v.data.fill_(self.max_bits)
-        print(f"bit_width reset to {self.max_bits}.")
 
     def load_pretrained(self) -> bool:
         """loads pertained model.
@@ -307,8 +295,8 @@ class BaseTrainer(gym.Env, ABC):
         self.upgrader.zero_obs()
         info = self.train_one_step()
 
-        rate = self._last_eve_obs.sum() / (self._last_eve_obs.numel() *
-                                           self.max_bits)
+        # set a random bound to 8
+        rate = self._last_eve_obs.sum() / (self._last_eve_obs.numel() * 8)
         rate = tensor_dict_to_numpy_dict({"rate": rate})["rate"]
 
         # reward is current_acc - baseline_acc
@@ -420,6 +408,11 @@ class BaseTrainer(gym.Env, ABC):
             # reset model to last best one.
             self.load_cached_checkpoint_from_RAM()
 
+        # reset related last value
+        # WRAN: don't forget to reset self._obs_gen and self._last_eve_obs to None.
+        # somtimes, the episode may be interrupted, but the gen do not reset.
+        self._last_eve_obs = None
+        self._obs_gen = None
         self.upgrader.zero_obs()
         self.train_one_step()
         return self.fetch_obs()

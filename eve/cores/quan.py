@@ -13,6 +13,7 @@ from eve.cores.eve import Eve
 from eve.cores.state import State
 from eve.cores.utils import _align_dims
 
+
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 class Quan(Eve):
@@ -20,12 +21,10 @@ class Quan(Eve):
 
     Args:
         state (State): the object to compute static and dynamic states of this layer.
-        max_bit_width (int): the max bit width of current layer. if bit width is not
+        max_bits (int): the max bit width of current layer. if bit width is not
             upgradable, the bit_width is the initial bit width of current layer.
             if bit width is upgradable, the bit_width is the max bits allowed.
-        requires_upgrade (bool): if ``True``, the bit width will be added to eve
-            parameters, which can be upgraded. Default: ``False``.
-    
+
     .. note::
 
         The bit_width is vital to quantization neural networks, you must make it
@@ -38,35 +37,28 @@ class Quan(Eve):
     """
     neurons: int  # the number of neurons in this layer
     filter_type: str  # the type of kernels in previous layers
-    requires_upgrade: bool  # whether add bit_width to eve parameters.
 
-    def __init__(self,
-                 state: State,
-                 max_bit_width: int = 8,
-                 requires_upgrade: bool = False,
-                 **kwargs):
+    def __init__(self, state: State, max_bits: int = 8, **kwargs):
         super(Quan, self).__init__()
         self.state = state
         self.neurons = state.neurons
         self.filter_type = state.filter_type
         self.kwargs = kwargs
-        self.requires_upgrade = requires_upgrade
+        self.max_bits = max_bits
 
         # register bit_width
-        bit_width = torch.Tensor([max_bit_width] * self.neurons)
+        bit_width = torch.Tensor([max_bits] * self.neurons)
         bit_width = _align_dims(self.filter_type, bit_width)
 
-        self.register_eve_parameter(
-            "bit_width_eve",
-            Parameter(bit_width, requires_grad=requires_upgrade))
+        self.register_eve_parameter("bit_width_eve", Parameter(bit_width))
 
         def upgrade_fn(param, action=None, obs=None):
             if action is not None:
                 # ensure y in [0, 1]
                 action = torch.clamp(action, min=0.0, max=1.0)
-                # convert to specified bit
-                new_bit_width = torch.floor(action * (max_bit_width + 1))
-                param.zero_().add_(new_bit_width)
+                # # convert to specified bit
+                # new_bit_width = torch.floor(action * (max_bits + 1))
+                param.zero_().add_(action)
             else:
                 pass
 
@@ -75,12 +67,17 @@ class Quan(Eve):
         # register parameter used in optimizer optimization.
         # this parameter will be ignored in some cases, such as ste quantization
         # method, however, we still define it here.
-        alpha = 1.0 / (2**self.bit_width_eve - 1 + 1e-8)
+        alpha = 1.0 / (2**self.bit_width - 1 + 1e-8)
         alpha = _align_dims(self.filter_type, alpha)
         self.alpha = Parameter(alpha, requires_grad=True)
 
+    @property
+    def bit_width(self):
+        new_bit_width = torch.floor(self.bit_width_eve * self.max_bits)
+        return new_bit_width
+
     def obs(self):
-        if not self.requires_upgrade:
+        if not self.bit_width_eve.requires_grad:
             return None
         else:
             return torch.stack([
@@ -114,6 +111,7 @@ class Quan(Eve):
 
         return quan
 
+
 def quantize(input: Tensor,
              alpha: Tensor,
              zero_point: Tensor,
@@ -126,8 +124,10 @@ def quantize(input: Tensor,
     output = torch.where(output > positive, positive, output)
     return output
 
+
 def dequantize(input: Tensor, alpha: Tensor, zero_point: Tensor) -> Tensor:
     return (input - zero_point) * alpha
+
 
 class ste(Function):
     """SurrogateFunction 
@@ -144,6 +144,7 @@ class ste(Function):
     @staticmethod
     def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
         return grad_output, None, None
+
 
 class lsq(Function):
     """
@@ -189,6 +190,7 @@ class lsq(Function):
         # HACK: alpha must be positive.
         return grad_x, grad_alpha, None
 
+
 def ln_error(x: Tensor, alpha: Tensor, bit_width: Tensor,
              regular: str) -> Tensor:
     quan_x = quantize(x, alpha, torch.zeros_like(alpha), 2**bit_width - 1,
@@ -204,6 +206,7 @@ def ln_error(x: Tensor, alpha: Tensor, bit_width: Tensor,
         if dims == 1:
             error = error.mean(dim=i, keepdim=True)
     return error
+
 
 def update_running_alpha(error: Tensor, lower_error: Tensor,
                          upper_error: Tensor) -> List[Tensor]:
@@ -227,6 +230,7 @@ def update_running_alpha(error: Tensor, lower_error: Tensor,
     b = ((g1 == 0) * (g2 == 0) == 1) + ((g1 * (g2 == 0) * (g3 == 0)) > 0) > 0
     s = (((g1 * g2) > 0) + ((g1 * (g2 == 0) * g3) > 0)) > 0
     return b, s
+
 
 class llsq(Function):
     """
@@ -274,6 +278,7 @@ class llsq(Function):
         # HACK: alpha must be positive.
         return grad_output, grad_alpha, None, None
 
+
 class SteQuan(Quan):
     """SteQuan.
     
@@ -282,14 +287,15 @@ class SteQuan(Quan):
     def quan(self, x: Tensor) -> Tensor:
         # if bit width is changed by upgrader, alpha should be updated.
         def update_alpha():
-            alpha = 1.0 / (2**self.bit_width_eve - 1 + 1e-8)
+            alpha = 1.0 / (2**self.bit_width - 1 + 1e-8)
             alpha = _align_dims(self.filter_type, alpha)
             self.alpha.data.zero_().add_(alpha.to(self.alpha))
 
-        if self.requires_upgrade:  # only happens in requires_upgrade.
+        if self.bit_width_eve.requires_grad:  # only happens in requires_upgrade.
             update_alpha()
 
-        return ste().apply(x, self.alpha, self.bit_width_eve)
+        return ste().apply(x, self.alpha, self.bit_width)
+
 
 class LsqQuan(Quan):
     """LsqQuan.
@@ -301,7 +307,8 @@ class LsqQuan(Quan):
         self.alpha.data.fill_(1.0)
 
     def quan(self, x: Tensor) -> Tensor:
-        return lsq().apply(x, self.alpha, self.bit_width_eve)
+        return lsq().apply(x, self.alpha, self.bit_width)
+
 
 class LlsqQuan(Quan):
     """LlsqQuan
@@ -313,7 +320,5 @@ class LlsqQuan(Quan):
         self.alpha.data.fill_(1.0)
 
     def quan(self, x: Tensor) -> Tensor:
-        return llsq().apply(x, self.alpha, self.bit_width_eve,
+        return llsq().apply(x, self.alpha, self.bit_width,
                             self.kwargs.get("regular", "l2"))
-
-

@@ -13,11 +13,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from eve.cores.eve import Eve
-from eve.upgrade import Upgrader
+from eve.upgrade import Upgrader, UpgraderScheduler
 from gym import spaces
 from torch import Tensor
 import gym
 from eve.app.common.eve_space import EveBox
+
 
 class BaseEve(eve.cores.Eve, ABC):
     """Defines a unified interface for different tasks.
@@ -154,18 +155,33 @@ class ClsEve(BaseEve):
             "acc": self._top_one_accuracy(y_hat, y),
         }
 
-
     @property
     def action_space(self) -> gym.spaces.Space:
-        return EveBox(
-            low=0.0,
-            high=1.0,
-            neurons=self.max_neurons,
-            states=self.max_states,
-            eve_shape=(self.max_neurons, 1),
-            shape=(1, ),
-            dtype=np.float32,
-        )
+        if not hasattr(self, "eve_name"):
+            raise RuntimeError(
+                "call self.configure_upgrader to set eve name first")
+        if self.eve_name == "bit_width_eve":
+            return EveBox(
+                low=0.5,
+                high=1.0,
+                neurons=self.max_neurons,
+                states=self.max_states,
+                eve_shape=(self.max_neurons, 1),
+                shape=(1, ),
+                dtype=np.float32,
+            )
+        elif self.eve_name == "voltage_threshold_eve":
+            return EveBox(
+                low=0.0,
+                high=1.0,
+                neurons=self.max_neurons,
+                states=self.max_states,
+                eve_shape=(self.max_neurons, 1),
+                shape=(1, ),
+                dtype=np.float32,
+            )
+        else:
+            raise NotImplementedError
 
     @property
     def observation_space(self) -> gym.spaces.Space:
@@ -179,4 +195,57 @@ class ClsEve(BaseEve):
             eve_shape=(self.max_neurons, self.max_states),
             shape=(self.max_states, ),
             dtype=np.float32,
+        )
+
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+        return torch.optim.Adam(
+            self.torch_parameters(),
+            lr=1e-3,
+            betas=[0.9, 0.999],
+            eps=1e-8,
+            weight_decay=1e-6,
+            amsgrad=False,
+        )
+
+    def configure_upgraders(self, eve_name: str, init_value: Dict[str, float],
+                            spiking_mode: bool) -> Upgrader:
+        upgrader_scheduler = UpgraderScheduler(self)
+
+        return upgrader_scheduler.setup(eve_name, init_value, spiking_mode)
+
+    def configure_lr_scheduler(
+        self, optimizer: torch.optim.Optimizer
+    ) -> torch.optim.lr_scheduler._LRScheduler:
+        return torch.optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[
+                50 * len(self.train_dataset), 100 * len(self.train_dataset)
+            ],
+            gamma=0.1)
+
+    @property
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset,
+            batch_size=128,
+            shuffle=True,
+            num_workers=4,
+        )
+
+    @property
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.test_dataset,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
+        )
+
+    @property
+    def valid_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.valid_dataset,
+            batch_size=128,
+            shuffle=False,
+            num_workers=4,
         )

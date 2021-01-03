@@ -64,12 +64,10 @@ class vgg(Cifar10Eve):
         node_kwargs: Dict[str, Any] = {
             "voltage_threshold": 0.5,
             "time_independent": True,
-            "requires_upgrade": True,
         },
         quan: str = "SteQuan",
         quan_kwargs: Dict[str, Any] = {
-            "max_bit_width": 8,
-            "requires_upgrade": True,
+            "max_bits": 8,
         },
         encoder: str = "RateEncoder",
         encoder_kwargs: Dict[str, Any] = {
@@ -178,27 +176,32 @@ class Cifar10VggTrainer(Cifar10Trainer):
             "node_kwargs": {
                 "voltage_threshold": 0.5,
                 "time_independent": True,
-                "requires_upgrade": True,
             },
             "quan": "SteQuan",
             "quan_kwargs": {
-                "max_bit_width": 8,
-                "requires_upgrade": True,
+                "max_bits": 8,
             },
             "encoder": "RateEncoder",
             "encoder_kwargs": {
                 "timesteps": 1,
             }
         },
-        max_bits: int = 8,
+        upgrader_kwargs: dict = {
+            "eve_name": "bit_width_eve",
+            "init_value": {
+                "bit_width_eve": 1.0,
+                "voltage_threshold_eve": 0.5,
+            },
+            "spiking_mode": False,
+        },
         root_dir: str = ".",
         data_root: str = ".",
         pretrained: str = None,
         device: str = "auto",
         eval_steps: int = 100,
     ):
-        super().__init__(vgg, eve_net_kwargs, max_bits, root_dir, data_root,
-                         pretrained, device)
+        super().__init__(vgg, eve_net_kwargs, upgrader_kwargs, root_dir,
+                         data_root, pretrained, device, eval_steps)
 
     def load_pretrained(self) -> bool:
         load_flag = super().load_pretrained()
@@ -221,19 +224,24 @@ register(id="cifar10vgg-v0",
                  "node_kwargs": {
                      "voltage_threshold": 0.5,
                      "time_independent": True,
-                     "requires_upgrade": True,
                  },
                  "quan": "SteQuan",
                  "quan_kwargs": {
-                     "max_bit_width": 8,
-                     "requires_upgrade": True,
+                     "max_bits": 8,
                  },
                  "encoder": "RateEncoder",
                  "encoder_kwargs": {
                      "timesteps": 1,
                  }
              },
-             "max_bits": 8,
+             "upgrader_kwargs": {
+                 "eve_name": "bit_width_eve",
+                 "init_value": {
+                     "bit_width_eve": 1.0,
+                     "voltage_threshold_eve": 0.5,
+                 },
+                 "spiking_mode": False,
+             },
              "root_dir": ".",
              "data_root": ".",
              "pretrained": None,

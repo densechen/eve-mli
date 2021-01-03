@@ -11,12 +11,15 @@ from torch._six import container_abcs
 from eve.cores.eve import upgrade_fn
 from torch.nn import Parameter
 
+
 class _RequiredParameter(object):
     """Singleton class representing a required parameter for an Upgrader."""
     def __repr__(self):
         return "<required parameter>"
 
+
 required = _RequiredParameter()
+
 
 # pylint: disable=no-member
 class Upgrader(object):
@@ -317,4 +320,3 @@ class Upgrader(object):
         each neuron, otherwise, an action to a layer.
         """
         upgrade_fn[params](param=params, action=action)
-

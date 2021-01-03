@@ -4,15 +4,16 @@ import importlib
 import os
 import sys
 import uuid
+from pprint import pprint
 
 import gym
 import numpy as np
-
 import torch
-from pprint import pprint
+from collections import OrderedDict
+from eve.rl.common.utils import set_random_seed
 from eve.rl.exp_manager import ExperimentManager
 from eve.rl.utils.utils import ALGOS, StoreDict
-from eve.rl.common.utils import set_random_seed
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--algo",
@@ -27,7 +28,7 @@ parser.add_argument(
     help="The environment used to wrapper trainer."
     "Different environments will apply different"
     "reward functions and interactive steps.",
-    default="cifar10vgg-v0",
+    default="mnist-v0",
     type=str,
     required=False,
 )
@@ -190,40 +191,80 @@ parser.add_argument("-uuid",
                     action="store_true",
                     default=False,
                     help="Ensure that the run has a unique ID.")
+
+parser.add_argument(
+    "-up",
+    "--upgrader-mode",
+    type=str,
+    default="node",
+    choices=["quan", "node", "mixed"],
+    help="'quan': train in non-spiking mode, update eve of quan. "
+    "'node': train in spiking mode, update eve of node"
+    "'mixed': train in spiking mode, update eve of quan.")
+parser.add_argument("--timesteps",
+                    type=int,
+                    default=5,
+                    help="the timesteps of spiking trains in spiking mode.")
 args = parser.parse_args()
 
 # Create env_kwargs here
 # the following parameters is used to define a trainer for env.
+
+upgrader_kwargs = {
+    "node": {
+        "eve_name": "voltage_threshold_eve",
+        "init_value": {
+            "bit_width_eve": 1. / 8.,  # set to one bit
+            "voltage_threshold_eve": 0.5,
+        },
+        "spiking_mode": True,
+    },
+    "quan": {
+        "eve_name": "bit_width_eve",
+        "init_value": {
+            "bit_width_eve": 1.0,  # set to 8 bits
+            "voltage_threshold_eve": 0.5,
+        },
+        "spiking_mode": False,
+    },
+    "mixed": {
+        "eve_name": "bit_width_eve",
+        "init_value": {
+            "bit_width_eve": 1.0,  # set to 8 bits
+            "voltage_threshold_eve": None,  # do not reset!
+        },
+        "spiking_mode": True,
+    }
+}[args.upgrader_mode]
+
 args.env_kwargs = dict(
     eve_net_kwargs={
         "node": "IfNode",
         "node_kwargs": {
             "voltage_threshold": 0.5,
             "time_independent": False,
-            "requires_upgrade": False,
         },
         "quan": "SteQuan",
         "quan_kwargs": {
-            "requires_upgrade": True,
         },
         "encoder": "RateEncoder",
         "encoder_kwargs": {
-            "timesteps": 1,
+            "timesteps": args.timesteps,
         }
     },
-    max_bits=8,
+    upgrader_kwargs=upgrader_kwargs,
     root_dir="/media/densechen/data/code/eve-mli/examples/logs",
     data_root="/media/densechen/data/dataset",
     pretrained=
-    "/media/densechen/data/code/eve-mli/examples/checkpoint/eve-cifar10-vggsmall-zxd-93.4-8943fa3.pth",
+    "/media/densechen/data/code/eve-mli/examples/checkpoint/mnist.pth",
     device="auto",
-    eval_steps=1000,
+    eval_steps=100,
 )
 
 # rewrite log floder.
 args.log_folder = "/media/densechen/data/code/eve-mli/examples/logs"
 
-pprint(args)
+pprint(OrderedDict(args.__dict__))
 
 env_id = args.env
 registered_envs = set(gym.envs.registry.env_specs.keys())

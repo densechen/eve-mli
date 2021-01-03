@@ -13,6 +13,7 @@ from eve.cores.eve import Eve
 from eve.cores.state import State
 from eve.cores.utils import _align_dims
 
+
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 class Node(Eve):
@@ -27,9 +28,7 @@ class Node(Eve):
             not generate a valid spiking signal.
         time_independent (bool): if ``True``, we will detach membrane voltage
             from last time. Default: ``True``.
-        requires_upgrade (bool): if ``True``, the voltage_threshold will be added to
-            eve parameters, which can be upgraded. Default: ``False``.
-    
+
     .. note::
         
         The voltage_threshold have a great influence on the fire rate of
@@ -45,33 +44,29 @@ class Node(Eve):
 
     neurons: int  # the number of neurons in this layer
     filter_type: str  # the type of kernels in previous layers
-    requires_upgrade: bool  # whether add voltage_threshold to eve parameters.
 
     def __init__(
         self,
         state: State = None,
         voltage_threshold: float = 0.5,
         time_independent: bool = True,
-        requires_upgrade: bool = False,
     ):
         super(Node, self).__init__()
 
         self.neurons = state.neurons
         self.filter_type = state.filter_type
         self.time_independent = time_independent
-        self.requires_upgrade = requires_upgrade
         self.state = state
 
         # register voltage_threshold
         voltage_threshold = torch.Tensor([voltage_threshold] * self.neurons)
         voltage_threshold = _align_dims(self.filter_type, voltage_threshold)
 
-        self.register_eve_parameter(
-            "voltage_threshold_eve",
-            Parameter(voltage_threshold, requires_grad=requires_upgrade))
+        self.register_eve_parameter("voltage_threshold_eve",
+                                    Parameter(voltage_threshold))
 
         def upgrade_fn(param, action=None, obs=None):
-            if action is None:
+            if action is not None:
                 # directly take the action
                 param.zero_().add_(action.view_as(param))
             else:
@@ -83,11 +78,8 @@ class Node(Eve):
         # register voltage as hidden state, which will reset every time.
         self.register_hidden_state("voltage_hid", None)
 
-        # register an forward hook to calculate the observation states
-        self.register_forward_hook(Node._attach_obs_to_eve_parameters)
-
     def obs(self):
-        if not self.requires_upgrade or not self.spiking:
+        if not self.voltage_threshold_eve.requires_grad or not self.spiking:
             return None
         else:
             return torch.stack([
@@ -116,9 +108,11 @@ class Node(Eve):
         else:
             return self.non_spiking_forward(x)
 
+
 def heaviside(x: Tensor) -> Tensor:
     r"""The heaviside function."""
     return torch.ge(x, 0.).to(x)
+
 
 class if_fire(Function):
     """fire and reset membrane voltage.
@@ -149,6 +143,7 @@ class if_fire(Function):
     def backward(ctx, voltage_grad: Tensor,
                  dv_grad: Tensor) -> List[Union[Tensor, None]]:
         return voltage_grad, dv_grad, None
+
 
 class lif_fire(Function):
     """fire and reset membrane voltage.
@@ -184,6 +179,7 @@ class lif_fire(Function):
 
         return voltage_grad, dv_grad, None, None
 
+
 class IfNode(Node):
     """Implementation of IFNode.
 
@@ -204,6 +200,7 @@ class IfNode(Node):
 
     def non_spiking_forward(self, x: Tensor) -> Tensor:
         return F.relu(x)
+
 
 class LifNode(Node):
     """Implementation of LIFNode.
@@ -232,4 +229,3 @@ class LifNode(Node):
 
     def non_spiking_forward(self, x: Tensor) -> Tensor:
         return F.leaky_relu(x)
-

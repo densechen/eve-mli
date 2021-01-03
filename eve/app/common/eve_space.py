@@ -37,3 +37,50 @@ class EveBox(Box):
         self.neurons = neurons
         self.states = states
         self.eve_shape = eve_shape
+
+    def _sample(self):
+        """
+        Generates a single random sample inside of the Box.
+
+        In creating a sample of the box, each coordinate is sampled according to
+        the form of the interval:
+
+        * [a, b] : uniform distribution
+        * [a, oo) : shifted exponential distribution
+        * (-oo, b] : shifted negative exponential distribution
+        * (-oo, oo) : normal distribution
+        """
+        high = self.high if self.dtype.kind == 'f' \
+                else self.high.astype('int64') + 1
+
+        sample = np.empty(self.shape)
+
+        # Masking arrays which classify the coordinates according to interval
+        # type
+        unbounded = ~self.bounded_below & ~self.bounded_above
+        upp_bounded = ~self.bounded_below & self.bounded_above
+        low_bounded = self.bounded_below & ~self.bounded_above
+        bounded = self.bounded_below & self.bounded_above
+
+        # Vectorized sampling by interval type
+        sample[unbounded] = self.np_random.normal(
+            size=unbounded[unbounded].shape)
+
+        sample[low_bounded] = self.np_random.exponential(
+            size=low_bounded[low_bounded].shape) + self.low[low_bounded]
+
+        sample[upp_bounded] = -self.np_random.exponential(
+            size=upp_bounded[upp_bounded].shape) + self.high[upp_bounded]
+
+        sample[bounded] = self.np_random.uniform(low=self.low[bounded],
+                                                 high=high[bounded],
+                                                 size=bounded[bounded].shape)
+        if self.dtype.kind == 'i':
+            sample = np.floor(sample)
+
+        return sample.astype(self.dtype)
+
+    def sample(self):
+        # Stack neurons times of actions
+        action = [self._sample() for _ in range(self.neurons)]
+        return np.stack(action, axis=0)

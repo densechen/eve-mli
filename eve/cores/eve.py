@@ -11,6 +11,7 @@ from torch.nn import Module, Parameter
 
 upgrade_fn = OrderedDict()
 
+
 class Eve(Module):
     """Base class for Eve.
 
@@ -44,6 +45,7 @@ class Eve(Module):
 
         # keep the same behavior with Module default.
         self.spiking = False
+
         # register an forward hook to attach the observation states
         self.register_forward_hook(Eve._attach_obs_to_eve_parameters)
 
@@ -174,10 +176,10 @@ class Eve(Module):
             mode (bool): whether to set spiking mode (``True``) or 
                 non-spiking mode (``False``).
         """
-        self.spiking = mode
-        for module in self.children():
+        # self.spiking = mode
+        for module in self.modules():
             if isinstance(module, Eve):
-                module.spike(mode)
+                module.spiking = mode
         return self
 
     def non_spike(self):
@@ -316,4 +318,3 @@ class Eve(Module):
             else:
                 raise ValueError("Cannot assign {} to {}".format(
                     torch.typename(obs), k))
-
