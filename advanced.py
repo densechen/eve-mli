@@ -28,7 +28,7 @@ parser.add_argument(
     help="The environment used to wrapper trainer."
     "Different environments will apply different"
     "reward functions and interactive steps.",
-    default="mnist-v0",
+    default="cifar10vgg-v0",
     type=str,
     required=False,
 )
@@ -196,14 +196,14 @@ parser.add_argument(
     "-up",
     "--upgrader-mode",
     type=str,
-    default="node",
+    default="quan",
     choices=["quan", "node", "mixed"],
     help="'quan': train in non-spiking mode, update eve of quan. "
     "'node': train in spiking mode, update eve of node"
     "'mixed': train in spiking mode, update eve of quan.")
 parser.add_argument("--timesteps",
                     type=int,
-                    default=5,
+                    default=2,
                     help="the timesteps of spiking trains in spiking mode.")
 args = parser.parse_args()
 
@@ -245,9 +245,8 @@ args.env_kwargs = dict(
             "time_independent": False,
         },
         "quan": "SteQuan",
-        "quan_kwargs": {
-        },
-        "encoder": "RateEncoder",
+        "quan_kwargs": {},
+        "encoder": "PoissonEncoder",
         "encoder_kwargs": {
             "timesteps": args.timesteps,
         }
@@ -256,7 +255,7 @@ args.env_kwargs = dict(
     root_dir="/media/densechen/data/code/eve-mli/examples/logs",
     data_root="/media/densechen/data/dataset",
     pretrained=
-    "/media/densechen/data/code/eve-mli/examples/checkpoint/mnist.pth",
+    "/media/densechen/data/code/eve-mli/examples/checkpoint/eve-cifar10-vggsmall-zxd-93.4-8943fa3.pth",
     device="auto",
     eval_steps=100,
 )

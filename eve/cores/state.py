@@ -34,7 +34,7 @@ class State(object):
         All the state is with shape [neurons,]
     """
 
-    layer_index = 0  # global index of layer
+    layer_index = 1  # global index of layer
     max_feat_out = 0
     max_feat_in = 0
     max_kernel_size = 0
@@ -88,7 +88,7 @@ class State(object):
 
         This function will reset all global states of :class:`State`.
         """
-        State.layer_index = 0  # global index of layer
+        State.layer_index = 1  # global index of layer
         State.max_feat_out = 0
         State.max_feat_in = 0
         State.max_kernel_size = 0
@@ -102,7 +102,7 @@ class State(object):
 
     @property
     def k(self):
-        k = torch.tensor([self.layer_index / (self.layer_index + 1e-8)] *
+        k = torch.tensor([self.layer_index / State.layer_index] *
                          self.neurons,
                          device=self.device)
         return k

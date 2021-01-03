@@ -2,19 +2,17 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 import gym
 import torch as th
+from eve.rl.common.policies import (BasePolicy, ContinuousCritic,
+                                    register_policy)
+from eve.rl.common.preprocessing import get_action_dim
+from eve.rl.common.torch_layers import (BaseFeaturesExtractor,
+                                        FlattenExtractor, create_mlp,
+                                        get_actor_critic_arch)
+from eve.rl.common.type_aliases import Schedule
 from torch import nn
 
-from eve.rl.common.policies import BasePolicy, ContinuousCritic, register_policy
-from eve.rl.common.preprocessing import get_action_dim
-from eve.rl.common.torch_layers import (
-    BaseFeaturesExtractor,
-    FlattenExtractor,
-    create_mlp,
-    get_actor_critic_arch,
-)
-from eve.rl.common.type_aliases import Schedule
 
-
+# pylint: disable=abstract-class-instantiated
 class Actor(BasePolicy):
     """
     Actor network (policy) for TD3.
@@ -78,6 +76,94 @@ class Actor(BasePolicy):
         # assert deterministic, 'The TD3 actor only outputs deterministic actions'
         features = self.extract_features(obs)
         return self.mu(features)
+
+    def _predict(self,
+                 observation: th.Tensor,
+                 deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic=deterministic)
+
+
+class EveActor(BasePolicy):
+    """
+    EveActor network (policy) for TD3.
+
+    :param observation_space: Obervation space
+    :param action_space: Action space
+    :param net_arch: Network architecture
+    :param features_extractor: Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: Number of features
+    :param activation_fn: Activation function
+    :param normalize_images: Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    """
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        net_arch: List[int],
+        features_extractor: nn.Module,
+        features_dim: int,
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        normalize_images: bool = True,
+    ):
+        super(EveActor, self).__init__(
+            observation_space,
+            action_space,
+            features_extractor=features_extractor,
+            normalize_images=normalize_images,
+            squash_output=True,
+        )
+
+        self.features_extractor = features_extractor
+        self.normalize_images = normalize_images
+        self.net_arch = net_arch
+        self.features_dim = features_dim
+        self.activation_fn = activation_fn
+        self.static_obs_num = observation_space.static_obs_num
+        self.dynamic_obs_num = observation_space.dynamic_obs_num
+
+        action_dim = get_action_dim(self.action_space)
+        actor_static_net = create_mlp(self.static_obs_num,
+                                      action_dim,
+                                      net_arch,
+                                      activation_fn,
+                                      squash_output=True)
+        actor_dynamic_net = create_mlp(self.dynamic_obs_num,
+                                       action_dim,
+                                       net_arch,
+                                       activation_fn,
+                                       squash_output=True)
+
+        # Deterministic action
+        self.static_mu = nn.Sequential(*actor_static_net)
+        self.dynamic_mu = nn.Sequential(*actor_dynamic_net)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(
+            dict(
+                net_arch=self.net_arch,
+                features_dim=self.features_dim,
+                activation_fn=self.activation_fn,
+                features_extractor=self.features_extractor,
+            ))
+        return data
+
+    def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
+        # assert deterministic, 'The TD3 actor only outputs deterministic actions'
+        features = self.extract_features(obs)
+
+        static_features = features[..., :self.static_obs_num]
+        dynamic_features = features[..., -self.dynamic_obs_num:]
+
+        # static is the same for all neurons, we just forward any one of them
+        static_action = self.static_mu(static_features[:, :1, :])
+        dynamic_action = self.dynamic_mu(dynamic_features)
+
+        # add together to generate final value
+        return static_action + dynamic_action
 
     def _predict(self,
                  observation: th.Tensor,
@@ -171,8 +257,11 @@ class TD3Policy(BasePolicy):
     def _build(self, lr_schedule: Schedule) -> None:
         # Create actor and target
         # the features extractor should not be shared
-        self.actor = self.make_actor(features_extractor=None)
-        self.actor_target = self.make_actor(features_extractor=None)
+        # self.actor = self.make_actor(features_extractor=None)
+        # self.actor_target = self.make_actor(features_extractor=None)
+        self.actor = self.make_eve_actor(features_extractor=None)
+        self.actor_target = self.make_eve_actor(features_extractor=None)
+
         # Initialize the target to have the same weights as the actor
         self.actor_target.load_state_dict(self.actor.state_dict())
 
@@ -225,6 +314,14 @@ class TD3Policy(BasePolicy):
         actor_kwargs = self._update_features_extractor(self.actor_kwargs,
                                                        features_extractor)
         return Actor(**actor_kwargs).to(self.device)
+
+    def make_eve_actor(
+        self,
+        features_extractor: Optional[BaseFeaturesExtractor] = None
+    ) -> EveActor:
+        actor_kwargs = self._update_features_extractor(self.actor_kwargs,
+                                                       features_extractor)
+        return EveActor(**actor_kwargs).to(self.device)
 
     def make_critic(
         self,

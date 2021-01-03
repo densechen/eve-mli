@@ -162,7 +162,7 @@ class ClsEve(BaseEve):
                 "call self.configure_upgrader to set eve name first")
         if self.eve_name == "bit_width_eve":
             return EveBox(
-                low=0.5,
+                low=0.0,
                 high=1.0,
                 neurons=self.max_neurons,
                 states=self.max_states,
@@ -172,7 +172,7 @@ class ClsEve(BaseEve):
             )
         elif self.eve_name == "voltage_threshold_eve":
             return EveBox(
-                low=0.0,
+                low=0.5,
                 high=1.0,
                 neurons=self.max_neurons,
                 states=self.max_states,
