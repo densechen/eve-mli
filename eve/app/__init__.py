@@ -1,5 +1,4 @@
-# import to register trainer env
-from .cifar10 import *
-from .common import *
-from .imagenet import *
-from .mnist import *
+from .algorithm import ALGOS
+from .exp_manager import ExperimentManager
+from .upgrader import Upgrader
+# from .trainer import BaseTrainer

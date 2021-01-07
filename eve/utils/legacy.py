@@ -6,13 +6,13 @@ from pprint import pprint
 from typing import Union
 
 import eve
-import eve.cores
+import eve.core
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
+def load_weight_from_legacy_checkpoint(m: eve.core.Eve,
                                        legacy_checkpoint: str,
                                        eve_checkpoint: str,
                                        key_map: OrderedDict = None,
@@ -74,4 +74,3 @@ def load_weight_from_legacy_checkpoint(m: eve.cores.Eve,
     # save it so that next time, you can directly load checkpoint from it.
     torch.save({"state_dict": m.state_dict()}, eve_checkpoint)
     print(f"new checkpoint has been saved in {eve_checkpoint}.")
-

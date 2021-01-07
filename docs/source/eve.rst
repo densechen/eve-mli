@@ -8,9 +8,7 @@ Subpackages
    :maxdepth: 4
 
    eve.app
-   eve.cores
-   eve.rl
-   eve.upgrade
+   eve.core
    eve.utils
 
 Module contents

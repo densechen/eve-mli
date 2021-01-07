@@ -29,8 +29,7 @@ Indices and tables
    :caption: APIs
 
    eve
-   eve.cores
+   eve.core
    eve.app
-   eve.upgrade
-   eve.rl
+   eve.app.algorithm
    eve.utils
