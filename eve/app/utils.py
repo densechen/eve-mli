@@ -22,6 +22,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 import yaml
+import eve.app.space
 
 # pylint: disable=no-member
 TensorDict = Dict[str, th.Tensor]
@@ -86,7 +87,8 @@ def update_learning_rate(optimizer: th.optim.Optimizer,
         param_group["lr"] = learning_rate
 
 
-def get_schedule_fn(value_schedule: Union["Schedule", float, int]) -> "Schedule":
+def get_schedule_fn(
+        value_schedule: Union["Schedule", float, int]) -> "Schedule":
     """
     Transform (if needed) learning rate and clip range (for PPO)
     to callable.
@@ -344,14 +346,16 @@ def preprocess_obs(obs: th.Tensor,
         (True by default)
     :return:
     """
-    if isinstance(observation_space, gym.spaces.Box):
+    if isinstance(observation_space, (gym.spaces.Box, eve.app.space.EveBox)):
         return obs.float()
 
-    elif isinstance(observation_space, gym.spaces.Discrete):
+    elif isinstance(observation_space,
+                    (gym.spaces.Discrete, eve.app.space.EveDiscrete)):
         # One hot encoding and convert to float to avoid errors
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
 
-    elif isinstance(observation_space, gym.spaces.MultiDiscrete):
+    elif isinstance(observation_space,
+                    (gym.spaces.MultiDiscrete, eve.app.space.EveMultiBinary)):
         # Tensor concatenation of one hot encodings of each Categorical sub-space
         return th.cat(
             [
@@ -363,7 +367,8 @@ def preprocess_obs(obs: th.Tensor,
             dim=-1,
         ).view(obs.shape[0], sum(observation_space.nvec))
 
-    elif isinstance(observation_space, gym.spaces.MultiBinary):
+    elif isinstance(observation_space,
+                    (gym.spaces.MultiBinary, eve.app.space.EveMultiBinary)):
         return obs.float()
 
     else:

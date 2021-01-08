@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Union
+from typing import List, Union, Callable
 
 import torch as th
 import torch.nn as nn
@@ -48,11 +48,17 @@ class Quantizer(Quan):
             if callable function provided, we will use it directly.
         average_tracker_momentum: if use average tracker, the momentum of the tracker.
         upgrade_bits: if ``True``, the bits can be changed all the time by upgrader.
+        neuron_wise: if ``False``, the bits will be shared among each neurons.
+            NOTE: if ``True``, the observation returned is [neurons, states] formot.
+            if ``Flase``, the observation returned is [states] formot.
         asymmetric: asymmetric quantization or not.
         signed_quantization: if ``True``, the quantization range can be negative.
         learnable_alpha: if the alpha should be learnable. in some quantization
             functions, the alpha value can be updated by gradient. if the alpha
             can be learnabled, we will not update it by tracker information.
+        state_list: a list contains ["name", fn] to calculate states.
+            if fn is None, we will try to load the build-in methods.
+            refer ``eve.core.state`` to see the supported function.
         kwargs: the extra arguments to quantization function.
 
     .. note::
@@ -61,19 +67,21 @@ class Quantizer(Quan):
         if learnable_alpha is enabled, the range tracker will be disabled to 
         avoid the conflict of grad update of alpha.
     """
-
-    def __init__(self,
-                 state: State,
-                 bits: int = 8,
-                 quantize_fn: str = "Round",
-                 range_tracker: str = "average_tracker",
-                 average_tracker_momentum: float = 0.1,
-                 upgrade_bits: bool = False,
-                 asymmetric: bool = False,
-                 signed_quantization: bool = False,
-                 learnable_alpha: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        state: State,
+        bits: int = 8,
+        quantize_fn: str = "Round",
+        range_tracker: str = "average_tracker",
+        average_tracker_momentum: float = 0.1,
+        upgrade_bits: bool = False,
+        neuron_wise: bool = False,
+        asymmetric: bool = False,
+        signed_quantization: bool = False,
+        learnable_alpha: bool = False,
+        state_list: List = None,
+        **kwargs,
+    ):
         super().__init__()
 
         self.state = state
@@ -82,17 +90,15 @@ class Quantizer(Quan):
         self.signed_quantization = signed_quantization
         self.learnable_alpha = learnable_alpha
         self.max_bits = bits
+        self.neuron_wise = neuron_wise
+
+        self.state.set_neuron_wise(self.neuron_wise)
 
         # bit eve is in range [0, 1]
         bits_eve = self.state._align_dims(
-            th.Tensor(
-                [1.0] * self.state.neurons)
-        )
-        self.register_eve_parameter(
-            "bits_eve",
-            Parameter(
-                bits_eve,
-                upgrade_bits))
+            th.Tensor([1.0] * (self.state.neurons if self.neuron_wise else 1)))
+        self.register_eve_parameter("bits_eve",
+                                    Parameter(bits_eve, upgrade_bits))
 
         # register function for bits_eve
 
@@ -107,23 +113,18 @@ class Quantizer(Quan):
         self.register_upgrade_fn(self.bits_eve, upgrade_fn)
 
         # register the state observation needed for bits_eve.
-        self.state.register_state_fn("k_fn")
-        self.state.register_state_fn("feat_out_fn")
-        self.state.register_state_fn("feat_in_fn")
-        self.state.register_state_fn("param_num_fn")
-        self.state.register_state_fn("stride_fn")
-        self.state.register_state_fn("kernel_size_fn")
-        self.state.register_state_fn("l1_norm_fn")
-        self.state.register_state_fn("kl_div_fn")
-        self.state.register_state_fn("fire_rate_fn")
+        if state_list is not None:
+            for name, fn in state_list:
+                self.state.register_state_fn(name, fn)
 
         # used for tracker
-        self.register_buffer("min_val", None)
-        self.register_buffer("max_val", None)
+        self.register_buffer("min_val", None, persistent=False)
+        self.register_buffer("max_val", None, persistent=False)
 
         # alpha
-        self.alpha = nn.Parameter(self.state._align_dims(
-            th.Tensor([1.0] * self.state.neurons)), learnable_alpha)
+        self.alpha = nn.Parameter(
+            self.state._align_dims(th.Tensor([1.0] * self.state.neurons)),
+            learnable_alpha)
 
         # register forward pre hook to do range tracker.
         self.average_tracker_momentum = average_tracker_momentum
@@ -136,10 +137,15 @@ class Quantizer(Quan):
             try:
                 quantize_fn = getattr(eve.core.quantize_fn, quantize_fn)
             except Exception as e:
-                raise NotImplementedError(f"only the following function supported: {eve.core.quantize_fn.__all__}"
-                                          f"Got: {quantize_fn}"
-                                          f"Raise: {e}")
+                raise NotImplementedError(
+                    f"only the following function supported: {eve.core.quantize_fn.__all__}"
+                    f"Got: {quantize_fn}"
+                    f"Raise: {e}")
         self.quantize_fn = quantize_fn
+
+    @property
+    def states(self):
+        return len(self.state.state_list())
 
     def obs(self, input, output):
         if not self.bits_eve.requires_grad:
@@ -154,14 +160,14 @@ class Quantizer(Quan):
     @property
     def positive(self):
         if self.signed_quantization:
-            return (2 ** (self.bits - 1) - 1) * (self.bits > 0)
+            return (2**(self.bits - 1) - 1) * (self.bits > 0)
         else:
-            return (2 ** (self.bits) - 1) * (self.bits > 0)
+            return (2**(self.bits) - 1) * (self.bits > 0)
 
     @property
     def negative(self):
         if self.signed_quantization:
-            return - (2 ** (self.bits - 1)) * (self.bits > 0)
+            return -(2**(self.bits - 1)) * (self.bits > 0)
         else:
             return th.zeros_like(self.bits)
 
@@ -169,10 +175,11 @@ class Quantizer(Quan):
     def asymmetric_quantization_param(self):
         quantized_range = self.positive - self.negative
         float_range = self.max_val - self.min_val
-        self.alpha.data.zero_().add_(float_range * quantized_range /
-                                     (quantized_range * quantized_range + 1e-8))
-        self.zero_point = th.round(
-            self.min_val * self.alpha / (self.alpha * self.alpha + 1e-8))
+        self.alpha.data.zero_().add_(
+            float_range * quantized_range /
+            (quantized_range * quantized_range + 1e-8))
+        self.zero_point = th.round(self.min_val * self.alpha /
+                                   (self.alpha * self.alpha + 1e-8))
 
     @th.no_grad()
     def symmetric_quantization_param(self):
@@ -182,8 +189,9 @@ class Quantizer(Quan):
         # in bits == 0, the quantized_range equals zero too.
         # we multiply quantized_range both in Numerator and Denominator to keep the
         # final alpha equals to 0
-        self.alpha.data.zero_().add_(float_range * quantized_range /
-                                     (quantized_range * quantized_range + 1e-8))
+        self.alpha.data.zero_().add_(
+            float_range * quantized_range /
+            (quantized_range * quantized_range + 1e-8))
         self.zero_point = th.zeros_like(self.alpha)
 
     @staticmethod
@@ -208,10 +216,10 @@ class Quantizer(Quan):
             cls.min_val = min_val
             cls.max_val = max_val
         else:
-            cls.min_val.mul_(1 - cls.average_tracker_momentum
-                             ).add_(min_val, alpha=cls.average_tracker_momentum)
-            cls.max_val.mul_(1 - cls.average_tracker_momentum
-                             ).add_(max_val, alpha=cls.average_tracker_momentum)
+            cls.min_val.mul_(1 - cls.average_tracker_momentum).add_(
+                min_val, alpha=cls.average_tracker_momentum)
+            cls.max_val.mul_(1 - cls.average_tracker_momentum).add_(
+                max_val, alpha=cls.average_tracker_momentum)
 
         # update parameters
         if cls.asymmetric:
@@ -252,4 +260,6 @@ class Quantizer(Quan):
             cls.symmetric_quantization_param()
 
     def quantization_forward(self, x: Tensor) -> Tensor:
-        return self.quantize_fn.apply(x, self.alpha, self.zero_point, self.positive, self.negative, **self.kwargs)
+        return self.quantize_fn.apply(x, self.alpha, self.zero_point,
+                                      self.positive, self.negative,
+                                      **self.kwargs)

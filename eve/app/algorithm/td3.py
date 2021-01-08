@@ -6,6 +6,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from eve.app import logger
+import eve.app.space
 from eve.app.algo import ActionNoise, MaybeCallback, OffPolicyAlgorithm
 from eve.app.buffers import get_action_dim
 from eve.app.policies import (BaseFeaturesExtractor, BasePolicy,
@@ -30,7 +31,6 @@ class Actor(BasePolicy):
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
-
     def __init__(
         self,
         observation_space: gym.spaces.Space,
@@ -109,7 +109,6 @@ class TD3Policy(BasePolicy):
     :param share_features_extractor: Whether to share or not the features extractor
         between the actor and the critic (this saves computation time)
     """
-
     def __init__(
         self,
         observation_space: gym.spaces.Space,
@@ -240,13 +239,18 @@ class TD3Policy(BasePolicy):
 
     def forward(self,
                 observation: th.Tensor,
+                state: th.Tensor = None,
                 deterministic: bool = False) -> th.Tensor:
-        return self._predict(observation, deterministic=deterministic)
+        # TODO (eve): add support to state
+        return self._predict(observation, state,
+                             deterministic=deterministic), state
 
     def _predict(self,
                  observation: th.Tensor,
+                 state: th.Tensor = None,
                  deterministic: bool = False) -> th.Tensor:
-        return self.actor(observation, deterministic=deterministic)
+        # TODO (eve): add support to state
+        return self.actor(observation, deterministic=deterministic), state
 
 
 MlpPolicy = TD3Policy
@@ -301,7 +305,6 @@ class TD3(OffPolicyAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
-
     def __init__(
         self,
         policy: Union[str, Type[TD3Policy]],
@@ -351,7 +354,7 @@ class TD3(OffPolicyAlgorithm):
             seed=seed,
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
-            supported_action_spaces=(gym.spaces.Box),
+            supported_action_spaces=(gym.spaces.Box, eve.app.space.EveBox),
         )
 
         self.policy_delay = policy_delay
@@ -398,14 +401,18 @@ class TD3(OffPolicyAlgorithm):
                 # Compute the next Q-values: min over all critics targets
                 next_q_values = th.cat(self.critic_target(
                     replay_data.next_observations, next_actions),
-                    dim=-1)
+                                       dim=-1)
                 next_q_values, _ = th.min(next_q_values, dim=-1, keepdim=True)
 
                 # make it suit for eve
                 if replay_data.rewards.dim() < next_q_values.dim():
                     rewards = replay_data.rewards.unsqueeze(1)
+                else:
+                    rewards = replay_data.rewards
                 if replay_data.dones.dim() < next_q_values.dim():
                     dones = replay_data.dones.unsqueeze(1)
+                else:
+                    dones = replay_data.dones
 
                 target_q_values = rewards + (
                     1 - dones) * self.gamma * next_q_values

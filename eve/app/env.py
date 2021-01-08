@@ -15,16 +15,16 @@ from typing import (Any, Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Type, Union)
 
 import cloudpickle
+import eve.app.space
 import gym
 import numpy as np
 import pandas
-
-from matplotlib import pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
+
 ################################
 # VECTORIZED ENVIRONMENT
 ################################
-
 
 # Define type aliases here to avoid circular import
 # Used when we want to access one or more VecEnv
@@ -45,7 +45,6 @@ class VecEnv(ABC):
     :param observation_space: the observation space
     :param action_space: the action space
     """
-
     def __init__(self, num_envs: int, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space):
         self.num_envs = num_envs
@@ -218,7 +217,6 @@ class VecEnvWrapper(VecEnv):
     :param observation_space: the observation space (can be None to load from venv)
     :param action_space: the action space (can be None to load from venv)
     """
-
     def __init__(
         self,
         venv: VecEnv,
@@ -423,7 +421,6 @@ class ObsDictWrapper(VecEnvWrapper):
 
     :param env: The vectorized environment to wrap.
     """
-
     def __init__(self, venv: VecEnv):
         super(ObsDictWrapper, self).__init__(venv, venv.observation_space,
                                              venv.action_space)
@@ -498,7 +495,6 @@ class CloudpickleWrapper:
 
     :param var: the variable you wish to wrap for pickling with cloudpickle
     """
-
     def __init__(self, var: Any):
         self.var = var
 
@@ -550,8 +546,10 @@ def _worker(remote: mp.connection.Connection,
         except EOFError:
             break
 
+
 GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
 GymStepReturn = Tuple[GymObs, float, bool, Dict]
+
 
 class DummyVecEnv(VecEnv):
     """
@@ -564,7 +562,6 @@ class DummyVecEnv(VecEnv):
     :param env_fns: a list of functions
         that return environments to vectorize
     """
-
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
@@ -573,12 +570,14 @@ class DummyVecEnv(VecEnv):
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
 
+        if isinstance(env.observation_space, eve.app.space.EveSpace):
+            buf_obs_shape = (self.num_envs, env.observation_space.max_neurons)
+        else:
+            buf_obs_shape = (self.num_envs, )
+
         self.buf_obs = OrderedDict(
-            [(k, np.zeros(
-                (self.num_envs, ) + tuple(shapes[k]),
-                dtype=dtypes[k])) for k in self.keys
-             ],
-        )
+            [(k, np.zeros(buf_obs_shape + tuple(shapes[k]), dtype=dtypes[k]))
+             for k in self.keys], )
         self.buf_dones = np.zeros((self.num_envs, ), dtype=np.bool)
         self.buf_rews = np.zeros((self.num_envs, ), dtype=np.float32)
         self.buf_infos = [{} for _ in range(self.num_envs)]
@@ -659,9 +658,7 @@ class DummyVecEnv(VecEnv):
                        indices: VecEnvIndices = None) -> List[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_envs = self._get_target_envs(indices)
-        return [
-            is_wrapped(env_i, wrapper_class) for env_i in target_envs
-        ]
+        return [is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 
     def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
         indices = self._get_indices(indices)
@@ -727,7 +724,6 @@ class SubprocVecEnv(VecEnv):
            Must be one of the methods returned by multiprocessing.get_all_start_methods().
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
-
     def __init__(self,
                  env_fns: List[Callable[[], gym.Env]],
                  start_method: Optional[str] = None):
@@ -887,7 +883,8 @@ class RunningMeanStd(object):
         self.count = new_count
 
 
-def check_for_correct_spaces(env: "GymEnv", observation_space: gym.spaces.Space,
+def check_for_correct_spaces(env: "GymEnv",
+                             observation_space: gym.spaces.Space,
                              action_space: gym.spaces.Space) -> None:
     """
     Checks that the environment has same spaces as provided ones. Used by BaseAlgorithm to check if
@@ -924,7 +921,6 @@ class VecNormalize(VecEnvWrapper):
     :param gamma: discount factor
     :param epsilon: To avoid division by zero
     """
-
     def __init__(
         self,
         venv: VecEnv,
@@ -1160,6 +1156,7 @@ class VecNormalize(VecEnvWrapper):
         """
         with open(save_path, "wb") as file_handler:
             pickle.dump(self, file_handler)
+
 
 ################################
 # MONITOR

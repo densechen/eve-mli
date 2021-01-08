@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from copy import deepcopy
 from typing import (Any, Callable, Dict, Iterable, List, Optional, Tuple, Type,
-                    Union, Generator)
+                    Union, Generator, final)
 from copy import deepcopy
 import eve.app.logger as logger
 import gym
@@ -29,7 +29,7 @@ import torch.nn.functional as F
 
 
 class BaseTrainer(ABC, gym.Env):
-    """
+    r"""
     The base of trainer.
 
     :param learning_rate: learning rate for the optimizer, it can be a function
@@ -44,11 +44,13 @@ class BaseTrainer(ABC, gym.Env):
     # the generator to fetch obsveration one by one.
     obs_generator: Generator
     # the previous eve parameters which attached with a obs
-    last_obs: th.Tensor
+    last_eve: th.Tensor
 
     # the baseline accuracy used for computing reward
     baseline_acc: float
     finetune_acc: float
+    accumulate_reward: float
+    best_reward: float
 
     # the upgrader is used to tell the trainer how to modified the networks
     # structure along with time.
@@ -57,25 +59,36 @@ class BaseTrainer(ABC, gym.Env):
     # cache the model state dict in RAM to speed up reloading
     state_dict_cache: dict
 
+    # env_id used to name a trainer
+    _env_id: str
+
+    global_model = None
+
+    @staticmethod
+    @final
+    def assign_model(model: BaseModel):
+        """Assign a model to global model, all instance of this class
+        will use the same model
+        """
+        BaseTrainer.global_model = model
+
     def __init__(
         self,
-        model: BaseModel,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
         device: Union[th.device, str] = "auto",
+        env_id: str = "basic_trainer",
         **kwargs,
     ):
         super().__init__()
-
-        assert isinstance(
-            model, BaseModel), f"BaseModel excepted, but got {th.typename(model)}"
 
         self.device = get_device(device)
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.model = model.to(self.device)
+        self.model = BaseTrainer.global_model.to(self.device)
         self.model.device = self.device
+        self.upgrader = self.model.upgrader
 
         self.verbose = verbose
 
@@ -90,11 +103,15 @@ class BaseTrainer(ABC, gym.Env):
 
         self.finetune_acc = 0.0
         self.baseline_acc = 0.0
+        self.accumulate_reward = 0.0
+        self.best_reward = 0.0
+
+        self._env_id = env_id
 
         self.kwargs = kwargs
 
-    def set_upgrader(self, upgrader: eve.app.Upgrader, *args, **kwargs):
-        self.upgrader = upgrader
+        # cache the inital model to RAM
+        self.cache_to_RAM()
 
     def cache_to_RAM(self):
         self.state_dict_cache = deepcopy(self.model.state_dict())
@@ -117,23 +134,27 @@ class BaseTrainer(ABC, gym.Env):
             print(f"load checkpoint from {path}")
 
         self.baseline_acc = self.model.test_epoch()["acc"]
+        # cache loaded model to RAM
+        self.cache_to_RAM()
 
     def save_checkpoint(self, path: str) -> None:
         th.save({"state_dict": self.model.state_dict()}, path)
         if self.verbose > 0:
             print(f"save checkpoint to {path}")
 
-    def fit(self, epochs: int, *args, **kwargs):
-        for e in range(epochs):
-            info = self.model.train_epoch(*args, *args, **kwargs)
-            print(f"Epoch ({e}):")
-            for k, v in info.items():
-                print(f"{k}\t: {v:.2f}")
+    def fit(self, *args, **kwargs):
+        """Fit the model.
+        """
+        return self.model.train_epoch(*args, *args, **kwargs)
 
     def test(self, *args, **kwargs):
+        """Test the model.
+        """
         return self.model.test_epoch(*args, **kwargs)
 
     def valid(self, *args, **kwargs):
+        """Valid the model.
+        """
         return self.model.valid_epoch(*args, **kwargs)
 
     ###
@@ -156,19 +177,28 @@ class BaseTrainer(ABC, gym.Env):
     def max_states(self) -> int:
         return self.model.max_states
 
+    def fit_step(self, *args, **kwargs):
+        return self.model.train_step(*args, **kwargs)
+
+    def test_step(self, *args, **kwargs):
+        return self.model.test_step(*args, **kwargs)
+
+    def valid_step(self, *args, **kwargs):
+        return self.model.valid_step(*args, **kwargs)
+
     def take_action(self, action: np.ndarray) -> None:
         action = th.as_tensor(action, device=self.device)
 
-        action = action[:self.last_obs.numel()].view_as(self.last_obs)
+        action = action[:self.last_eve.numel()].view_as(self.last_eve)
 
-        self.upgrader.take_action(self.last_obs, action)
+        self.upgrader.take_action(self.last_eve, action)
 
+    @abstractmethod
     def reward(self) -> float:
-        self.upgrader.zero_obs()
+        """A simple reward function.
 
-        info = self.model.train_step()
-
-        return info["acc"]
+        You have to rewrite this function based on your tasks.
+        """
 
     def fetch_obs(self) -> np.ndarray:
         """
@@ -184,19 +214,22 @@ class BaseTrainer(ABC, gym.Env):
             eve_obs = None
             self.obs_generator = None
 
-        self.last_obs = eve_obs
+        self.last_eve = eve_obs
 
         if eve_obs is not None:
             # pad obs to [max_neurons, max_states]
-            obs = eve_obs.obs_generator
-            neurons, states = obs.shape
-            padding = [
-                0,
-                self.max_states - states,
-                0,
-                self.max_neurons - neurons,
-            ]
-            obs = F.pad(obs, pad=padding)
+            obs = eve_obs.obs
+            if obs.cpu().numpy().shape != self.observation_space.shape:
+                # try to padding the state for neuron wise mode
+                neurons, states = obs.shape
+                padding = [
+                    0,
+                    self.max_states - states,
+                    0,
+                    self.max_neurons - neurons,
+                ]
+                obs = F.pad(obs, pad=padding)
+
             return obs.cpu().numpy().astype(np.float32)
         else:
             return None
@@ -220,6 +253,9 @@ class BaseTrainer(ABC, gym.Env):
         # obtain reward
         reward = self.reward()
 
+        # accumulate_reward
+        self.accumulate_reward += reward
+
         # current_obs
         obs = self.fetch_obs()
 
@@ -228,23 +264,13 @@ class BaseTrainer(ABC, gym.Env):
         else:
             return obs, reward, True, {}
 
+    @abstractmethod
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
 
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        # load best model first
-        self.load_cached_checkpoint_from_RAM()
-
-        finetune_acc = self.model.test_epoch()["acc"]
-
-        print(f"baseline: {self.baseline_acc}, ours: {finetune_acc}")
-
-        save_path = self.kwargs.get("save_path", os.path.join(
-            self.tensorboard_log, "model.ckpt"))
-
-        self.save_checkpoint(path=save_path)
 
     def seed(self, seed: Optional[int] = None) -> None:
         """
@@ -269,23 +295,33 @@ class BaseTrainer(ABC, gym.Env):
         self.steps += 1
         if self.steps % self.eval_steps == 0:
             self.steps = 0
-            finetune_acc = self.valid_epoch()["acc"]
+            finetune_acc = self.valid()["acc"]
             # eval model
             if finetune_acc > self.finetune_acc:
                 self.finetune_acc = finetune_acc
-                # save the model
-                self.cache_checkpoint_to_RAM()
-                if self.verbose > 1:
-                    print("a better model achieved, cache to RAM")
+            # reset model to explore more posibility
+            self.load_from_RAM()
 
-            # reset model to last best one.
-            self.load_cached_checkpoint_from_RAM()
+        # save best model which achieve higher reward
+        if self.accumulate_reward > self.best_reward:
+            self.cache_to_RAM()
+            self.best_reward = self.accumulate_reward
+
+        # clear accumulate reward
+        self.accumulate_reward = 0.0
 
         # reset related last value
         # WRAN: don't forget to reset self._obs_gen and self._last_eve_obs to None.
         # somtimes, the episode may be interrupted, but the gen do not reset.
-        self.last_obs = None
+        self.last_eve = None
         self.obs_generator = None
         self.upgrader.zero_obs()
-        self.train_one_step()
+        self.fit_step()
         return self.fetch_obs()
+
+    @property
+    def env_id(self):
+        if hasattr(self.model, "env_id"):
+            return self.model.env_id
+        else:
+            return self._env_id

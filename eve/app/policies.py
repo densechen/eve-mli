@@ -14,16 +14,15 @@ from eve.app.utils import (Schedule, get_device, is_vectorized_observation,
                            preprocess_obs)
 from eve.core.eve import Eve
 from torch.distributions import Bernoulli, Categorical, Normal
+import eve.app.space
 
 # pylint: disable=no-member
 # pylint: disable=no-member,unexpected-keyword-arg,no-value-for-parameter
-
 """Probability distributions."""
 
 
 class Distribution(ABC):
     """Abstract base class for distributions."""
-
     def __init__(self):
         super(Distribution, self).__init__()
 
@@ -129,7 +128,6 @@ class DiagGaussianDistribution(Distribution):
 
     :param action_dim:  Dimension of the action space.
     """
-
     def __init__(self, action_dim: int):
         super(DiagGaussianDistribution, self).__init__()
         self.distribution = None
@@ -221,7 +219,6 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
     :param action_dim: Dimension of the action space.
     :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
-
     def __init__(self, action_dim: int, epsilon: float = 1e-6):
         super(SquashedDiagGaussianDistribution, self).__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
@@ -282,7 +279,6 @@ class CategoricalDistribution(Distribution):
 
     :param action_dim: Number of discrete actions
     """
-
     def __init__(self, action_dim: int):
         super(CategoricalDistribution, self).__init__()
         self.distribution = None
@@ -338,7 +334,6 @@ class MultiCategoricalDistribution(Distribution):
 
     :param action_dims: List of sizes of discrete action spaces
     """
-
     def __init__(self, action_dims: List[int]):
         super(MultiCategoricalDistribution, self).__init__()
         self.action_dims = action_dims
@@ -372,7 +367,7 @@ class MultiCategoricalDistribution(Distribution):
             dist.log_prob(action) for dist, action in zip(
                 self.distributions, th.unbind(actions, dim=1))
         ],
-            dim=1).sum(dim=1)
+                        dim=1).sum(dim=1)
 
     def entropy(self) -> th.Tensor:
         return th.stack([dist.entropy() for dist in self.distributions],
@@ -406,7 +401,6 @@ class BernoulliDistribution(Distribution):
 
     :param action_dim: Number of binary actions
     """
-
     def __init__(self, action_dims: int):
         super(BernoulliDistribution, self).__init__()
         self.distribution = None
@@ -476,7 +470,6 @@ class StateDependentNoiseDistribution(Distribution):
         ``latent_sde`` in the code.
     :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
-
     def __init__(
         self,
         action_dim: int,
@@ -671,7 +664,6 @@ class TanhBijector(object):
 
     :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
-
     def __init__(self, epsilon: float = 1e-6):
         super(TanhBijector, self).__init__()
         self.epsilon = epsilon
@@ -757,9 +749,12 @@ def get_flattened_obs_dim(observation_space: gym.spaces.Space) -> int:
     # it may be a problem for Dict/Tuple spaces too...
     if isinstance(observation_space, gym.spaces.MultiDiscrete):
         return sum(observation_space.nvec)
+    elif isinstance(observation_space, eve.app.space.EveSpace):
+        return eve.app.space.flatdim(observation_space)
     else:
         # Use Gym internal method
         return gym.spaces.utils.flatdim(observation_space)
+
 
 # pylint: disable=no-member
 
@@ -771,7 +766,6 @@ class BaseFeaturesExtractor(Eve):
     :param observation_space:
     :param features_dim: Number of features extracted.
     """
-
     def __init__(self, observation_space: gym.Space, features_dim: int = 0):
         super(BaseFeaturesExtractor, self).__init__()
         assert features_dim > 0
@@ -793,11 +787,14 @@ class FlattenExtractor(BaseFeaturesExtractor):
 
     :param observation_space:
     """
-
-    def __init__(self, observation_space: gym.Space, start_dim: int = 1):
+    def __init__(self, observation_space: Union[gym.Space, "EveSpace"]):
         super(FlattenExtractor,
               self).__init__(observation_space,
                              get_flattened_obs_dim(observation_space))
+        if isinstance(observation_space, eve.app.space.EveSpace):
+            start_dim = 2
+        else:
+            start_dim = 1
         self.flatten = nn.Flatten(start_dim=start_dim)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
@@ -868,7 +865,6 @@ class MlpExtractor(Eve):
     :param activation_fn: The activation function to use for the networks.
     :param device:
     """
-
     def __init__(
         self,
         feature_dim: int,
@@ -1024,7 +1020,6 @@ class BaseModel(Eve, ABC):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
-
     def __init__(
         self,
         observation_space: gym.spaces.Space,
@@ -1191,7 +1186,6 @@ class BasePolicy(BaseModel):
     :param squash_output: For continuous actions, whether the output is squashed
         or not using a ``tanh()`` function.
     """
-
     def __init__(self, *args, squash_output: bool = False, **kwargs):
         super(BasePolicy, self).__init__(*args, **kwargs)
         self._squash_output = squash_output
@@ -1251,31 +1245,34 @@ class BasePolicy(BaseModel):
         :return: the model's action and the next state
             (used in recurrent policies)
         """
-        # TODO (GH/1): add support for RNN policies
-        # if state is None:
-        #     state = self.initial_state
-        # if mask is None:
-        #     mask = [False for _ in range(self.n_envs)]
         if isinstance(observation, dict):
             observation = ObsDictWrapper.convert_dict(observation)
         else:
             observation = np.array(observation)
 
         # TODO eve: add support to eve
-        shape = self.observation_space.shape
+        if isinstance(self.observation_space, eve.app.space.EveSpace):
+            shape = (self.observation_space.max_neurons,
+                     ) + self.observation_space.shape
+        else:
+            shape = self.observation_space.shape
 
         observation = observation.reshape((-1, ) + shape)
 
         observation = th.as_tensor(observation).to(self.device)
-        state = th.as_tensor(state).to(self.device)
+        if state is not None:
+            state = th.as_tensor(state).to(self.device)
         with th.no_grad():
-            actions, state = self._predict(
-                observation, state, deterministic=deterministic)
+            actions, state = self._predict(observation,
+                                           state,
+                                           deterministic=deterministic)
         # Convert to numpy
         actions = actions.cpu().numpy()
-        state = state.cpu().numpy()
+        if state is not None:
+            state = state.cpu().numpy()
 
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space,
+                      (gym.spaces.Box, eve.app.space.EveBox)):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
                 actions = self.unscale_action(actions)
@@ -1342,7 +1339,6 @@ class ActorCriticPolicy(BasePolicy):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
-
     def __init__(
         self,
         observation_space: gym.spaces.Space,
@@ -1532,6 +1528,7 @@ class ActorCriticPolicy(BasePolicy):
     def forward(
             self,
             obs: th.Tensor,
+            state: th.Tensor = None,
             deterministic: bool = False
     ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
@@ -1599,14 +1596,16 @@ class ActorCriticPolicy(BasePolicy):
             return self.action_dist.proba_distribution(
                 action_logits=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(mean_actions,  # pylint: disable=too-many-function-args
-                                                       self.log_std,
-                                                       latent_sde)
+            return self.action_dist.proba_distribution(
+                mean_actions,  # pylint: disable=too-many-function-args
+                self.log_std,
+                latent_sde)
         else:
             raise ValueError("Invalid action distribution")
 
     def _predict(self,
                  observation: th.Tensor,
+                 state: th.Tensor = None,
                  deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
@@ -1620,13 +1619,14 @@ class ActorCriticPolicy(BasePolicy):
         return distribution.get_actions(deterministic=deterministic)
 
     def evaluate_actions(
-            self, obs: th.Tensor,
+            self, obs: th.Tensor, state: th.Tensor,
             actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
 
         :param obs:
+        :param state: can be None, used in RNN model.
         :param actions:
         :return: estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
@@ -1664,7 +1664,6 @@ class ContinuousCritic(BaseModel):
     :param share_features_extractor: Whether the features extractor is shared or not
         between the actor and the critic (this saves computation time)
     """
-
     def __init__(
         self,
         observation_space: gym.spaces.Space,

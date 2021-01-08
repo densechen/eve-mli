@@ -30,29 +30,41 @@ class EveBox(EveSpace):
         Box(2,)
 
     """
-
-    def __init__(self, low, high, shape=None, dtype=np.float32):
+    def __init__(self,
+                 low,
+                 high,
+                 shape=None,
+                 max_neurons: int = None,
+                 max_states: int = None,
+                 dtype=np.float32):
         assert dtype is not None, 'dtype must be explicitly provided. '
         self.dtype = np.dtype(dtype)
+        self.max_neurons = max_neurons
+        self.max_states = max_states
 
         # determine shape if it isn't provided directly
         if shape is not None:
             shape = tuple(shape)
             assert np.isscalar(
-                low) or low.shape == shape, "low.shape doesn't match provided shape"
+                low
+            ) or low.shape == shape, "low.shape doesn't match provided shape"
             assert np.isscalar(
-                high) or high.shape == shape, "high.shape doesn't match provided shape"
+                high
+            ) or high.shape == shape, "high.shape doesn't match provided shape"
         elif not np.isscalar(low):
             shape = low.shape
             assert np.isscalar(
-                high) or high.shape == shape, "high.shape doesn't match low.shape"
+                high
+            ) or high.shape == shape, "high.shape doesn't match low.shape"
         elif not np.isscalar(high):
             shape = high.shape
             assert np.isscalar(
-                low) or low.shape == shape, "low.shape doesn't match high.shape"
+                low
+            ) or low.shape == shape, "low.shape doesn't match high.shape"
         else:
             raise ValueError(
-                "shape must be provided or inferred from the shapes of low or high")
+                "shape must be provided or inferred from the shapes of low or high"
+            )
 
         if np.isscalar(low):
             low = np.full(shape, low, dtype=dtype)
@@ -69,12 +81,13 @@ class EveBox(EveSpace):
                 return np.finfo(dtype).precision
             else:
                 return np.inf
+
         low_precision = _get_precision(self.low.dtype)
         high_precision = _get_precision(self.high.dtype)
         dtype_precision = _get_precision(self.dtype)
         if min(low_precision, high_precision) > dtype_precision:
-            logger.warn(
-                "Box bound precision lowered by casting to {}".format(self.dtype))
+            logger.warn("Box bound precision lowered by casting to {}".format(
+                self.dtype))
         self.low = self.low.astype(self.dtype)
         self.high = self.high.astype(self.dtype)
 
@@ -140,7 +153,8 @@ class EveBox(EveSpace):
     def contains(self, x):
         if isinstance(x, list):
             x = np.array(x)  # Promote list to array for contains check
-        return x.shape == self.shape and np.all(x >= self.low) and np.all(x <= self.high)
+        return x.shape == self.shape and np.all(x >= self.low) and np.all(
+            x <= self.high)
 
     def to_jsonable(self, sample_n):
         return np.array(sample_n).tolist()
@@ -149,10 +163,13 @@ class EveBox(EveSpace):
         return [np.asarray(sample) for sample in sample_n]
 
     def __repr__(self):
-        return "Box({}, {}, {}, {})".format(self.low.min(), self.high.max(), self.shape, self.dtype)
+        return "Box({}, {}, {}, {})".format(self.low.min(), self.high.max(),
+                                            self.shape, self.dtype)
 
     def __eq__(self, other):
-        return isinstance(other, EveBox) and (self.shape == other.shape) and np.allclose(self.low, other.low) and np.allclose(self.high, other.high)
+        return isinstance(
+            other, EveBox) and (self.shape == other.shape) and np.allclose(
+                self.low, other.low) and np.allclose(self.high, other.high)
 
 
 class EveDict(EveSpace):
@@ -186,10 +203,10 @@ class EveDict(EveSpace):
         >>>    })
     
     """
-
     def __init__(self, spaces=None, **spaces_kwargs):
         assert (spaces is None) or (
-            not spaces_kwargs), 'Use either Dict(spaces=dict(...)) or Dict(foo=x, bar=z)'
+            not spaces_kwargs
+        ), 'Use either Dict(spaces=dict(...)) or Dict(foo=x, bar=z)'
         if spaces is None:
             spaces = spaces_kwargs
         if isinstance(spaces, dict) and not isinstance(spaces, OrderedDict):
@@ -199,7 +216,8 @@ class EveDict(EveSpace):
         self.spaces = spaces
         for space in spaces.values():
             assert isinstance(
-                space, Space), 'Values of the dict should be instances of gym.Space'
+                space,
+                Space), 'Values of the dict should be instances of gym.Space'
         # None for shape and dtype, since it'll require special handling
         super(EveDict, self).__init__(None, None)
 
@@ -207,7 +225,8 @@ class EveDict(EveSpace):
         [space.seed(seed) for space in self.spaces.values()]
 
     def sample(self):
-        return OrderedDict([(k, space.sample()) for k, space in self.spaces.items()])
+        return OrderedDict([(k, space.sample())
+                            for k, space in self.spaces.items()])
 
     def contains(self, x):
         if not isinstance(x, dict) or len(x) != len(self.spaces):
@@ -227,12 +246,15 @@ class EveDict(EveSpace):
             yield key
 
     def __repr__(self):
-        return "EveDict(" + ", ". join([str(k) + ":" + str(s) for k, s in self.spaces.items()]) + ")"
+        return "EveDict(" + ", ".join(
+            [str(k) + ":" + str(s) for k, s in self.spaces.items()]) + ")"
 
     def to_jsonable(self, sample_n):
         # serialize as dict-repr of vectors
-        return {key: space.to_jsonable([sample[key] for sample in sample_n])
-                for key, space in self.spaces.items()}
+        return {
+            key: space.to_jsonable([sample[key] for sample in sample_n])
+            for key, space in self.spaces.items()
+        }
 
     def from_jsonable(self, sample_n):
         dict_of_list = {}
@@ -258,10 +280,11 @@ class EveDiscrete(EveSpace):
         >>> EveDiscrete(2)
 
     """
-
-    def __init__(self, n):
+    def __init__(self, n, max_neurons: int = None, max_states: int = None):
         assert n >= 0
         self.n = n
+        self.max_neurons = max_neurons
+        self.max_states = max_states
         super(EveDiscrete, self).__init__((), np.int64)
 
     def sample(self):
@@ -270,7 +293,8 @@ class EveDiscrete(EveSpace):
     def contains(self, x):
         if isinstance(x, int):
             as_int = x
-        elif isinstance(x, (np.generic, np.ndarray)) and (x.dtype.char in np.typecodes['AllInteger'] and x.shape == ()):
+        elif isinstance(x, (np.generic, np.ndarray)) and (
+                x.dtype.char in np.typecodes['AllInteger'] and x.shape == ()):
             as_int = int(x)
         else:
             return False
@@ -306,9 +330,10 @@ class EveMultiBinary(EveSpace):
                [1, 1]], dtype=int8)
 
     '''
-
-    def __init__(self, n):
+    def __init__(self, n, max_neurons: int = None, max_states: int = None):
         self.n = n
+        self.max_neurons = max_neurons
+        self.max_states = max_states
         if type(n) in [tuple, list, np.ndarray]:
             input_n = n
         else:
@@ -316,7 +341,10 @@ class EveMultiBinary(EveSpace):
         super(EveMultiBinary, self).__init__(input_n, np.int8)
 
     def sample(self):
-        return self.np_random.randint(low=0, high=2, size=self.n, dtype=self.dtype)
+        return self.np_random.randint(low=0,
+                                      high=2,
+                                      size=self.n,
+                                      dtype=self.dtype)
 
     def contains(self, x):
         if isinstance(x, list) or isinstance(x, tuple):
@@ -358,25 +386,29 @@ class EveMultiDiscrete(EveSpace):
         MultiDiscrete([ 5, 2, 2 ])
 
     """
-
-    def __init__(self, nvec):
+    def __init__(self, nvec, max_neurons: int = None, max_states: int = None):
         """
         nvec: vector of counts of each categorical variable
         """
         assert (np.array(nvec) > 0).all(), 'nvec (counts) have to be positive'
         self.nvec = np.asarray(nvec, dtype=np.int64)
 
+        self.max_neurons = max_neurons
+        self.max_states = max_states
+
         super(EveMultiDiscrete, self).__init__(self.nvec.shape, np.int64)
 
     def sample(self):
-        return (self.np_random.random_sample(self.nvec.shape)*self.nvec).astype(self.dtype)
+        return (self.np_random.random_sample(self.nvec.shape) *
+                self.nvec).astype(self.dtype)
 
     def contains(self, x):
         if isinstance(x, list):
             x = np.array(x)  # Promote list to array for contains check
         # if nvec is uint32 and space dtype is uint32, then 0 <= x < self.nvec guarantees that x
         # is within correct bounds for space dtype (even though x does not have to be unsigned)
-        return x.shape == self.shape and (0 <= x).all() and (x < self.nvec).all()
+        return x.shape == self.shape and (0 <= x).all() and (x <
+                                                             self.nvec).all()
 
     def to_jsonable(self, sample_n):
         return [sample.tolist() for sample in sample_n]
@@ -388,7 +420,8 @@ class EveMultiDiscrete(EveSpace):
         return "EveMultiDiscrete({})".format(self.nvec)
 
     def __eq__(self, other):
-        return isinstance(other, EveMultiDiscrete) and np.all(self.nvec == other.nvec)
+        return isinstance(other,
+                          EveMultiDiscrete) and np.all(self.nvec == other.nvec)
 
 
 class EveTuple(EveSpace):
@@ -398,12 +431,12 @@ class EveTuple(EveSpace):
     Example usage:
     self.observation_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(3)))
     """
-
     def __init__(self, spaces):
         self.spaces = spaces
         for space in spaces:
             assert isinstance(
-                space, Space), "Elements of the tuple must be instances of gym.Space"
+                space,
+                Space), "Elements of the tuple must be instances of gym.Space"
         super(EveTuple, self).__init__(None, None)
 
     def seed(self, seed=None):
@@ -419,15 +452,22 @@ class EveTuple(EveSpace):
             space.contains(part) for (space, part) in zip(self.spaces, x))
 
     def __repr__(self):
-        return "EveTuple(" + ", ". join([str(s) for s in self.spaces]) + ")"
+        return "EveTuple(" + ", ".join([str(s) for s in self.spaces]) + ")"
 
     def to_jsonable(self, sample_n):
         # serialize as list-repr of tuple of vectors
-        return [space.to_jsonable([sample[i] for sample in sample_n])
-                for i, space in enumerate(self.spaces)]
+        return [
+            space.to_jsonable([sample[i] for sample in sample_n])
+            for i, space in enumerate(self.spaces)
+        ]
 
     def from_jsonable(self, sample_n):
-        return [sample for sample in zip(*[space.from_jsonable(sample_n[i]) for i, space in enumerate(self.spaces)])]
+        return [
+            sample for sample in zip(*[
+                space.from_jsonable(sample_n[i])
+                for i, space in enumerate(self.spaces)
+            ])
+        ]
 
     def __getitem__(self, index):
         return self.spaces[index]
@@ -570,33 +610,25 @@ def flatten_space(space):
         True
     """
     if isinstance(space, EveBox):
-        return EveBox(space.low.flatten(), space.high.flatten(), dtype=space.dtype)
+        return EveBox(space.low.flatten(),
+                      space.high.flatten(),
+                      dtype=space.dtype)
     if isinstance(space, EveDiscrete):
         return EveBox(low=0, high=1, shape=(space.n, ), dtype=space.dtype)
     if isinstance(space, EveTuple):
         space = [flatten_space(s) for s in space.spaces]
-        return EveBox(
-            low=np.concatenate([s.low for s in space]),
-            high=np.concatenate([s.high for s in space]),
-            dtype=np.result_type(*[s.dtype for s in space])
-        )
+        return EveBox(low=np.concatenate([s.low for s in space]),
+                      high=np.concatenate([s.high for s in space]),
+                      dtype=np.result_type(*[s.dtype for s in space]))
     if isinstance(space, EveDict):
         space = [flatten_space(s) for s in space.spaces.values()]
-        return EveBox(
-            low=np.concatenate([s.low for s in space]),
-            high=np.concatenate([s.high for s in space]),
-            dtype=np.result_type(*[s.dtype for s in space])
-        )
+        return EveBox(low=np.concatenate([s.low for s in space]),
+                      high=np.concatenate([s.high for s in space]),
+                      dtype=np.result_type(*[s.dtype for s in space]))
     if isinstance(space, EveMultiBinary):
-        return EveBox(low=0,
-                      high=1,
-                      shape=(space.n, ),
-                      dtype=space.dtype
-                      )
+        return EveBox(low=0, high=1, shape=(space.n, ), dtype=space.dtype)
     if isinstance(space, EveMultiDiscrete):
-        return EveBox(
-            low=np.zeros_like(space.nvec),
-            high=space.nvec,
-            dtype=space.dtype
-        )
+        return EveBox(low=np.zeros_like(space.nvec),
+                      high=space.nvec,
+                      dtype=space.dtype)
     raise NotImplementedError

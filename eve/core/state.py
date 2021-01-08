@@ -63,10 +63,16 @@ class State(object):
         State.global_feat_out += self.neurons
         State.global_feat_in += self.filter_module.weight.shape[1]
         State.global_param_num += self.filter_module.weight.numel()
-        State.global_stride += self.filter_module.stride[0]
-        State.global_kernel_size += self.filter_module.kernel_size[0]
+        State.global_stride += self.filter_module.stride[
+            0] if self.filter_type == nn.Conv2d else 0
+        State.global_kernel_size += self.filter_module.kernel_size[
+            0] if self.filter_type == nn.Conv2d else 0
 
+        self.neuron_wise = False
         self.__fn__ = OrderedDict()
+
+    def set_neuron_wise(self, mode=True):
+        self.neuron_wise = mode
 
     def _align_dims(self, x):
         if isinstance(self.filter_module, nn.Linear):
@@ -124,14 +130,20 @@ class State(object):
         self.__fn__[name] = fn
 
     @th.no_grad()
-    def gather_states(self, input: Tensor = None, output: Tensor = None) -> namedtuple:
+    def gather_states(self,
+                      input: Tensor = None,
+                      output: Tensor = None) -> namedtuple:
         """Run over all states functions and stack all states along the last dim.
         """
-        state = namedtuple("state", self.state_list())
+        if len(self.__fn__) == 0:
+            return None
+        states = [fn(self, input, output) for fn in self.__fn__.values()]
+        states = th.stack(states, dim=-1)
 
-        states = state(*[fn(self, input, output)
-                         for fn in self.__fn__.values()])
-        return th.stack(states, dim=-1)
+        if self.neuron_wise:
+            return states  # [neurons, obs]
+        else:
+            return states.squeeze(dim=0)  # [obs]
 
     @property
     def device(self):
@@ -190,19 +202,29 @@ class State(object):
 
     @staticmethod
     def k_fn(cls, input=None, output=None):
-        return th.tensor([cls.idx / State.global_idx] * cls.neurons, device=cls.device)
+        return th.tensor([cls.idx / State.global_idx] *
+                         (cls.neurons if cls.neuron_wise else 1),
+                         device=cls.device)
 
     @staticmethod
     def feat_out_fn(cls, input=None, output=None):
-        return th.tensor([cls.neurons / State.global_feat_out]*cls.neurons, device=cls.device)
+        return th.tensor([cls.neurons / State.global_feat_out] *
+                         (cls.neurons if cls.neuron_wise else 1),
+                         device=cls.device)
 
     @staticmethod
     def feat_in_fn(cls, input=None, output=None):
-        return th.tensor([cls.filter_module.weight.shape[1] / State.global_feat_in] * cls.neurons, device=cls.device)
+        return th.tensor(
+            [cls.filter_module.weight.shape[1] / State.global_feat_in] *
+            (cls.neurons if cls.neuron_wise else 1),
+            device=cls.device)
 
     @staticmethod
     def param_num_fn(cls, input=None, output=None):
-        return th.tensor([cls.filter_module.weight.numel() / State.global_param_num] * cls.neurons, device=cls.device)
+        return th.tensor(
+            [cls.filter_module.weight.numel() / State.global_param_num] *
+            (cls.neurons if cls.neuron_wise else 1),
+            device=cls.device)
 
     @staticmethod
     def stride_fn(cls, input=None, output=None):
@@ -210,7 +232,9 @@ class State(object):
             stride = 0.0
         else:
             stride = cls.filter_module.stride[0]
-        return th.tensor([stride / State.global_stride] * cls.neurons, device=cls.device)
+        return th.tensor([stride / State.global_stride] *
+                         (cls.neurons if cls.neuron_wise else 1),
+                         device=cls.device)
 
     @staticmethod
     def kernel_size_fn(cls, input=None, output=None):
@@ -218,30 +242,38 @@ class State(object):
             kernel_size = 0.0
         else:
             kernel_size = cls.filter_module.kernel_size[0]
-        return th.tensor([kernel_size * State.global_kernel_size] * cls.neurons, device=cls.device)
+        return th.tensor([kernel_size / State.global_kernel_size] *
+                         (cls.neurons if cls.neuron_wise else 1),
+                         device=cls.device)
 
     @staticmethod
     def l1_norm_fn(cls, input=None, output=None):
         if cls.filter_type == nn.Linear:
             # filter shape is [featout, featin]
             weight = cls.filter_weight
-            return weight.abs().sum(dim=1)  # [featout]
+            l1_norm = weight.abs().mean(dim=1)  # [featout]
         elif cls.filter_type == nn.Conv2d:
             # filter shape is [outchannel, inchannel, w, h]
             weight = cls.filter_weight
-            return weight.abs().sum(dim=(1, 2, 3))  # [featout]
+            l1_norm = weight.abs().mean(dim=(1, 2, 3))  # [featout]
         else:
             raise NotImplementedError
+
+        return l1_norm if cls.neuron_wise else l1_norm.mean(0, keepdim=True)
 
     @staticmethod
     def kl_div_fn(cls, input=None, output=None):
         """input is a list containing all input non-position value.
         """
         dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[cls.filter_type]
-        return F.kl_div(input[0], output,
-                        reduction="none").mean(dim, keepdim=False)
+        kl_div = F.kl_div(input[0], output,
+                          reduction="none").mean(dim, keepdim=False)
+        return kl_div if cls.neuron_wise else kl_div.mean(0, keepdim=True)
 
     @staticmethod
     def fire_rate_fn(cls, input=None, output=None):
         dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[cls.filter_type]
-        return (output > 0.0).float().mean(dim, keepdim=False)
+        fire_rate = (output > 0.0).float().mean(dim, keepdim=False)
+
+        return fire_rate if cls.neuron_wise else fire_rate.mean(0,
+                                                                keepdim=True)

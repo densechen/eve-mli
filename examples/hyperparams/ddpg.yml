@@ -1,5 +1,5 @@
 # Tuned
-mnist-v0:
+mnist_trainer:
   n_timesteps: !!float 1e6
   policy: 'MlpPolicy'
   gamma: 0.98
@@ -9,19 +9,5 @@ mnist-v0:
   noise_std: 0.1
   gradient_steps: -1
   n_episodes_rollout: 1
-  learning_rate: !!float 1e-5
-  policy_kwargs: "dict(net_arch=[400, 300])"
-
-# Tuned
-cifar10vgg-v0:
-  n_timesteps: !!float 1e6
-  policy: 'MlpPolicy'
-  gamma: 0.98
-  buffer_size: 2000
-  learning_starts: 1000
-  noise_type: 'normal'
-  noise_std: 0.1
-  gradient_steps: -1
-  n_episodes_rollout: 1
-  learning_rate: !!float 1e-5
+  learning_rate: !!float 1e-3
   policy_kwargs: "dict(net_arch=[400, 300])"

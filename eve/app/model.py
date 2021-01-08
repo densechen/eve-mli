@@ -69,6 +69,10 @@ class BaseModel(Eve):
     optimizer: th.optim.Optimizer
     scheduler: th.optim.lr_scheduler._LRScheduler
 
+    # upgrader is used to control the evolution of network.
+    # all the eve parameters will be adapted by upgrader.
+    upgrader: eve.app.Upgrader
+
     # set them if used RL training.
     max_neurons: int  # the widthest part of feature.
     max_states: int  # the widthest part of observation.
@@ -195,7 +199,10 @@ class BaseModel(Eve):
             info = self.valid_step(*args, **kwargs)
         return info
 
-    def train_epoch(self, *args, timesteps: int = -1, **kwargs) -> Dict[str, Any]:
+    def train_epoch(self,
+                    *args,
+                    timesteps: int = -1,
+                    **kwargs) -> Dict[str, Any]:
         """Train the model for timesteps times.
 
         :param timesteps: the max iterations to train. if -1, train it on 
@@ -212,9 +219,12 @@ class BaseModel(Eve):
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
         else:
-            return {k: sum(v)/len(v) for k, v in infos.items()}
+            return {k: sum(v) / len(v) for k, v in infos.items()}
 
-    def test_epoch(self, *args, timesteps: int = -1, **kwargs) -> Dict[str, Any]:
+    def test_epoch(self,
+                   *args,
+                   timesteps: int = -1,
+                   **kwargs) -> Dict[str, Any]:
         """Test the model for timesteps times.
 
         :param timesteps: the max iterations to test. if -1, test it on 
@@ -231,9 +241,12 @@ class BaseModel(Eve):
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
         else:
-            return {k: sum(v)/len(v) for k, v in infos.items()}
+            return {k: sum(v) / len(v) for k, v in infos.items()}
 
-    def valid_epoch(self, *args, timesteps: int = -1, **kwargs) -> Dict[str, Any]:
+    def valid_epoch(self,
+                    *args,
+                    timesteps: int = -1,
+                    **kwargs) -> Dict[str, Any]:
         """Valid the model for timesteps times.
 
         :param timesteps: the max iterations to valid. if -1, valid it on 
@@ -250,7 +263,7 @@ class BaseModel(Eve):
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
         else:
-            return {k: sum(v)/len(v) for k, v in infos.items()}
+            return {k: sum(v) / len(v) for k, v in infos.items()}
 
     @abstractmethod
     def prepare_data(self, *args, **kwargs) -> None:
@@ -268,17 +281,19 @@ class BaseModel(Eve):
         self.test_dataloader = None
         self.valid_dataloader = None
 
-    def setup_train(
-            self,
-            optimizer: th.optim.Optimizer = None,
-            scheduler: th.optim.lr_scheduler._LRScheduler = None,
-            *args, **kwargs) -> None:
+    def setup_train(self,
+                    optimizer: th.optim.Optimizer = None,
+                    scheduler: th.optim.lr_scheduler._LRScheduler = None,
+                    upgrader: eve.app.Upgrader = None,
+                    *args,
+                    **kwargs) -> None:
         """ Setups train.
 
         optimizer and scheduler will be assigned in this function.
         """
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.upgrader = upgrader
 
     @abstractmethod
     def forward(self, batch, batch_idx, *args, **kwargs) -> Dict[str, Any]:
@@ -307,6 +322,28 @@ class BaseModel(Eve):
                 new_state_dict[k] = v
         self.load_state_dict(new_state_dict)
 
+    @staticmethod
+    def load(self, path: str):
+        """load everything from file.
+        """
+        ckpt = th.load(path, map_location=self.device)
+        if self.optimizer is not None:
+            self.optimizer.load_state_dict(ckpt["optim_state_dict"])
+        if self.scheduler is not None:
+            self.scheduler.load_state_dict(ckpt["sche_state_dict"])
+        self.load_state_dict(ckpt["state_dict"])
+
+    @staticmethod
+    def save(self, path: str):
+        """save everything from file.
+        """
+        th.save(
+            {
+                "state_dict": self.state_dict(),
+                "optim_state_dict": self.optimizer.state_dict(),
+                "sche_state_dict": self.scheduler.state_dict()
+            }, path)
+
 
 class Classifier(BaseModel):
     """A simple class for classification task.
@@ -314,7 +351,6 @@ class Classifier(BaseModel):
     We will use Cross-Entropy Loss as default and provide 
     a default settting to it.
     """
-
     def __init__(self, model: Eve, device: Union[th.device, str] = "auto"):
         super().__init__(device)
 
@@ -348,26 +384,41 @@ class Classifier(BaseModel):
             "acc": self._top_one_accuracy(y_hat, y),
         }
 
-    def setup_train(
-            self,
-            optimizer: th.optim.Optimizer = None,
-            scheduler: th.optim.lr_scheduler._LRScheduler = None,
-            **kwargs):
+    def setup_train(self,
+                    optimizer: th.optim.Optimizer = None,
+                    scheduler: th.optim.lr_scheduler._LRScheduler = None,
+                    upgrader: eve.app.Upgrader = None,
+                    **kwargs):
+        """Set the optimizer, scheduler and upgrader.
+        """
         if self.train_dataloader is None:
             raise RuntimeError("Call self.prepare_data() to load data first.")
+
         if optimizer is not None:
             self.optimizer = optimizer
         else:
-            self.optimizer = th.optim.Adam(self.torch_parameters(), lr=kwargs.get(
-                "lr", 1e-3), weight_decay=kwargs.get("weight_decay", 1e-6))
-
+            self.optimizer = th.optim.Adam(self.torch_parameters(),
+                                           lr=kwargs.get("lr", 1e-3),
+                                           weight_decay=kwargs.get(
+                                               "weight_decay", 1e-6))
         if scheduler is not None:
             self.scheduler = scheduler
         else:
             self.scheduler = th.optim.lr_scheduler.MultiStepLR(
-                self.optimizer, milestones=[
-                    50 * len(self.train_dataloader), 100 * len(self.train_dataloader)],
+                self.optimizer,
+                milestones=[
+                    50 * len(self.train_dataloader),
+                    100 * len(self.train_dataloader)
+                ],
                 gamma=kwargs.get("gamma", 0.1))
+
+        if upgrader is not None:
+            self.upgrader = upgrader
+        else:
+            if len(list(self.eve_parameters())) > 0:
+                self.upgrader = eve.app.Upgrader(self.eve_parameters())
+            else:
+                self.upgrader = None
 
     def prepare_data(self, data_root: str, *args, **kwargs):
         from torch.utils.data import DataLoader, random_split
@@ -397,11 +448,18 @@ class Classifier(BaseModel):
                                     download=True,
                                     transform=cifar10_transform_test)
 
-        self.train_dataloader = DataLoader(self.train_dataset,
-                                           batch_size=kwargs.get(
-                                               "batch_size", 128),
-                                           shuffle=True, num_workers=kwargs.get("num_workers", 4))
-        self.test_dataloader = DataLoader(self.test_dataset, batch_size=kwargs.get(
-            "batch_size", 128), shuffle=False, num_workers=kwargs.get("num_workers", 4))
-        self.valid_dataloader = DataLoader(self.valid_dataset, batch_size=kwargs.get(
-            "batch_size", 128), shuffle=False, num_workers=kwargs.get("num_workers", 4))
+        self.train_dataloader = DataLoader(
+            self.train_dataset,
+            batch_size=kwargs.get("batch_size", 128),
+            shuffle=True,
+            num_workers=kwargs.get("num_workers", 4))
+        self.test_dataloader = DataLoader(
+            self.test_dataset,
+            batch_size=kwargs.get("batch_size", 128),
+            shuffle=False,
+            num_workers=kwargs.get("num_workers", 4))
+        self.valid_dataloader = DataLoader(
+            self.valid_dataset,
+            batch_size=kwargs.get("batch_size", 128),
+            shuffle=False,
+            num_workers=kwargs.get("num_workers", 4))

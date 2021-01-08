@@ -14,6 +14,7 @@ import eve.app.logger as logger
 import gym
 import numpy as np
 import torch as th
+import eve.app.space
 from eve.app.buffers import ReplayBuffer, RolloutBuffer, RolloutReturn
 from eve.app.callbacks import (BaseCallback, CallbackList, ConvertCallback,
                                EvalCallback, MaybeCallback)
@@ -35,7 +36,6 @@ class ActionNoise(ABC):
     """
     The action noise base class
     """
-
     def __init__(self):
         super(ActionNoise, self).__init__()
 
@@ -57,7 +57,6 @@ class NormalActionNoise(ActionNoise):
     :param mean: the mean value of the noise
     :param sigma: the scale of the noise (std here)
     """
-
     def __init__(self, mean: np.ndarray, sigma: np.ndarray):
         self._mu = mean
         self._sigma = sigma
@@ -82,7 +81,6 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
     :param dt: the timestep for the noise
     :param initial_noise: the initial value for the noise output, (if None: 0)
     """
-
     def __init__(
         self,
         mean: np.ndarray,
@@ -125,7 +123,6 @@ class VectorizedActionNoise(ActionNoise):
     :param base_noise: ActionNoise The noise generator to use
     :param n_envs: The number of parallel environments
     """
-
     def __init__(self, base_noise: ActionNoise, n_envs: int):
         try:
             self.n_envs = int(n_envs)
@@ -273,7 +270,6 @@ class BaseAlgorithm(ABC):
         Default: -1 (only sample at the beginning of the rollout)
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
-
     def __init__(
         self,
         policy: Type[BasePolicy],
@@ -974,7 +970,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         See https://github.com/hill-a/stable-baselines/issues/863
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
-
     def __init__(
         self,
         policy: Type[BasePolicy],
@@ -1207,20 +1202,29 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             The two differs when the action space is not normalized (bounds are not [-1, 1]).
         """
         # Select action randomly or according to policy
+        # if neuron wise, the action space is [n_envs, neurons, actions]
+        # else, the action space is [n_envs, actions]
         if self.num_timesteps < learning_starts and not (
                 self.use_sde and self.use_sde_at_warmup):
             # Warmup phase
-            # add support to eve
-            unscaled_action = np.array([self.action_space.sample()])
+            if isinstance(self.action_space, eve.app.space.EveSpace):
+                unscaled_action = []
+                for _ in range(self.action_space.max_neurons):
+                    unscaled_action.append(self.action_space.sample())
+                unscaled_action = np.array([unscaled_action])
+            else:
+                unscaled_action = np.array([self.action_space.sample()])
         else:
             # Note: when using continuous actions,
             # we assume that the policy uses tanh to scale the action
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
             unscaled_action, _ = self.predict(self._last_obs,
+                                              state=None,
                                               deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space,
+                      (gym.spaces.Box, eve.app.space.EveBox)):
             scaled_action = self.policy.scale_action(unscaled_action)
 
             # Add noise to the action (improve exploration)
@@ -1391,7 +1395,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     action_noise.reset()
 
                 # Log training infos
-                if log_interval is not None and self._episode_num % log_interval == 0:
+                if log_interval is not None and log_interval > 0 and self._episode_num % log_interval == 0:
                     self._dump_logs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
@@ -1435,7 +1439,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
-
     def __init__(
         self,
         policy: Union[str, Type[ActorCriticPolicy]],

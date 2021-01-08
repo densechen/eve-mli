@@ -9,7 +9,7 @@ import gym
 import numpy as np
 import psutil
 import torch as th
-
+import eve.app.space
 # pylint: disable=no-member
 
 
@@ -46,15 +46,23 @@ def get_action_dim(action_space: gym.spaces.Space) -> int:
     """
     if isinstance(action_space, gym.spaces.Box):
         return int(np.prod(action_space.shape))
-    # TODO (eve): add new type for eve supported.
+    elif isinstance(action_space, eve.app.space.EveBox):
+        # add special case for eve
+        return int(np.prod(action_space.shape[1:]))
     elif isinstance(action_space, gym.spaces.Discrete):
         # Action is an int
+        return 1
+    elif isinstance(action_space, eve.space.EveDiscrete):
         return 1
     elif isinstance(action_space, gym.spaces.MultiDiscrete):
         # Number of discrete actions
         return int(len(action_space.nvec))
+    elif isinstance(action_space, eve.space.EveMultiDiscrete):
+        return int(len(action_space.nvec))
     elif isinstance(action_space, gym.spaces.MultiBinary):
         # Number of binary actions
+        return int(action_space.n)
+    elif isinstance(action_space, eve.space.EveMultiBinary):
         return int(action_space.n)
     else:
         raise NotImplementedError(
@@ -70,15 +78,22 @@ def get_obs_shape(observation_space: gym.spaces.Space) -> Tuple[int, ...]:
     """
     if isinstance(observation_space, gym.spaces.Box):
         return observation_space.shape
-    # TODO (eve): add new type for eve supported.
+    elif isinstance(observation_space, eve.app.space.EveBox):
+        return observation_space.shape
     elif isinstance(observation_space, gym.spaces.Discrete):
         # Observation is an int
+        return (1, )
+    elif isinstance(observation_space, eve.app.space.EveDiscrete):
         return (1, )
     elif isinstance(observation_space, gym.spaces.MultiDiscrete):
         # Number of discrete features
         return (int(len(observation_space.nvec)), )
+    elif isinstance(observation_space, eve.app.space.EveMultiDiscrete):
+        return (int(len(observation_space.nvec)), )
     elif isinstance(observation_space, gym.spaces.MultiBinary):
         # Number of binary features
+        return (int(observation_space.n), )
+    elif isinstance(observation_space, eve.app.space.EveMultiBinary):
         return (int(observation_space.n), )
     else:
         raise NotImplementedError(
@@ -96,7 +111,6 @@ class BaseBuffer(ABC):
         to which the values will be converted
     :param n_envs: Number of parallel environments
     """
-
     def __init__(
         self,
         buffer_size: int,
@@ -238,7 +252,6 @@ class ReplayBuffer(BaseBuffer):
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
         and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
     """
-
     def __init__(
         self,
         buffer_size: int,
@@ -260,18 +273,32 @@ class ReplayBuffer(BaseBuffer):
         mem_available = psutil.virtual_memory().available
 
         self.optimize_memory_usage = optimize_memory_usage
-        self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype)
+
+        if isinstance(self.observation_space, eve.app.space.EveSpace):
+            buffer_obs_shape = (
+                self.buffer_size, self.n_envs,
+                self.observation_space.max_neurons) + self.obs_shape
+            buffer_action_shape = (self.buffer_size, self.n_envs,
+                                   self.action_space.max_neurons,
+                                   self.action_dim)
+        else:
+            buffer_obs_shape = (
+                self.buffer_size,
+                self.n_envs,
+            ) + self.obs_shape
+            buffer_action_shape = (self.buffer_size, self.n_envs,
+                                   self.action_dim)
+
+        self.observations = np.zeros(buffer_obs_shape,
+                                     dtype=observation_space.dtype)
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
         else:
-            self.next_observations = np.zeros(
-                (self.buffer_size, self.n_envs) + self.obs_shape,
-                dtype=observation_space.dtype)
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
+            self.next_observations = np.zeros(buffer_obs_shape,
+                                              dtype=observation_space.dtype)
+
+        self.actions = np.zeros(buffer_action_shape, dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs),
                                 dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs),
@@ -379,7 +406,6 @@ class RolloutBuffer(BaseBuffer):
     :param gamma: Discount factor
     :param n_envs: Number of parallel environments
     """
-
     def __init__(
         self,
         buffer_size: int,
@@ -404,10 +430,24 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape, dtype=np.float32)
+        if isinstance(self.observation_space, eve.app.space.EveSpace):
+            buffer_obs_shape = (
+                self.buffer_size, self.n_envs,
+                self.observation_space.max_neurons) + self.obs_shape
+            buffer_action_shape = (self.buffer_size, self.n_envs,
+                                   self.action_space.max_neurons,
+                                   self.action_dim)
+        else:
+            buffer_obs_shape = (
+                self.buffer_size,
+                self.n_envs,
+            ) + self.obs_shape
+            buffer_action_shape = (self.buffer_size, self.n_envs,
+                                   self.action_dim)
+        self.observations = np.zeros(buffer_obs_shape, dtype=np.float32)
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, (self.buffer_size, self.n_envs, self.action_dim)), dtype=np.float32)
+            (self.buffer_size, self.n_envs, buffer_action_shape),
+            dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs),
                                 dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs),

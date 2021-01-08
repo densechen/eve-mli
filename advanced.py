@@ -290,7 +290,6 @@ print("=" * 10, env_id, "=" * 10)
 print(f"Seed: {args.seed}")
 
 exp_manager = ExperimentManager(
-    args,
     args.algo,
     env_id,
     args.log_folder,

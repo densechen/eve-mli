@@ -26,6 +26,7 @@ from optuna.integration.skopt import SkoptSampler
 from optuna.pruners import BasePruner, MedianPruner, SuccessiveHalvingPruner
 from optuna.samplers import BaseSampler, RandomSampler, TPESampler
 
+
 class StoreDict(argparse.Action):
     """
     Custom argparse action for storing dict.
@@ -33,7 +34,6 @@ class StoreDict(argparse.Action):
     In: args1:0.0 args2:"dict(a=1)"
     Out: {'args1': 0.0, arg2: dict(a=1)}
     """
-
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         self._nargs = nargs
         super(StoreDict, self).__init__(option_strings,
@@ -49,6 +49,7 @@ class StoreDict(argparse.Action):
             # Evaluate the string as python code
             arg_dict[key] = eval(value)
         setattr(namespace, self.dest, arg_dict)
+
 
 def get_callback_list(hyperparams: Dict[str, Any]) -> List[BaseCallback]:
     """
@@ -152,37 +153,35 @@ class ExperimentManager(object):
 
         Refer `examples/advanced.ipynb` for a detailed using example.
     """
-
     def __init__(
-            self,
-            args: argparse.Namespace,
-            algo: str,
-            env_id: str,
-            log_folder: str,
-            tensorboard_log: str = "",
-            n_timesteps: int = 0,
-            eval_freq: int = 10000,
-            n_eval_episodes: int = 5,
-            save_freq: int = -1,
-            hyperparams: Optional[Dict[str, Any]] = None,
-            env_kwargs: Optional[Dict[str, Any]] = None,
-            trained_agent: str = "",
-            optimize_hyperparameters: bool = False,
-            storage: Optional[str] = None,
-            study_name: Optional[str] = None,
-            n_trials: int = 1,
-            n_jobs: int = 1,
-            sampler: str = "tpe",
-            pruner: str = "median",
-            n_startup_trials: int = 0,
-            n_evaluations: int = 1,
-            uuid_str: str = "",
-            seed: int = 0,
-            log_interval: int = 0,
-            save_replay_buffer: bool = False,
-            verbose: int = 1,
-            vec_env_type: str = "dummy",
-            default_hyperparameter_yaml:
+        self,
+        algo: str,
+        env_id: str,
+        log_folder: str,
+        tensorboard_log: str = "",
+        n_timesteps: int = 0,
+        eval_freq: int = 10000,
+        n_eval_episodes: int = 5,
+        save_freq: int = -1,
+        hyperparams: Optional[Dict[str, Any]] = None,
+        env_kwargs: Optional[Dict[str, Any]] = None,
+        trained_agent: str = "",
+        optimize_hyperparameters: bool = False,
+        storage: Optional[str] = None,
+        study_name: Optional[str] = None,
+        n_trials: int = 1,
+        n_jobs: int = 1,
+        sampler: str = "tpe",
+        pruner: str = "median",
+        n_startup_trials: int = 0,
+        n_evaluations: int = 1,
+        uuid_str: str = "",
+        seed: int = 0,
+        log_interval: int = 0,
+        save_replay_buffer: bool = False,
+        verbose: int = 1,
+        vec_env_type: str = "dummy",
+        default_hyperparameter_yaml:
         # the folder contains the default hyperparameter for differnt ALGOS.
         str = "hyperparams",
     ):
@@ -239,7 +238,6 @@ class ExperimentManager(object):
         self.tensorboard_log = None if tensorboard_log == "" else os.path.join(
             tensorboard_log, env_id)
         self.verbose = verbose
-        self.args = args
         self.log_interval = log_interval
         self.save_replay_buffer = save_replay_buffer
 
@@ -251,7 +249,7 @@ class ExperimentManager(object):
         self.params_path = f"{self.save_path}/{self.env_id}"
         self.default_hyperparameter_yaml = default_hyperparameter_yaml
 
-    def setup_experiment(self) -> Optional[BaseAlgorithm]:
+    def setup_experiment(self, env=None) -> Optional[BaseAlgorithm]:
         """
         Read hyperparameters, pre-process them (create schedules, wrappers, callbacks, action noise objects)
         create the environment and possibly the model.
@@ -266,7 +264,7 @@ class ExperimentManager(object):
         self.create_callbacks()
 
         # Create env to have access to action space for action noise
-        env = self.create_envs(self.n_envs, no_log=False)
+        env = self.create_envs(env, self.n_envs, no_log=False)
 
         self._hyperparams = self._preprocess_action_noise(hyperparams, env)
 
@@ -345,14 +343,6 @@ class ExperimentManager(object):
         with open(os.path.join(self.params_path, "config.yml"), "w") as f:
             yaml.dump(saved_hyperparams, f)
 
-        # save command line arguments
-        with open(os.path.join(self.params_path, "args.yml"), "w") as f:
-            ordered_args = OrderedDict([
-                (key, vars(self.args)[key])
-                for key in sorted(vars(self.args).keys())
-            ])
-            yaml.dump(ordered_args, f)
-
         print(f"Log path: {self.save_path}")
 
     def read_hyperparameters(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -391,8 +381,7 @@ class ExperimentManager(object):
             if key not in hyperparams:
                 continue
             if isinstance(hyperparams[key], str):
-                _, initial_value = hyperparams[key].split(
-                    "_")  # pylint: disable=unused-variable
+                _, initial_value = hyperparams[key].split("_")  # pylint: disable=unused-variable
                 initial_value = float(initial_value)
                 hyperparams[key] = linear_schedule(initial_value)
             elif isinstance(hyperparams[key], (float, int)):
@@ -526,27 +515,27 @@ class ExperimentManager(object):
                     verbose=1,
                 ))
 
-        # Create test env if needed, do not normalize reward
-        if self.eval_freq > 0 and not self.optimize_hyperparameters:
-            # Account for the number of parallel environments
-            self.eval_freq = max(self.eval_freq // self.n_envs, 1)
+        # # Create test env if needed, do not normalize reward
+        # if self.eval_freq > 0 and not self.optimize_hyperparameters:
+        #     # Account for the number of parallel environments
+        #     self.eval_freq = max(self.eval_freq // self.n_envs, 1)
 
-            if self.verbose > 0:
-                print("Creating test environment")
+        #     if self.verbose > 0:
+        #         print("Creating test environment")
 
-            save_vec_normalize = SaveVecNormalizeCallback(
-                save_freq=1, save_path=self.params_path)
-            eval_callback = EvalCallback(
-                self.create_envs(1, eval_env=True),
-                callback_on_new_best=save_vec_normalize,
-                best_model_save_path=self.save_path,
-                n_eval_episodes=self.n_eval_episodes,
-                log_path=self.save_path,
-                eval_freq=self.eval_freq,
-                deterministic=self.deterministic_eval,
-            )
+        #     save_vec_normalize = SaveVecNormalizeCallback(
+        #         save_freq=1, save_path=self.params_path)
+        #     eval_callback = EvalCallback(
+        #         self.create_envs(1, eval_env=True),
+        #         callback_on_new_best=save_vec_normalize,
+        #         best_model_save_path=self.save_path,
+        #         n_eval_episodes=self.n_eval_episodes,
+        #         log_path=self.save_path,
+        #         eval_freq=self.eval_freq,
+        #         deterministic=self.deterministic_eval,
+        #     )
 
-            self.callbacks.append(eval_callback)
+        #     self.callbacks.append(eval_callback)
 
     def _maybe_normalize(self, env: VecEnv, eval_env: bool) -> VecEnv:
         """Wraps the env into a VecNormalize wrapper if needed and load 
@@ -587,6 +576,7 @@ class ExperimentManager(object):
         return env
 
     def create_envs(self,
+                    env,
                     n_envs: int,
                     eval_env: bool = False,
                     no_log: bool = False) -> VecEnv:
@@ -607,7 +597,7 @@ class ExperimentManager(object):
         # env = SubprocVecEnv([make_env(env_id, i, self.seed) for i in range(n_envs)])
         # On most env, SubprocVecEnv does not help and is quite memory hungry
         env = make_vec_env(
-            env_id=self.env_id,
+            env_id=env if env is not None else self.env_id,
             n_envs=n_envs,
             seed=self.seed,
             env_kwargs=self.env_kwargs,
@@ -662,7 +652,6 @@ class ExperimentManager(object):
         if sampler_method == "random":
             sampler = RandomSampler(seed=self.seed)
         elif sampler_method == "tpe":
-            # TODO: try with multivariate=True
             sampler = TPESampler(n_startup_trials=self.n_startup_trials,
                                  seed=self.seed)
         elif sampler_method == "skopt":
@@ -773,7 +762,6 @@ class ExperimentManager(object):
             )
             self.tensorboard_log = None
 
-        # TODO: eval each hyperparams several times to account for noisy evaluation
         sampler = self._create_sampler(self.sampler)
         pruner = self._create_pruner(self.pruner)
 
