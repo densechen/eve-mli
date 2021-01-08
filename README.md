@@ -18,10 +18,19 @@ Install from [PyPI](https://pypi.org/project/eve-mli/):
 pip install eve-mli
 ```
 
-Developers can download and install the latest version from [GitHub](https://github.com/densechen/eve-mli):
+Developers can download and install the latest version from
+
+[GitHub](https://github.com/densechen/eve-mli):
 
 ```bash
 git clone https://github.com/densechen/eve-mli.git
+cd eve-mli
+python setup.py install
+```
+
+or [Gitee](https://gitee.com/densechen/eve-mli.git):
+```bash
+git clone https://gitee.com/densechen/eve-mli.git
 cd eve-mli
 python setup.py install
 ```
