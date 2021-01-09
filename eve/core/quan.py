@@ -71,6 +71,8 @@ class Quantizer(Quan):
         state_list: a list contains ["name", fn] to calculate states.
             if fn is None, we will try to load the build-in methods.
             refer ``eve.core.state`` to see the supported function.
+        upgrade_fn: the function to update eve parameter, e.i. bits in this module.
+            if None, a directly replace operation will be used. 
         kwargs: the extra arguments to quantization function.
 
     .. note::
@@ -92,6 +94,7 @@ class Quantizer(Quan):
         signed_quantization: bool = False,
         learnable_alpha: bool = False,
         state_list: List = None,
+        upgrade_fn: Callable = None,
         **kwargs,
     ):
         super().__init__()
@@ -113,14 +116,15 @@ class Quantizer(Quan):
                                     Parameter(bits_eve, upgrade_bits))
 
         # register function for bits_eve
+        if upgrade_fn is None:
 
-        def upgrade_fn(param, action=None):
-            # action is always in [0, 1]
-            # if action is not None, take action
-            if action is not None:
-                param.zero_().add_(action)
-            else:
-                pass
+            def upgrade_fn(param, action=None):
+                # action is always in [0, 1]
+                # if action is not None, take action
+                if action is not None:
+                    param.zero_().add_(action)
+                else:
+                    pass
 
         self.register_upgrade_fn(self.bits_eve, upgrade_fn)
 

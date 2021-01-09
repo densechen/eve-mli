@@ -123,13 +123,12 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     Continuous actions are usually considered to be independent,
     so we can sum components of the ``log_prob`` or the entropy.
 
-    :param tensor: shape: (n_batch, n_actions) or (n_batch,)
-    :return: shape: (n_batch,)
+    :param tensor: shape: (n_batch, neurons, n_actions) or (n_batch, neurons)
+    :return: shape: (n_batch, neurons)
     """
-    if len(tensor.shape) > 1:
-        tensor = tensor.sum(dim=1)
-    else:
-        tensor = tensor.sum()
+    if len(tensor.shape) > 2:
+        tensor = tensor.sum(dim=2)
+
     return tensor
 
 
@@ -573,7 +572,7 @@ class StateDependentNoiseDistribution(Distribution):
         # can be different between the policy and the noise network
         self.latent_sde_dim = latent_dim if latent_sde_dim is None else latent_sde_dim
         # Reduce the number of parameters if needed
-        log_std = th.ones(self.latent_sde_dim,
+        log_std = th.ones(1, self.latent_sde_dim,
                           self.action_dim) if self.full_std else th.ones(
                               self.latent_sde_dim, 1)
         # Transform it to a parameter so it can be optimized
@@ -596,7 +595,9 @@ class StateDependentNoiseDistribution(Distribution):
         # Stop gradient if we don't want to influence the features
         self._latent_sde = latent_sde if self.learn_features else latent_sde.detach(
         )
-        variance = th.mm(self._latent_sde**2, self.get_std(log_std)**2)
+        variance = th.bmm(
+            self._latent_sde**2,
+            self.get_std(log_std.repeat(len(self._latent_sde), 1, 1))**2)
         self.distribution = Normal(mean_actions,
                                    th.sqrt(variance + self.epsilon))
         return self
@@ -614,7 +615,7 @@ class StateDependentNoiseDistribution(Distribution):
         if self.bijector is not None:
             # Squash correction (from original SAC implementation)
             log_prob -= th.sum(
-                self.bijector.log_prob_correction(gaussian_actions), dim=1)
+                self.bijector.log_prob_correction(gaussian_actions), dim=-1)
         return log_prob
 
     def entropy(self) -> Optional[th.Tensor]:
@@ -642,7 +643,8 @@ class StateDependentNoiseDistribution(Distribution):
         # Default case: only one exploration matrix
         if len(latent_sde) == 1 or len(latent_sde) != len(
                 self.exploration_matrices):
-            return th.mm(latent_sde, self.exploration_mat)
+            return th.bmm(latent_sde,
+                          self.exploration_mat.repeat(len(latent_sde), 1, 1))
         # Use batch matrix multiplication for efficient computation
         # (batch_size, n_features) -> (batch_size, 1, n_features)
         latent_sde = latent_sde.unsqueeze(1)
@@ -1726,7 +1728,6 @@ class ActorCriticPolicy(BasePolicy):
         given the observations.
 
         :param obs:
-        :param state: can be None, used in RNN model.
         :param actions:
         :return: estimated value, log likelihood of taking those actions
             and entropy of the action distribution.

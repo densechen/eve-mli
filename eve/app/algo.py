@@ -9,7 +9,6 @@
 #  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
 # / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
-
 """Abstract base classes for RL algorithms."""
 import io
 import os
@@ -41,7 +40,6 @@ from eve.app.utils import (EveEnv, Schedule, get_device, get_latest_run_id,
                            update_learning_rate)
 
 # pylint:disable=no-member
-
 r"""
                                      .__  .__ 
   _______  __ ____             _____ |  | |__|
@@ -52,6 +50,7 @@ _/ __ \  \/ // __ \   ______  /     \|  | |  |
 
 Action Noise  
 """
+
 
 class ActionNoise(ABC):
     """
@@ -220,6 +219,7 @@ class VectorizedActionNoise(ActionNoise):
         for noise in noises:
             noise.reset()
 
+
 r"""
                                      .__  .__ 
   _______  __ ____             _____ |  | |__|
@@ -381,6 +381,8 @@ class BaseAlgorithm(ABC):
                 raise ValueError(
                     "generalized State-Dependent Exploration (gSDE) can only be used with continuous actions."
                 )
+        if self.sample_episode and self.n_envs > 1:
+            raise ValueError("Sample episode only fit for n_env == 1")
 
     @staticmethod
     def _wrap_env(env: EveEnv,
@@ -982,37 +984,36 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         See https://github.com/hill-a/stable-baselines/issues/863
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
-    def __init__(
-        self,
-        policy: Type[BasePolicy],
-        env: Union[EveEnv, str],
-        policy_base: Type[BasePolicy],
-        learning_rate: Union[float, Schedule],
-        buffer_size: int = int(1e6),
-        learning_starts: int = 100,
-        batch_size: int = 256,
-        tau: float = 0.005,
-        gamma: float = 0.99,
-        train_freq: int = 1,
-        gradient_steps: int = 1,
-        n_episodes_rollout: int = -1,
-        action_noise: Optional[ActionNoise] = None,
-        policy_kwargs: Dict[str, Any] = None,
-        tensorboard_log: Optional[str] = None,
-        verbose: int = 0,
-        device: Union[th.device, str] = "auto",
-        support_multi_env: bool = False,
-        create_eval_env: bool = False,
-        monitor_wrapper: bool = True,
-        seed: Optional[int] = None,
-        use_sde: bool = False,
-        sde_sample_freq: int = -1,
-        use_sde_at_warmup: bool = False,
-        sde_support: bool = True,
-        remove_time_limit_termination: bool = False,
-        supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
-        sample_episode: bool=False
-    ):
+    def __init__(self,
+                 policy: Type[BasePolicy],
+                 env: Union[EveEnv, str],
+                 policy_base: Type[BasePolicy],
+                 learning_rate: Union[float, Schedule],
+                 buffer_size: int = int(1e6),
+                 learning_starts: int = 100,
+                 batch_size: int = 256,
+                 tau: float = 0.005,
+                 gamma: float = 0.99,
+                 train_freq: int = 1,
+                 gradient_steps: int = 1,
+                 n_episodes_rollout: int = -1,
+                 action_noise: Optional[ActionNoise] = None,
+                 policy_kwargs: Dict[str, Any] = None,
+                 tensorboard_log: Optional[str] = None,
+                 verbose: int = 0,
+                 device: Union[th.device, str] = "auto",
+                 support_multi_env: bool = False,
+                 create_eval_env: bool = False,
+                 monitor_wrapper: bool = True,
+                 seed: Optional[int] = None,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 use_sde_at_warmup: bool = False,
+                 sde_support: bool = True,
+                 remove_time_limit_termination: bool = False,
+                 supported_action_spaces: Optional[Tuple[space.EveSpace,
+                                                         ...]] = None,
+                 sample_episode: bool = False):
 
         super(OffPolicyAlgorithm, self).__init__(
             policy=policy,
@@ -1220,8 +1221,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Note: when using continuous actions,
             # we assume that the policy uses tanh to scale the action
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
-            unscaled_action = self.predict(self._last_obs,
-                                              deterministic=False)
+            unscaled_action = self.predict(self._last_obs, deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
         if isinstance(self.action_space, space.EveBox):
@@ -1553,11 +1553,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
-            clipped_actions = actions
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, space.EveBox):
                 clipped_actions = np.clip(actions, self.action_space.low,
                                           self.action_space.high)
+            else:
+                clipped_actions = actions
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 
@@ -1571,9 +1572,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self._update_info_buffer(infos)
             n_steps += 1
 
-            if isinstance(self.action_space, space.EveDiscrete):
-                # Reshape in case of discrete action
-                actions = actions.reshape(-1, 1)
+            # if isinstance(self.action_space, space.EveDiscrete):
+            #     # Reshape in case of discrete action
+            #     # actions = actions.reshape(-1, 1)
             rollout_buffer.add(self._last_obs, actions, rewards,
                                self._last_dones, values, log_probs)
             self._last_obs = new_obs

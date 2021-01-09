@@ -168,8 +168,13 @@ class PPO(OnPolicyAlgorithm):
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
+
+            rollout_datas = self.rollout_buffer.sample(self.batch_size)
+            if not isinstance(rollout_datas, list):
+                rollout_datas = [rollout_datas]
             # Do a complete pass on the rollout buffer
-            for rollout_data in self.rollout_buffer.get(self.batch_size):
+            self.policy.reset(set_to_none=True)
+            for rollout_data in rollout_datas:
                 actions = rollout_data.actions
                 if isinstance(self.action_space, space.EveDiscrete):
                     # Convert discrete action from float to long
@@ -183,8 +188,13 @@ class PPO(OnPolicyAlgorithm):
 
                 # TODO (eve): add state to arguments
                 values, log_prob, entropy = self.policy.evaluate_actions(
-                    rollout_data.observations, None, actions)
-                values = values.flatten()
+                    rollout_data.observations, actions)
+                # values = values.flatten()
+
+                values = values.mean(dim=1).flatten()
+                log_prob = log_prob.mean(dim=1).flatten()
+                entropy = entropy.mean(dim=1).flatten()
+
                 # Normalize advantage
                 advantages = rollout_data.advantages
                 advantages = (advantages -

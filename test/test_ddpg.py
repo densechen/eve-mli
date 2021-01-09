@@ -208,7 +208,8 @@ class MnistTrainer(eve.app.trainer.BaseTrainer):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--neuron_wise", default=False)
+parser.add_argument("--neuron_wise", action="store_true", default=False)
+parser.add_argument("--sample_episode", action="store_true", default=False)
 args = parser.parse_args()
 # define a mnist classifier
 neuron_wise = args.neuron_wise
@@ -239,12 +240,12 @@ exp_manager = eve.app.ExperimentManager(
     algo="ddpg",
     env_id="mnist_trainer",
     env=MnistTrainer,
-    log_folder="examples/logs",
+    log_folder="../examples/logs",
     n_timesteps=100000,
     save_freq=1000,
-    default_hyperparameter_yaml="examples/hyperparams",
+    default_hyperparameter_yaml="../examples/hyperparams",
     log_interval=100,
-    sample_episode=True,
+    sample_episode=args.sample_episode,
 )
 
 model = exp_manager.setup_experiment()

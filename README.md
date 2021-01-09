@@ -1,6 +1,7 @@
+<center>
+<img src="images/logo.png" width="37" height="52" alt="logo" />
+</center>
 # eve-mli: making learning interesting
-
-<img src="images/logo.png" width="37" height="52" alt="logo" align=center />
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve-mli) [![Documentation Status](https://readthedocs.org/projects/eve-mli/badge/?version=latest)](https://eve-mli.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-mli)](https://pypi.org/project/eve-mli) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-mli)](https://pypi.org/project/eve-mli)
 

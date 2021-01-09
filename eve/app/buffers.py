@@ -193,24 +193,18 @@ class BaseBuffer(ABC):
         :return: if episode sample, return a list with episode length and 
             contains BufferSamples, else, return BufferSamples.
         """
+        returns = []
         if self.sample_episode:
             upper_bound = len(self.episode_interval)
             episode_inds = np.random.randint(0, upper_bound, size=batch_size)
-            returns = []
             for ei in episode_inds:
                 episode_start_point, episode_end_point = self.episode_interval[
                     ei]
                 batch_inds = np.arange(episode_start_point, episode_end_point)
-                returns.append(self._get_samples(batch_inds, env=env))
-            items = [[] for _ in range(len(returns[0]))]
-            for re in returns:
-                for i, d in enumerate(re):
-                    items[i].append(d)
-            items = type(returns[0])(*[th.stack(i, dim=1) for i in items])
-            packed_returns = []
-            for d in zip(*items):
-                packed_returns.append(type(returns[0])(*d))
-            return packed_returns
+                returns += [
+                    self._get_samples(batch_inds, env_inds, env=env)
+                    for env_inds in range(self.n_envs)
+                ]
         else:
             upper_bound = self.buffer_size if self.full else self.pos
             if self.full:
@@ -219,12 +213,26 @@ class BaseBuffer(ABC):
                     self.pos) % self.buffer_size
             else:
                 batch_inds = np.random.randint(0, self.pos, size=batch_size)
-            return self._get_samples(batch_inds, env=env)
+            returns += [
+                self._get_samples(batch_inds, env_inds, env=env)
+                for env_inds in range(self.n_envs)
+            ]
+
+        items = [[] for _ in range(len(returns[0]))]
+        for re in returns:
+            for i, d in enumerate(re):
+                items[i].append(d)
+        items = type(returns[0])(*[th.stack(i, dim=1) for i in items])
+        packed_returns = []
+        for d in zip(*items):
+            packed_returns.append(type(returns[0])(*d))
+        return packed_returns
 
     @abstractmethod
     def _get_samples(
         self,
         batch_inds: np.ndarray,
+        env_idx: int,
         env: Optional["VecNormalize"] = None
     ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
         """
@@ -344,35 +352,39 @@ class ReplayBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-        # we discard the last episode which bridged the beginning and endding buffer.
-        if done and self.start_point < self.pos:
-            self.episode_interval.append(
-                [deepcopy(self.start_point),
-                 deepcopy(self.pos)])
-            self.start_point = deepcopy(self.pos)
-        elif done and self.start_point > self.pos:
-            self.start_point = deepcopy(self.pos)
+        if self.sample_episode:
+            # we discard the last episode which bridged the beginning and endding buffer.
+            if done and self.start_point < self.pos:
+                self.episode_interval.append(
+                    [deepcopy(self.start_point),
+                     deepcopy(self.pos)])
+                self.start_point = deepcopy(self.pos)
+            elif done and self.start_point > self.pos:
+                self.start_point = deepcopy(self.pos)
 
-        # pop overtime state
-        if len(self.episode_interval) and self.episode_interval[0][
-                0] <= self.pos and self.pos < self.episode_interval[0][1]:
-            # remove the last one
-            self.episode_interval.popleft()
+            # pop overtime state
+            if len(self.episode_interval) and self.episode_interval[0][
+                    0] <= self.pos and self.pos < self.episode_interval[0][1]:
+                # remove the last one
+                self.episode_interval.popleft()
 
     def _get_samples(
             self,
             batch_inds: np.ndarray,
+            env_inds: int,
             env: Optional["VecNormalize"] = None) -> ReplayBufferSamples:
 
         next_obs = self._normalize_obs(
-            self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env)
+            self.observations[(batch_inds + 1) % self.buffer_size,
+                              env_inds, :], env)
 
         data = (
-            self._normalize_obs(self.observations[batch_inds, 0, :], env),
-            self.actions[batch_inds, 0, :],
+            self._normalize_obs(self.observations[batch_inds, env_inds, :],
+                                env),
+            self.actions[batch_inds, env_inds, :],
             next_obs,
-            self.dones[batch_inds],
-            self._normalize_reward(self.rewards[batch_inds], env),
+            self.dones[batch_inds, env_inds],
+            self._normalize_reward(self.rewards[batch_inds, env_inds], env),
         )
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
@@ -432,9 +444,7 @@ class RolloutBuffer(BaseBuffer):
                                self.action_space.max_neurons, self.action_dim)
 
         self.observations = np.zeros(buffer_obs_shape, dtype=np.float32)
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, buffer_action_shape),
-            dtype=np.float32)
+        self.actions = np.zeros(buffer_action_shape, dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs),
                                 dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs),
@@ -467,6 +477,8 @@ class RolloutBuffer(BaseBuffer):
 
         """
         # convert to numpy
+        while last_values.dim() > 1:
+            last_values = last_values.mean(dim=-1)
         last_values = last_values.clone().cpu().numpy().flatten()
 
         last_gae_lam = 0
@@ -497,70 +509,80 @@ class RolloutBuffer(BaseBuffer):
         :param log_prob: log probability of the action
             following the current policy.
         """
-        if len(log_prob.shape) == 0:
-            # Reshape 0-d tensor to avoid error
-            log_prob = log_prob.reshape(-1, 1)
+        # if len(log_prob.shape) == 0:
+        #     # Reshape 0-d tensor to avoid error
+        #     log_prob = log_prob.reshape(-1, 1)
+        # if len(value) >= 3:
+        #     # We only log the average value of the action in one layer.
+        #     value = value.mean(dim=1)
+        while value.dim() > 1:
+            value = value.mean(dim=-1)
+        while log_prob.dim() > 1:
+            log_prob = log_prob.mean(dim=-1)
 
         self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
-        self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
+        self.log_probs[self.pos] = log_prob.clone().cpu().numpy().flatten()
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True
+            self.pos = 0
 
         # we discard the last episode which bridged the beginning and endding buffer.
-        if done and self.start_point < self.pos:
-            self.episode_interval.append(
-                [deepcopy(self.start_point),
-                 deepcopy(self.pos)])
-            self.start_point = deepcopy(self.pos)
-        elif done and self.start_point > self.pos:
-            self.start_point = deepcopy(self.pos)
+        if self.sample_episode:
+            if done and self.start_point < self.pos:
+                self.episode_interval.append(
+                    [deepcopy(self.start_point),
+                     deepcopy(self.pos)])
+                self.start_point = deepcopy(self.pos)
+            elif done and self.start_point > self.pos:
+                self.start_point = deepcopy(self.pos)
 
-        # pop overtime state
-        if len(self.episode_interval) and self.episode_interval[0][
-                0] <= self.pos and self.pos < self.episode_interval[0][1]:
-            # remove the last one
-            self.episode_interval.popleft()
+            # pop overtime state
+            if len(self.episode_interval) and self.episode_interval[0][
+                    0] <= self.pos and self.pos < self.episode_interval[0][1]:
+                # remove the last one
+                self.episode_interval.popleft()
 
-    def get(
-        self,
-        batch_size: Optional[int] = None
-    ) -> Generator[RolloutBufferSamples, None, None]:
-        assert self.full, ""
-        indices = np.random.permutation(self.buffer_size * self.n_envs)
-        # Prepare the data
-        if not self.generator_ready:
-            for tensor in [
-                    "observations", "actions", "values", "log_probs",
-                    "advantages", "returns"
-            ]:
-                self.__dict__[tensor] = self.swap_and_flatten(
-                    self.__dict__[tensor])
-            self.generator_ready = True
+    # def get(
+    #     self,
+    #     batch_size: Optional[int] = None
+    # ) -> Generator[RolloutBufferSamples, None, None]:
+    #     assert self.full, ""
+    #     indices = np.random.permutation(self.buffer_size * self.n_envs)
+    #     # Prepare the data
+    #     if not self.generator_ready:
+    #         for tensor in [
+    #                 "observations", "actions", "values", "log_probs",
+    #                 "advantages", "returns"
+    #         ]:
+    #             self.__dict__[tensor] = self.swap_and_flatten(
+    #                 self.__dict__[tensor])
+    #         self.generator_ready = True
 
-        # Return everything, don't create minibatches
-        if batch_size is None:
-            batch_size = self.buffer_size * self.n_envs
+    #     # Return everything, don't create minibatches
+    #     if batch_size is None:
+    #         batch_size = self.buffer_size * self.n_envs
 
-        start_idx = 0
-        while start_idx < self.buffer_size * self.n_envs:
-            yield self._get_samples(indices[start_idx:start_idx + batch_size])
-            start_idx += batch_size
+    #     start_idx = 0
+    #     while start_idx < self.buffer_size * self.n_envs:
+    #         yield self._get_samples(indices[start_idx:start_idx + batch_size])
+    #         start_idx += batch_size
 
     def _get_samples(
             self,
             batch_inds: np.ndarray,
+            env_inds: int,
             env: Optional["VecNormalize"] = None) -> RolloutBufferSamples:
         data = (
-            self.observations[batch_inds],
-            self.actions[batch_inds],
-            self.values[batch_inds].flatten(),
-            self.log_probs[batch_inds].flatten(),
-            self.advantages[batch_inds].flatten(),
-            self.returns[batch_inds].flatten(),
+            self.observations[batch_inds, env_inds],
+            self.actions[batch_inds, env_inds],
+            self.values[batch_inds, env_inds].flatten(),
+            self.log_probs[batch_inds, env_inds].flatten(),
+            self.advantages[batch_inds, env_inds].flatten(),
+            self.returns[batch_inds, env_inds].flatten(),
         )
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
