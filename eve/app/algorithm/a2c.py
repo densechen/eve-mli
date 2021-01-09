@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 from typing import Any, Dict, Optional, Type, Union
 
 import eve.app.space as space
@@ -74,6 +86,7 @@ class A2C(OnPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        sample_episode: bool = False,
     ):
 
         super(A2C, self).__init__(
@@ -101,6 +114,7 @@ class A2C(OnPolicyAlgorithm):
                 space.EveMultiDiscrete,
                 space.EveMultiBinary,
             ),
+            sample_episode=sample_episode,
         )
 
         self.normalize_advantage = normalize_advantage

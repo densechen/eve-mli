@@ -204,7 +204,7 @@ class MnistTrainer(eve.app.trainer.BaseTrainer):
 
         info = self.fit_step()
 
-        return info["acc"] - self.last_eve.mean().item() * 0.1
+        return info["acc"] - self.last_eve.mean().item() * 0.4
 
 
 parser = argparse.ArgumentParser()
@@ -238,14 +238,16 @@ MnistTrainer.assign_model(mnist_classifier)
 exp_manager = eve.app.ExperimentManager(
     algo="ddpg",
     env_id="mnist_trainer",
-    log_folder="../examples/logs",
+    env=MnistTrainer,
+    log_folder="examples/logs",
     n_timesteps=100000,
     save_freq=1000,
-    default_hyperparameter_yaml="../examples/hyperparams",
+    default_hyperparameter_yaml="examples/hyperparams",
     log_interval=100,
+    sample_episode=True,
 )
 
-model = exp_manager.setup_experiment(MnistTrainer)
+model = exp_manager.setup_experiment()
 
 exp_manager.learn(model)
 exp_manager.save_trained_model(model)

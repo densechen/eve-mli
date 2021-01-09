@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import eve.app.space as space
@@ -238,18 +250,13 @@ class TD3Policy(BasePolicy):
 
     def forward(self,
                 observation: th.Tensor,
-                state: th.Tensor = None,
                 deterministic: bool = False) -> th.Tensor:
-        # TODO (eve): add support to state
-        return self._predict(observation, state,
-                             deterministic=deterministic), state
+        return self._predict(observation, deterministic=deterministic)
 
     def _predict(self,
                  observation: th.Tensor,
-                 state: th.Tensor = None,
                  deterministic: bool = False) -> th.Tensor:
-        # TODO (eve): add support to state
-        return self.actor(observation, deterministic=deterministic), state
+        return self.actor(observation, deterministic=deterministic)
 
 
 MlpPolicy = TD3Policy
@@ -287,9 +294,6 @@ class TD3(OffPolicyAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
-    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_delay: Policy and target networks will only be updated once every policy_delay steps
         per training steps. The Q values will be updated policy_delay more often (update every training step).
     :param target_policy_noise: Standard deviation of Gaussian noise added to target policy
@@ -318,7 +322,6 @@ class TD3(OffPolicyAlgorithm):
         gradient_steps: int = -1,
         n_episodes_rollout: int = 1,
         action_noise: Optional[ActionNoise] = None,
-        optimize_memory_usage: bool = False,
         policy_delay: int = 2,
         target_policy_noise: float = 0.2,
         target_noise_clip: float = 0.5,
@@ -329,6 +332,7 @@ class TD3(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        sample_episode: bool = False,
     ):
 
         super(TD3, self).__init__(
@@ -352,8 +356,8 @@ class TD3(OffPolicyAlgorithm):
             create_eval_env=create_eval_env,
             seed=seed,
             sde_support=False,
-            optimize_memory_usage=optimize_memory_usage,
             supported_action_spaces=(space.EveBox),
+            sample_episode=sample_episode,
         )
 
         self.policy_delay = policy_delay
@@ -384,71 +388,78 @@ class TD3(OffPolicyAlgorithm):
         for gradient_step in range(gradient_steps):
 
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(
+            replay_datas = self.replay_buffer.sample(
                 batch_size, env=self._vec_normalize_env)
 
-            with th.no_grad():
-                # Select action according to policy and add clipped noise
-                noise = replay_data.actions.clone().data.normal_(
-                    0, self.target_policy_noise)
-                noise = noise.clamp(-self.target_noise_clip,
-                                    self.target_noise_clip)
-                next_actions = (
-                    self.actor_target(replay_data.next_observations) +
-                    noise).clamp(-1, 1)
+            if not isinstance(replay_datas, list):
+                replay_datas = [replay_datas]
 
-                # Compute the next Q-values: min over all critics targets
-                next_q_values = th.cat(self.critic_target(
-                    replay_data.next_observations, next_actions),
-                                       dim=-1)
-                next_q_values, _ = th.min(next_q_values, dim=-1, keepdim=True)
+            self.policy.reset(set_to_none=True)
+            for replay_data in replay_datas:
+                with th.no_grad():
+                    # Select action according to policy and add clipped noise
+                    noise = replay_data.actions.clone().data.normal_(
+                        0, self.target_policy_noise)
+                    noise = noise.clamp(-self.target_noise_clip,
+                                        self.target_noise_clip)
+                    next_actions = (
+                        self.actor_target(replay_data.next_observations) +
+                        noise).clamp(-1, 1)
 
-                # make it suit for eve
-                if replay_data.rewards.dim() < next_q_values.dim():
-                    rewards = replay_data.rewards.unsqueeze(1)
-                else:
-                    rewards = replay_data.rewards
-                if replay_data.dones.dim() < next_q_values.dim():
-                    dones = replay_data.dones.unsqueeze(1)
-                else:
-                    dones = replay_data.dones
+                    # Compute the next Q-values: min over all critics targets
+                    next_q_values = th.cat(self.critic_target(
+                        replay_data.next_observations, next_actions),
+                                           dim=-1)
+                    next_q_values, _ = th.min(next_q_values,
+                                              dim=-1,
+                                              keepdim=True)
 
-                target_q_values = rewards + (
-                    1 - dones) * self.gamma * next_q_values
+                    # make it suit for eve
+                    if replay_data.rewards.dim() < next_q_values.dim():
+                        rewards = replay_data.rewards.unsqueeze(1)
+                    else:
+                        rewards = replay_data.rewards
+                    if replay_data.dones.dim() < next_q_values.dim():
+                        dones = replay_data.dones.unsqueeze(1)
+                    else:
+                        dones = replay_data.dones
 
-            # Get current Q-values estimates for each critic network
-            current_q_values = self.critic(replay_data.observations,
-                                           replay_data.actions)
+                    target_q_values = rewards + (
+                        1 - dones) * self.gamma * next_q_values
 
-            # Compute critic loss
-            critic_loss = sum([
-                F.mse_loss(current_q, target_q_values)
-                for current_q in current_q_values
-            ])
-            critic_losses.append(critic_loss.item())
+                # Get current Q-values estimates for each critic network
+                current_q_values = self.critic(replay_data.observations,
+                                               replay_data.actions)
 
-            # Optimize the critics
-            self.critic.optimizer.zero_grad()
-            critic_loss.backward()
-            self.critic.optimizer.step()
+                # Compute critic loss
+                critic_loss = sum([
+                    F.mse_loss(current_q, target_q_values)
+                    for current_q in current_q_values
+                ])
+                critic_losses.append(critic_loss.item())
 
-            # Delayed policy updates
-            if gradient_step % self.policy_delay == 0:
-                # Compute actor loss
-                actor_loss = -self.critic.q1_forward(
-                    replay_data.observations,
-                    self.actor(replay_data.observations)).mean()
-                actor_losses.append(actor_loss.item())
+                # Optimize the critics
+                self.critic.optimizer.zero_grad()
+                critic_loss.backward()
+                self.critic.optimizer.step()
 
-                # Optimize the actor
-                self.actor.optimizer.zero_grad()
-                actor_loss.backward()
-                self.actor.optimizer.step()
+                # Delayed policy updates
+                if gradient_step % self.policy_delay == 0:
+                    # Compute actor loss
+                    actor_loss = -self.critic.q1_forward(
+                        replay_data.observations,
+                        self.actor(replay_data.observations)).mean()
+                    actor_losses.append(actor_loss.item())
 
-                polyak_update(self.critic.parameters(),
-                              self.critic_target.parameters(), self.tau)
-                polyak_update(self.actor.parameters(),
-                              self.actor_target.parameters(), self.tau)
+                    # Optimize the actor
+                    self.actor.optimizer.zero_grad()
+                    actor_loss.backward()
+                    self.actor.optimizer.step()
+
+                    polyak_update(self.critic.parameters(),
+                                  self.critic_target.parameters(), self.tau)
+                    polyak_update(self.actor.parameters(),
+                                  self.actor_target.parameters(), self.tau)
 
         self._n_updates += gradient_steps
         logger.record("train/n_updates",

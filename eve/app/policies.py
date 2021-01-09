@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 import collections
 from abc import ABC, abstractmethod
 from functools import partial
@@ -806,7 +818,6 @@ def is_vectorized_observation(observation: np.ndarray,
     :return: whether the given observation is vectorized or not
     """
     if isinstance(observation_space, space.EveBox):
-        # TODO eve: add support for eve
         if observation.shape == observation_space.shape:
             return False
         elif observation.shape[1:] == observation_space.shape:
@@ -1152,6 +1163,9 @@ class BaseModel(Eve, ABC):
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
 
+        # set a eve buffer to support LSTM or RNN model
+        self.register_eve_buffer("state_eve", None)
+
     @abstractmethod
     def forward(self, *args, **kwargs):
         del args, kwargs
@@ -1314,7 +1328,6 @@ class BasePolicy(BaseModel):
     @abstractmethod
     def _predict(self,
                  observation: th.Tensor,
-                 state: th.Tensor = None,
                  deterministic: bool = False) -> List[th.Tensor]:
         """
         Get the action according to the policy for a given observation.
@@ -1330,7 +1343,6 @@ class BasePolicy(BaseModel):
     def predict(
         self,
         observation: np.ndarray,
-        state: Optional[np.ndarray] = None,
         mask: Optional[np.ndarray] = None,
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
@@ -1350,7 +1362,6 @@ class BasePolicy(BaseModel):
         else:
             observation = np.array(observation)
 
-        # TODO eve: add support to eve
         if isinstance(self.observation_space, space.EveSpace):
             shape = (self.observation_space.max_neurons,
                      ) + self.observation_space.shape
@@ -1360,16 +1371,10 @@ class BasePolicy(BaseModel):
         observation = observation.reshape((-1, ) + shape)
 
         observation = th.as_tensor(observation).to(self.device)
-        if state is not None:
-            state = th.as_tensor(state).to(self.device)
         with th.no_grad():
-            actions, state = self._predict(observation,
-                                           state,
-                                           deterministic=deterministic)
+            actions = self._predict(observation, deterministic=deterministic)
         # Convert to numpy
         actions = actions.cpu().numpy()
-        if state is not None:
-            state = state.cpu().numpy()
 
         if isinstance(self.action_space, space.EveBox):
             if self.squash_output:
@@ -1381,7 +1386,7 @@ class BasePolicy(BaseModel):
                 actions = np.clip(actions, self.action_space.low,
                                   self.action_space.high)
 
-        return actions, state
+        return actions
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """
@@ -1627,7 +1632,6 @@ class ActorCriticPolicy(BasePolicy):
     def forward(
             self,
             obs: th.Tensor,
-            state: th.Tensor = None,
             deterministic: bool = False
     ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
@@ -1702,7 +1706,6 @@ class ActorCriticPolicy(BasePolicy):
 
     def _predict(self,
                  observation: th.Tensor,
-                 state: th.Tensor = None,
                  deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
@@ -1716,7 +1719,7 @@ class ActorCriticPolicy(BasePolicy):
         return distribution.get_actions(deterministic=deterministic)
 
     def evaluate_actions(
-            self, obs: th.Tensor, state: th.Tensor,
+            self, obs: th.Tensor,
             actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,

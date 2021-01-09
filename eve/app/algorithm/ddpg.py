@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 from typing import Any, Dict, Optional, Type, Union
 
 import torch as th
@@ -37,9 +49,6 @@ class DDPG(TD3):
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
-    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
@@ -63,7 +72,6 @@ class DDPG(TD3):
         gradient_steps: int = -1,
         n_episodes_rollout: int = 1,
         action_noise: Optional["ActionNoise"] = None,
-        optimize_memory_usage: bool = False,
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Dict[str, Any] = None,
@@ -71,6 +79,7 @@ class DDPG(TD3):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        sample_episode: bool = False,
     ):
 
         super(DDPG, self).__init__(
@@ -92,13 +101,13 @@ class DDPG(TD3):
             device=device,
             create_eval_env=create_eval_env,
             seed=seed,
-            optimize_memory_usage=optimize_memory_usage,
             # Remove all tricks from TD3 to obtain DDPG:
             # we still need to specify target_policy_noise > 0 to avoid errors
             policy_delay=1,
             target_noise_clip=0.0,
             target_policy_noise=0.1,
             _init_setup_model=False,
+            sample_episode=sample_episode,
         )
 
         # Use only one critic

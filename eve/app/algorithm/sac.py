@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import eve.app.space as space
@@ -435,9 +447,6 @@ class SAC(OffPolicyAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
-    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param ent_coef: Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
@@ -473,7 +482,6 @@ class SAC(OffPolicyAlgorithm):
         gradient_steps: int = 1,
         n_episodes_rollout: int = -1,
         action_noise: Optional[ActionNoise] = None,
-        optimize_memory_usage: bool = False,
         ent_coef: Union[str, float] = "auto",
         target_update_interval: int = 1,
         target_entropy: Union[str, float] = "auto",
@@ -487,6 +495,7 @@ class SAC(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        sample_episode: bool = False,
     ):
 
         super(SAC, self).__init__(
@@ -512,8 +521,8 @@ class SAC(OffPolicyAlgorithm):
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
             use_sde_at_warmup=use_sde_at_warmup,
-            optimize_memory_usage=optimize_memory_usage,
             supported_action_spaces=(space.EveBox),
+            sample_episode=sample_episode,
         )
 
         self.target_entropy = target_entropy

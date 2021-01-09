@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import eve.app.space as space
@@ -226,9 +238,6 @@ class DQN(OffPolicyAlgorithm):
         during the rollout.
     :param n_episodes_rollout: Update the model every ``n_episodes_rollout`` episodes.
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
-    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param target_update_interval: update the target network every ``target_update_interval``
         environment steps.
     :param exploration_fraction: fraction of entire training period over which the exploration rate is reduced
@@ -258,7 +267,6 @@ class DQN(OffPolicyAlgorithm):
         train_freq: int = 4,
         gradient_steps: int = 1,
         n_episodes_rollout: int = -1,
-        optimize_memory_usage: bool = False,
         target_update_interval: int = 10000,
         exploration_fraction: float = 0.1,
         exploration_initial_eps: float = 1.0,
@@ -271,6 +279,7 @@ class DQN(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        sample_episode: bool=False,
     ):
 
         super(DQN, self).__init__(
@@ -294,8 +303,8 @@ class DQN(OffPolicyAlgorithm):
             create_eval_env=create_eval_env,
             seed=seed,
             sde_support=False,
-            optimize_memory_usage=optimize_memory_usage,
             supported_action_spaces=(space.EveDiscrete, ),
+            sample_episode=sample_episode,
         )
 
         self.exploration_initial_eps = exploration_initial_eps

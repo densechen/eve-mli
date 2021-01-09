@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 import argparse
 import csv
 import importlib
@@ -117,6 +129,7 @@ class ExperimentManager(object):
         env_id (str): the environment used to wrapper trainer. Different 
             environments will apply different reward functions and interactive 
             steps.
+        env: the eve instance of EveEnv.
         log_folder (str): the log folder of this experiment.
         tensorboard_log (str): tensorboard log dir.
         n_timesteps (int): rewrite n_timesteps.
@@ -155,6 +168,7 @@ class ExperimentManager(object):
         self,
         algo: str,
         env_id: str,
+        env: "EveEnv",
         log_folder: str,
         tensorboard_log: str = "",
         n_timesteps: int = 0,
@@ -182,10 +196,12 @@ class ExperimentManager(object):
         default_hyperparameter_yaml:
         # the folder contains the default hyperparameter for differnt ALGOS.
         str = "hyperparams",
+        sample_episode: bool = False,
     ):
         super(ExperimentManager, self).__init__()
         self.algo = algo
         self.env_id = env_id
+        self.env = env
         # Custom params
         self.custom_hyperparams = hyperparams
         self.env_kwargs = {} if env_kwargs is None else env_kwargs
@@ -195,6 +211,7 @@ class ExperimentManager(object):
         self.env_wrapper = None
         self.frame_stack = None
         self.seed = seed
+        self.sample_episode = sample_episode
 
         self.vec_env_class = {
             "dummy": DummyVecEnv,
@@ -247,7 +264,7 @@ class ExperimentManager(object):
         self.params_path = f"{self.save_path}/{self.env_id}"
         self.default_hyperparameter_yaml = default_hyperparameter_yaml
 
-    def setup_experiment(self, env=None) -> Optional[BaseAlgorithm]:
+    def setup_experiment(self) -> Optional[BaseAlgorithm]:
         """
         Read hyperparameters, pre-process them (create schedules, wrappers, callbacks, action noise objects)
         create the environment and possibly the model.
@@ -262,7 +279,7 @@ class ExperimentManager(object):
         self.create_callbacks()
 
         # Create env to have access to action space for action noise
-        env = self.create_envs(env, self.n_envs, no_log=False)
+        env = self.create_envs(self.n_envs, no_log=False)
 
         self._hyperparams = self._preprocess_action_noise(hyperparams, env)
 
@@ -277,6 +294,7 @@ class ExperimentManager(object):
                 tensorboard_log=self.tensorboard_log,
                 seed=self.seed,
                 verbose=self.verbose,
+                sample_episode=self.sample_episode,
                 **self._hyperparams,
             )
 
@@ -574,7 +592,6 @@ class ExperimentManager(object):
         return env
 
     def create_envs(self,
-                    env,
                     n_envs: int,
                     eval_env: bool = False,
                     no_log: bool = False) -> VecEnv:
@@ -595,7 +612,7 @@ class ExperimentManager(object):
         # env = SubprocVecEnv([make_env(env_id, i, self.seed) for i in range(n_envs)])
         # On most env, SubprocVecEnv does not help and is quite memory hungry
         env = make_vec_env(
-            env_id=env if env is not None else self.env_id,
+            env_id=self.env,
             n_envs=n_envs,
             seed=self.seed,
             env_kwargs=self.env_kwargs,

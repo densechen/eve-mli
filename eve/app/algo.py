@@ -1,3 +1,15 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 """Abstract base classes for RL algorithms."""
 import io
 import os
@@ -30,6 +42,16 @@ from eve.app.utils import (EveEnv, Schedule, get_device, get_latest_run_id,
 
 # pylint:disable=no-member
 
+r"""
+                                     .__  .__ 
+  _______  __ ____             _____ |  | |__|
+_/ __ \  \/ // __ \   ______  /     \|  | |  |
+\  ___/\   /\  ___/  /_____/ |  Y Y  \  |_|  |
+ \___  >\_/  \___  >         |__|_|  /____/__|
+     \/          \/                \/       
+
+Action Noise  
+"""
 
 class ActionNoise(ABC):
     """
@@ -198,6 +220,17 @@ class VectorizedActionNoise(ActionNoise):
         for noise in noises:
             noise.reset()
 
+r"""
+                                     .__  .__ 
+  _______  __ ____             _____ |  | |__|
+_/ __ \  \/ // __ \   ______  /     \|  | |  |
+\  ___/\   /\  ___/  /_____/ |  Y Y  \  |_|  |
+ \___  >\_/  \___  >         |__|_|  /____/__|
+     \/          \/                \/       
+
+Base Algorithm  
+"""
+
 
 def configure_logger(verbose: int = 0,
                      tensorboard_log: Optional[str] = None,
@@ -270,6 +303,7 @@ class BaseAlgorithm(ABC):
         use_sde: bool = False,
         sde_sample_freq: int = -1,
         supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
+        sample_episode: bool = False,
     ):
 
         if isinstance(policy, str) and policy_base is not None:
@@ -316,6 +350,7 @@ class BaseAlgorithm(ABC):
         self.ep_success_buffer = None  # type: Optional[deque]
         # For logging
         self._n_updates = 0  # type: int
+        self.sample_episode = sample_episode
 
         # Create and wrap the env if needed
         if env is not None:
@@ -655,7 +690,6 @@ class BaseAlgorithm(ABC):
     def predict(
         self,
         observation: np.ndarray,
-        state: Optional[np.ndarray] = None,
         mask: Optional[np.ndarray] = None,
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
@@ -669,7 +703,7 @@ class BaseAlgorithm(ABC):
         :return: the model's action and the next state
             (used in recurrent policies)
         """
-        return self.policy.predict(observation, state, mask, deterministic)
+        return self.policy.predict(observation, mask, deterministic)
 
     def set_random_seed(self, seed: Optional[int] = None) -> None:
         """
@@ -924,9 +958,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
-    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
@@ -966,7 +997,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         gradient_steps: int = 1,
         n_episodes_rollout: int = -1,
         action_noise: Optional[ActionNoise] = None,
-        optimize_memory_usage: bool = False,
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
@@ -981,6 +1011,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_support: bool = True,
         remove_time_limit_termination: bool = False,
         supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
+        sample_episode: bool=False
     ):
 
         super(OffPolicyAlgorithm, self).__init__(
@@ -999,6 +1030,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
             supported_action_spaces=supported_action_spaces,
+            sample_episode=sample_episode,
         )
         self.buffer_size = buffer_size
         self.batch_size = batch_size
@@ -1009,7 +1041,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
-        self.optimize_memory_usage = optimize_memory_usage
 
         # Remove terminations (dones) that are due to time limit
         # see https://github.com/hill-a/stable-baselines/issues/863
@@ -1040,7 +1071,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.observation_space,
             self.action_space,
             self.device,
-            optimize_memory_usage=self.optimize_memory_usage,
+            sample_episode=self.sample_episode,
         )
         self.policy = self.policy_class(
             self.observation_space,
@@ -1090,18 +1121,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Prevent continuity issue by truncating trajectory
         # when using memory efficient replay buffer
         # see https://github.com/DLR-RM/stable-baselines3/issues/46
-        truncate_last_traj = (self.optimize_memory_usage
-                              and reset_num_timesteps
+        truncate_last_traj = (reset_num_timesteps
                               and self.replay_buffer is not None
                               and (self.replay_buffer.full
                                    or self.replay_buffer.pos > 0))
 
         if truncate_last_traj:
-            warnings.warn(
-                "The last trajectory in the replay buffer will be truncated, "
-                "see https://github.com/DLR-RM/stable-baselines3/issues/46."
-                "You should use `reset_num_timesteps=False` or `optimize_memory_usage=False`"
-                "to avoid that issue.")
             # Go to the previous index
             pos = (self.replay_buffer.pos - 1) % self.replay_buffer.buffer_size
             self.replay_buffer.dones[pos] = True
@@ -1195,8 +1220,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Note: when using continuous actions,
             # we assume that the policy uses tanh to scale the action
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
-            unscaled_action, _ = self.predict(self._last_obs,
-                                              state=None,
+            unscaled_action = self.predict(self._last_obs,
                                               deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
@@ -1437,6 +1461,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
+        sample_episode: bool = False,
     ):
 
         super(OnPolicyAlgorithm, self).__init__(
@@ -1454,6 +1479,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             seed=seed,
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
+            sample_episode=sample_episode,
         )
 
         self.n_steps = n_steps
@@ -1479,6 +1505,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             gamma=self.gamma,
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
+            sample_episode=self.sample_episode,
         )
         self.policy = self.policy_class(
             self.observation_space,

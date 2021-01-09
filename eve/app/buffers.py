@@ -1,14 +1,27 @@
+#          _     _          _      _                 _   _        _             _
+#         /\ \  /\ \    _ / /\    /\ \              /\_\/\_\ _   _\ \          /\ \
+#        /  \ \ \ \ \  /_/ / /   /  \ \            / / / / //\_\/\__ \         \ \ \
+#       / /\ \ \ \ \ \ \___\/   / /\ \ \          /\ \/ \ \/ / / /_ \_\        /\ \_\
+#      / / /\ \_\/ / /  \ \ \  / / /\ \_\ ____   /  \____\__/ / / /\/_/       / /\/_/
+#     / /_/_ \/_/\ \ \   \_\ \/ /_/_ \/_/\____/\/ /\/________/ / /           / / /
+#    / /____/\    \ \ \  / / / /____/\  \/____\/ / /\/_// / / / /           / / /
+#   / /\____\/     \ \ \/ / / /\____\/        / / /    / / / / / ____      / / /
+#  / / /______      \ \ \/ / / /______       / / /    / / / /_/_/ ___/\___/ / /__
+# / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
+# \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
+
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum
 from typing import (Any, Dict, Generator, List, NamedTuple, Optional, Tuple,
                     Union)
-
+from copy import deepcopy
 import eve.app.space as space
 import numpy as np
 import psutil
 import torch as th
+from queue import deque
 
 # pylint: disable=no-member
 
@@ -87,6 +100,12 @@ class BaseBuffer(ABC):
     :param device: PyTorch device
         to which the values will be converted
     :param n_envs: Number of parallel environments
+    :param sample_episode: If ``False``, we will sample the observations in a 
+        ramdon states format, and will return batch_size states. If ``False``,
+        we will sample the observation in a random episode formot, and will
+        return batch_size episodes. NOTE: if ``True``, all the episodes length
+        should keep the same, or the batch size should be 1, otherwise, we
+        can't stack differnt length of episodes.
     """
     def __init__(
         self,
@@ -95,6 +114,7 @@ class BaseBuffer(ABC):
         action_space: space.EveSpace,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
+        sample_episode: bool = False,
     ):
         super(BaseBuffer, self).__init__()
         self.buffer_size = buffer_size
@@ -106,6 +126,15 @@ class BaseBuffer(ABC):
         self.full = False
         self.device = device
         self.n_envs = n_envs
+
+        self.sample_episode = sample_episode
+
+        self.episode_interval = deque()
+        # used to recored current episode starts.
+        # if we use a recurrent memory array, we will move the start point which
+        # is smaller than current index from episode interval for that
+        # the episode has been rewritten.
+        self.start_point = 0
 
     @staticmethod
     def swap_and_flatten(arr: np.ndarray) -> np.ndarray:
@@ -151,24 +180,45 @@ class BaseBuffer(ABC):
         """
         self.pos = 0
         self.full = False
+        # reset the episode message
+        self.start_point = 0
+        self.episode_interval = deque()
 
     def sample(self, batch_size: int, env: Optional["VecNormalize"] = None):
         """
         :param batch_size: Number of element to sample
         :param env: associated VecEnv
             to normalize the observations/rewards when sampling
-        :return:
+        :return: if episode sample, return a list with episode length and 
+            contains BufferSamples, else, return BufferSamples.
         """
-        # TODO eve: add some limitation to the random batch idx for episode sampling.
-        # either replay buffer and rollout buffer, the step is stacked one by one
-        # along first aixs, (in rollout buffer, every n_envs' steps treated as one steps).
-        # we can record the beginning of each episode and sample among the
-        # beginning indexes, return the whole steps between two beginning indices.
-        # via this way, we make sure that, the episide whole episode was sampled.
-
-        upper_bound = self.buffer_size if self.full else self.pos
-        batch_inds = np.random.randint(0, upper_bound, size=batch_size)
-        return self._get_samples(batch_inds, env=env)
+        if self.sample_episode:
+            upper_bound = len(self.episode_interval)
+            episode_inds = np.random.randint(0, upper_bound, size=batch_size)
+            returns = []
+            for ei in episode_inds:
+                episode_start_point, episode_end_point = self.episode_interval[
+                    ei]
+                batch_inds = np.arange(episode_start_point, episode_end_point)
+                returns.append(self._get_samples(batch_inds, env=env))
+            items = [[] for _ in range(len(returns[0]))]
+            for re in returns:
+                for i, d in enumerate(re):
+                    items[i].append(d)
+            items = type(returns[0])(*[th.stack(i, dim=1) for i in items])
+            packed_returns = []
+            for d in zip(*items):
+                packed_returns.append(type(returns[0])(*d))
+            return packed_returns
+        else:
+            upper_bound = self.buffer_size if self.full else self.pos
+            if self.full:
+                batch_inds = (
+                    np.random.randint(1, self.buffer_size, size=batch_size) +
+                    self.pos) % self.buffer_size
+            else:
+                batch_inds = np.random.randint(0, self.pos, size=batch_size)
+            return self._get_samples(batch_inds, env=env)
 
     @abstractmethod
     def _get_samples(
@@ -223,11 +273,6 @@ class ReplayBuffer(BaseBuffer):
     :param action_space: Action space
     :param device:
     :param n_envs: Number of parallel environments
-    :param optimize_memory_usage: Enable a memory efficient variant
-        of the replay buffer which reduces by almost a factor two the memory used,
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
-        and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
     """
     def __init__(
         self,
@@ -236,37 +281,31 @@ class ReplayBuffer(BaseBuffer):
         action_space: space.EveSpace,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
-        optimize_memory_usage: bool = False,
+        sample_episode: bool = False,
     ):
         super(ReplayBuffer, self).__init__(buffer_size,
                                            observation_space,
                                            action_space,
                                            device,
-                                           n_envs=n_envs)
+                                           n_envs=n_envs,
+                                           sample_episode=sample_episode)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
         # Check that the replay buffer can fit into the memory
         mem_available = psutil.virtual_memory().available
 
-        self.optimize_memory_usage = optimize_memory_usage
-
-
         buffer_obs_shape = (
             self.buffer_size, self.n_envs,
             self.observation_space.max_neurons) + self.obs_shape
         buffer_action_shape = (self.buffer_size, self.n_envs,
-                                self.action_space.max_neurons,
-                                self.action_dim)
+                               self.action_space.max_neurons, self.action_dim)
 
         self.observations = np.zeros(buffer_obs_shape,
                                      dtype=observation_space.dtype)
-        if optimize_memory_usage:
-            # `observations` contains also the next observation
-            self.next_observations = None
-        else:
-            self.next_observations = np.zeros(buffer_obs_shape,
-                                              dtype=observation_space.dtype)
+
+        # `observations` contains also the next observation
+        self.next_observations = None
 
         self.actions = np.zeros(buffer_action_shape, dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs),
@@ -291,11 +330,9 @@ class ReplayBuffer(BaseBuffer):
             reward: np.ndarray, done: np.ndarray) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
-        if self.optimize_memory_usage:
-            self.observations[(self.pos + 1) %
-                              self.buffer_size] = np.array(next_obs).copy()
-        else:
-            self.next_observations[self.pos] = np.array(next_obs).copy()
+
+        self.observations[(self.pos + 1) %
+                          self.buffer_size] = np.array(next_obs).copy()
 
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
@@ -306,43 +343,28 @@ class ReplayBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-    def sample(self,
-               batch_size: int,
-               env: Optional["VecNormalize"] = None) -> ReplayBufferSamples:
-        """
-        Sample elements from the replay buffer.
-        Custom sampling when using memory efficient variant,
-        as we should not sample the element with index `self.pos`
-        See https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
+        # we discard the last episode which bridged the beginning and endding buffer.
+        if done and self.start_point < self.pos:
+            self.episode_interval.append(
+                [deepcopy(self.start_point),
+                 deepcopy(self.pos)])
+            self.start_point = deepcopy(self.pos)
+        elif done and self.start_point > self.pos:
+            self.start_point = deepcopy(self.pos)
 
-        :param batch_size: Number of element to sample
-        :param env: associated VecEnv
-            to normalize the observations/rewards when sampling
-        :return:
-        """
-        if not self.optimize_memory_usage:
-            return super().sample(batch_size=batch_size, env=env)
-        # Do not sample the element with index `self.pos` as the transitions is invalid
-        # (we use only one array to store `obs` and `next_obs`)
-        if self.full:
-            batch_inds = (
-                np.random.randint(1, self.buffer_size, size=batch_size) +
-                self.pos) % self.buffer_size
-        else:
-            batch_inds = np.random.randint(0, self.pos, size=batch_size)
-        return self._get_samples(batch_inds, env=env)
+        # pop overtime state
+        if len(self.episode_interval) and self.episode_interval[0][
+                0] <= self.pos and self.pos < self.episode_interval[0][1]:
+            # remove the last one
+            self.episode_interval.popleft()
 
     def _get_samples(
             self,
             batch_inds: np.ndarray,
             env: Optional["VecNormalize"] = None) -> ReplayBufferSamples:
-        if self.optimize_memory_usage:
-            next_obs = self._normalize_obs(
-                self.observations[(batch_inds + 1) % self.buffer_size, 0, :],
-                env)
-        else:
-            next_obs = self._normalize_obs(
-                self.next_observations[batch_inds, 0, :], env)
+
+        next_obs = self._normalize_obs(
+            self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env)
 
         data = (
             self._normalize_obs(self.observations[batch_inds, 0, :], env),
@@ -385,13 +407,15 @@ class RolloutBuffer(BaseBuffer):
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
+        sample_episode: bool = False,
     ):
 
         super(RolloutBuffer, self).__init__(buffer_size,
                                             observation_space,
                                             action_space,
                                             device,
-                                            n_envs=n_envs)
+                                            n_envs=n_envs,
+                                            sample_episode=sample_episode)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
@@ -404,8 +428,7 @@ class RolloutBuffer(BaseBuffer):
             self.buffer_size, self.n_envs,
             self.observation_space.max_neurons) + self.obs_shape
         buffer_action_shape = (self.buffer_size, self.n_envs,
-                                self.action_space.max_neurons,
-                                self.action_dim)
+                               self.action_space.max_neurons, self.action_dim)
 
         self.observations = np.zeros(buffer_obs_shape, dtype=np.float32)
         self.actions = np.zeros(
@@ -486,6 +509,21 @@ class RolloutBuffer(BaseBuffer):
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True
+
+        # we discard the last episode which bridged the beginning and endding buffer.
+        if done and self.start_point < self.pos:
+            self.episode_interval.append(
+                [deepcopy(self.start_point),
+                 deepcopy(self.pos)])
+            self.start_point = deepcopy(self.pos)
+        elif done and self.start_point > self.pos:
+            self.start_point = deepcopy(self.pos)
+
+        # pop overtime state
+        if len(self.episode_interval) and self.episode_interval[0][
+                0] <= self.pos and self.pos < self.episode_interval[0][1]:
+            # remove the last one
+            self.episode_interval.popleft()
 
     def get(
         self,
