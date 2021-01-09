@@ -10,15 +10,17 @@
 # / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
+import math
+from abc import abstractmethod
+from typing import List, Union
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 from torch import Tensor
-from eve.core.eve import Eve
-from abc import abstractmethod
 from torch.autograd import Function
-from typing import List, Union
+
+from eve.core.eve import Eve
 
 # pylint: disable=no-member
 # pylint: disable=not-callable
@@ -31,7 +33,6 @@ def heaviside(x: Tensor) -> Tensor:
 class SurrogateFnBase(Eve):
     """The base class of different surrogate function.
     """
-
     def __init__(self, alpha: float = 1.0):
         super().__init__()
         if alpha is not None:
@@ -68,8 +69,8 @@ class piecewise_quadratic(Function):
         x, alpha = ctx.saved_tensors
         x_abs = x.abs()
         mask = (x_abs > (1 / alpha))
-        grad_x = (grad_output * (- alpha.pow(2) * x_abs + alpha)
-                  ).masked_fill_(mask, 0)
+        grad_x = (grad_output * (-alpha.pow(2) * x_abs + alpha)).masked_fill_(
+            mask, 0)
         return grad_x, None
 
 
@@ -84,7 +85,7 @@ class PiecewiseQuadratic(SurrogateFnBase):
         mask_non_negative = heaviside(x)
         mask_sign = mask_non_negative * 2 - 1
 
-        exp_x = th.exp(- mask_sign * x * self.alpha) / 2.0
+        exp_x = th.exp(-mask_sign * x * self.alpha) / 2.0
 
         return mask_non_negative - exp_x * mask_sign
 
@@ -197,8 +198,8 @@ class erf(Function):
     @staticmethod
     def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
         x, alpha = ctx.saved_tensors
-        grad_x = grad_output * (- (x * alpha).pow(2)
-                                ).exp() * (x / math.sqrt(math.pi))
+        grad_x = grad_output * (-(x * alpha).pow(2)).exp() * (
+            x / math.sqrt(math.pi))
         return grad_x, None
 
 
@@ -217,7 +218,10 @@ class piecewise_leaky_relu(Function):
     @staticmethod
     def forward(ctx, x: Tensor, w: float = 1.0, c: float = 0.01) -> Tensor:
         ctx.save_for_backward(x)
-        ctx.others = (w, c,)
+        ctx.others = (
+            w,
+            c,
+        )
         return heaviside(x)
 
     @staticmethod
@@ -252,8 +256,11 @@ class PiecewiseLeakyReLU(SurrogateFnBase):
         if c == 0:
             return mask2 * (x / (2 * w) + 0.5) + mask1
         else:
-            cw = c*w
-            return mask0 * (c * x + cw) + mask1 * (c * x + (-cw + 1)) + mask2 * (x / (2 * w) + 0.5)
+            cw = c * w
+            return mask0 * (c * x +
+                            cw) + mask1 * (c * x +
+                                           (-cw + 1)) + mask2 * (x /
+                                                                 (2 * w) + 0.5)
 
 
 __all__ = [

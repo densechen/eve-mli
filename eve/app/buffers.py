@@ -13,15 +13,16 @@
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
+from copy import deepcopy
 from enum import Enum
+from queue import deque
 from typing import (Any, Dict, Generator, List, NamedTuple, Optional, Tuple,
                     Union)
-from copy import deepcopy
+
 import eve.app.space as space
 import numpy as np
 import psutil
 import torch as th
-from queue import deque
 
 # pylint: disable=no-member
 

@@ -11,7 +11,7 @@
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
 from abc import abstractmethod
-from typing import List, Union, Callable
+from typing import Callable, List, Union
 
 import torch as th
 import torch.nn as nn

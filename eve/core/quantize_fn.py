@@ -10,22 +10,20 @@
 # / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
+from typing import List, Union
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Function
 from torch import Tensor
-from typing import List, Union
+from torch.autograd import Function
 
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 
 
-def quantize(input: Tensor,
-             alpha: Tensor,
-             zero_point: Tensor,
-             positive: Tensor,
-             negative: Tensor) -> Tensor:
+def quantize(input: Tensor, alpha: Tensor, zero_point: Tensor,
+             positive: Tensor, negative: Tensor) -> Tensor:
     output = th.round(input * alpha / (alpha * alpha + 1e-8) - zero_point)
 
     # don't use clamp.
@@ -41,9 +39,9 @@ def dequantize(input: Tensor, alpha: Tensor, zero_point: Tensor) -> Tensor:
 
 class Round(Function):
     @staticmethod
-    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor, positive: Tensor, negative: Tensor) -> Tensor:
-        quan_x = quantize(x, alpha, zero_point, positive,
-                          negative)
+    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
+                positive: Tensor, negative: Tensor) -> Tensor:
+        quan_x = quantize(x, alpha, zero_point, positive, negative)
 
         dequan_x = dequantize(quan_x, alpha, zero_point)
 
@@ -61,9 +59,9 @@ class lsq(Function):
         LEARNED STEP SIZE QUANTIZATION: https://quanoview.readthedocs.io/en/latest/_raw/LSQ.html
     """
     @staticmethod
-    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor, positive: Tensor, negative: Tensor) -> Tensor:
-        quan_x = quantize(x, alpha, zero_point, positive,
-                          negative)
+    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
+                positive: Tensor, negative: Tensor) -> Tensor:
+        quan_x = quantize(x, alpha, zero_point, positive, negative)
 
         dequan_x = dequantize(quan_x, alpha, zero_point)
 
@@ -75,8 +73,7 @@ class lsq(Function):
     def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
         x, quan_x, alpha, positive, negative = ctx.saved_tensors
 
-        g = th.ones_like(positive) / (th.sqrt(x.numel() * positive) +
-                                      1e-8)
+        g = th.ones_like(positive) / (th.sqrt(x.numel() * positive) + 1e-8)
 
         lower = (quan_x < negative).float()
         upper = (quan_x > positive).float()
@@ -94,8 +91,8 @@ class lsq(Function):
         return grad_x, grad_alpha, None, None, None, None
 
 
-def ln_error(x: Tensor, alpha: Tensor, zero_point: Tensor, positive: Tensor, negative: Tensor,
-             regular: str) -> Tensor:
+def ln_error(x: Tensor, alpha: Tensor, zero_point: Tensor, positive: Tensor,
+             negative: Tensor, regular: str) -> Tensor:
     quan_x = quantize(x, alpha, zero_point, positive, negative)
     dequan_x = dequantize(quan_x, alpha, zero_point)
 
@@ -142,9 +139,9 @@ class llsq(Function):
 
     """
     @staticmethod
-    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor, positive: Tensor, negative: Tensor, regular: str) -> Tensor:
-        quan_x = quantize(x, alpha, zero_point, positive,
-                          negative)
+    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
+                positive: Tensor, negative: Tensor, regular: str) -> Tensor:
+        quan_x = quantize(x, alpha, zero_point, positive, negative)
         dequan_x = dequantize(quan_x, alpha, zero_point)
         ctx.save_for_backward(x, quan_x, zero_point, alpha, positive, negative)
         ctx.others = (regular, )
@@ -163,10 +160,10 @@ class llsq(Function):
         grad_output = grad_output * middle
 
         error = ln_error(x, alpha, zero_point, positive, negative, regular)
-        lower_error = ln_error(x / 2, alpha, zero_point,
-                               positive, negative, regular)
-        upper_error = ln_error(x * 2, alpha, zero_point,
-                               positive, negative, regular)
+        lower_error = ln_error(x / 2, alpha, zero_point, positive, negative,
+                               regular)
+        upper_error = ln_error(x * 2, alpha, zero_point, positive, negative,
+                               regular)
 
         b, s = update_running_alpha(error, lower_error, upper_error)
 

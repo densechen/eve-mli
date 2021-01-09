@@ -29,6 +29,7 @@ import torch as th
 import torch.nn.functional as F
 from eve.app.callbacks import (BaseCallback, CallbackList, ConvertCallback,
                                EventCallback, MaybeCallback)
+from eve.app.env import EveEnv
 from eve.app.model import BaseModel
 from eve.app.space import EveSpace
 from eve.app.upgrader import Upgrader
@@ -37,7 +38,6 @@ from eve.app.utils import (Schedule, get_device, get_schedule_fn,
                            recursive_getattr, recursive_setattr, safe_mean,
                            save_to_pkl, save_to_zip_file, set_random_seed,
                            update_learning_rate)
-from eve.app.env import EveEnv
 
 # pylint: disable=no-member
 

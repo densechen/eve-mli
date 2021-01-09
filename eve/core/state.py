@@ -11,6 +11,7 @@
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
 from collections import OrderedDict, namedtuple
+from copy import deepcopy
 from inspect import signature
 from typing import Callable, List
 
@@ -18,8 +19,9 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from copy import deepcopy
+
 from eve.core.eve import Eve
+
 # pylint: disable=not-callable, no-member
 
 

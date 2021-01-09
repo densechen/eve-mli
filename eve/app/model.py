@@ -15,6 +15,8 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, Generator, List, Union
 
 import eve
+import eve.app.space as space
+import numpy as np
 import torch as th
 import torch.nn.functional as F
 from eve.app.space import EveSpace
@@ -22,8 +24,7 @@ from eve.app.upgrader import Upgrader
 from eve.app.utils import get_device
 from eve.core.eve import Eve
 from torch.utils.data import DataLoader, Dataset
-import numpy as np
-import eve.app.space as space
+
 # pylint: disable=no-member
 
 

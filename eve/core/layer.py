@@ -10,34 +10,51 @@
 # / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
+import math
+from abc import abstractmethod
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
-
-from eve.core.quan import Quantizer
-from eve.core.eve import Eve
-from eve.core.state import State
 from torch import Tensor
 from torch.nn import Parameter
-from abc import abstractmethod
-import math
+
+from eve.core.eve import Eve
+from eve.core.quan import Quantizer
+from eve.core.state import State
+
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 
 
 class QuanConv2d(nn.Conv2d):
     def __init__(
-        self, in_channels, out_channels, kernel_size,
-        stride=1, padding=0, dilation=1, groups=1, bias=True,
-        padding_mode="zeros", **kwargs,
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+        padding_mode="zeros",
+        **kwargs,
     ):
         """
         Args:
             kwargs: the argument used to define quantizer, except state. 
         """
         super(QuanConv2d, self).__init__(
-            in_channels, out_channels,
-            kernel_size, stride, padding, dilation, groups, bias, padding_mode,
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            groups,
+            bias,
+            padding_mode,
         )
 
         state = State(self)
@@ -52,17 +69,33 @@ class QuanConv2d(nn.Conv2d):
 
 
 class QuanConvTranspose2d(nn.ConvTranspose2d):
-    def __init__(
-            self, in_channels, out_channels, kernel_size,
-            stride=1, padding=0, output_padding=0, dilation=1, groups=1, bias=True,
-            padding_mode="zeros", **kwargs):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 padding=0,
+                 output_padding=0,
+                 dilation=1,
+                 groups=1,
+                 bias=True,
+                 padding_mode="zeros",
+                 **kwargs):
         """
         Args:
             kwargs: the argument used to define quantizer, except state. 
         """
         super(QuanConvTranspose2d, self).__init__(
-            in_channels, out_channels, kernel_size,
-            stride, padding, output_padding, dilation, groups, bias, padding_mode,
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            output_padding,
+            dilation,
+            groups,
+            bias,
+            padding_mode,
         )
 
         state = State(self)
@@ -72,21 +105,31 @@ class QuanConvTranspose2d(nn.ConvTranspose2d):
     def forward(self, input):
         quan_weight = self.quantizer(self.weight)
         return F.conv_transpose2d(input, quan_weight, self.bias, self.stride,
-                                  self.padding, self.output_padding, self.groups, self.dilation)
+                                  self.padding, self.output_padding,
+                                  self.groups, self.dilation)
 
 
 class QuanBNFuseConv2d(nn.Conv2d):
-    def __init__(
-            self, in_channels, out_channels, kernel_size,
-            stride=1, padding=0, dilation=1, groups=1, bias=False,
-            padding_mode="zeros", eps=1e-5, momentum=0.01, **kwargs):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 padding=0,
+                 dilation=1,
+                 groups=1,
+                 bias=False,
+                 padding_mode="zeros",
+                 eps=1e-5,
+                 momentum=0.01,
+                 **kwargs):
         """
         Args:
             kwargs: the argument used to define quantizer, except state. 
         """
-        super(QuanBNFuseConv2d, self).__init__(
-            in_channels, out_channels,
-            kernel_size, stride, padding, dilation, groups, bias, padding_mode)
+        super(QuanBNFuseConv2d,
+              self).__init__(in_channels, out_channels, kernel_size, stride,
+                             padding, dilation, groups, bias, padding_mode)
         self.eps = eps
         self.momentum = momentum
         self.gamma = Parameter(th.Tensor(out_channels))
@@ -111,8 +154,14 @@ class QuanBNFuseConv2d(nn.Conv2d):
 
         if self.training:
             output = F.conv2d(
-                input, self.weight, self.bias, self.stride, self.padding,
-                self.dilation, self.groups,)
+                input,
+                self.weight,
+                self.bias,
+                self.stride,
+                self.padding,
+                self.dilation,
+                self.groups,
+            )
 
             dims = [dim for dim in range(4) if dim != 1]
             batch_mean = th.mean(output, dim=dims)
@@ -123,29 +172,31 @@ class QuanBNFuseConv2d(nn.Conv2d):
                     self.running_mean.add_(batch_mean)
                     self.running_var.add_(batch_var)
                 else:
-                    self.running_mean.mul_(
-                        1 - self.momentum).add_(batch_mean * self.momentum)
-                    self.running_var.mul_(
-                        1 - self.momentum).add_(batch_var * self.momentum)
+                    self.running_mean.mul_(1 - self.momentum).add_(
+                        batch_mean * self.momentum)
+                    self.running_var.mul_(1 - self.momentum).add_(
+                        batch_var * self.momentum)
 
             if self.bias is not None:
                 bias = reshape_to_bias(
-                    self.beta + (self.bias - batch_mean) * (
-                        self.gamma / th.sqrt(batch_var + self.eps)))
+                    self.beta + (self.bias - batch_mean) *
+                    (self.gamma / th.sqrt(batch_var + self.eps)))
             else:
                 bias = reshape_to_bias(
-                    self.beta - batch_mean * (self.gamma / th.sqrt(batch_var + self.eps)))
+                    self.beta - batch_mean *
+                    (self.gamma / th.sqrt(batch_var + self.eps)))
             weight = self.weight * reshape_to_weight(
                 self.gamma / th.sqrt(self.running_var + self.eps))
 
         else:
             if self.bias is not None:
-                bias = reshape_to_bias(self.beta + (self.bias - self.running_mean) * (
-                    self.gamma / th.sqrt(self.running_var + self.eps)))
+                bias = reshape_to_bias(
+                    self.beta + (self.bias - self.running_mean) *
+                    (self.gamma / th.sqrt(self.running_var + self.eps)))
             else:
                 bias = reshape_to_bias(
-                    self.beta - self.running_mean * (
-                        self.gamma / th.sqrt(self.running_var + self.eps)))
+                    self.beta - self.running_mean *
+                    (self.gamma / th.sqrt(self.running_var + self.eps)))
             weight = self.weight * reshape_to_weight(
                 self.gamma / th.sqrt(self.running_var + self.eps))
 
@@ -157,7 +208,8 @@ class QuanBNFuseConv2d(nn.Conv2d):
                               self.groups)  # no bias
             # running ——> batch
             output *= reshape_to_activation(
-                th.sqrt(self.running_var + self.eps) / th.sqrt(batch_var + self.eps))
+                th.sqrt(self.running_var + self.eps) /
+                th.sqrt(batch_var + self.eps))
             output += reshape_to_activation(bias)
         else:
             output = F.conv2d(input, quan_weight, bias, self.stride,
@@ -184,7 +236,6 @@ class Dropout(Eve):
 
     The dropout mask will not be changed among a spike trains under spiking mode.
     """
-
     def __init__(self, p=0.5):
         super().__init__()
         if p < 0 or p > 1:
@@ -243,7 +294,6 @@ class Encoder(Eve):
     .. note:: 
         Only take effect under spiking mode. In non-spiking mode, it returns input directly.
     """
-
     def __init__(self, timesteps: int = 1):
         super().__init__()
 
@@ -276,7 +326,6 @@ class Encoder(Eve):
 class RateEncoder(Encoder):
     """Just return the input as encoding trains.
     """
-
     def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_eve is None:
             self.raw_input_eve = x
@@ -329,11 +378,10 @@ class LatencyEncoder(Encoder):
                 spike_time = (self.timesteps - 1 -
                               th.log(self.alpha * x + 1)).round().long()
             elif self.encoder_type == "linear":
-                spike_time = ((self.timesteps - 1) *
-                              (1 - x)).round().long()
+                spike_time = ((self.timesteps - 1) * (1 - x)).round().long()
 
-            self.raw_input_eve = F.one_hot(
-                spike_time, num_classes=self.timesteps).bool()
+            self.raw_input_eve = F.one_hot(spike_time,
+                                           num_classes=self.timesteps).bool()
 
             self.index = 0
         output = self.raw_input_eve[..., self.index]
@@ -346,9 +394,7 @@ class LatencyEncoder(Encoder):
 class PoissonEncoder(Encoder):
     """Widely used in spiking neuronal network.
     """
-
     def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_eve is None:
             self.raw_input_eve = x
-        return th.rand_like(self.raw_input_eve).le(
-            self.raw_input_eve).float()
+        return th.rand_like(self.raw_input_eve).le(self.raw_input_eve).float()

@@ -29,7 +29,3 @@ Indices and tables
    :caption: APIs
 
    eve
-   eve.core
-   eve.app
-   eve.app.algorithm
-   eve.utils

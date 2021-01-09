@@ -14,14 +14,17 @@ import math
 import warnings
 from abc import abstractmethod
 from collections import OrderedDict
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, TypeVar, Union, Iterator, final)
 from inspect import signature
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
+                    Tuple, TypeVar, Union, final)
+
 import torch as th
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Module, Parameter
 
+# a global ordered dictionary to save the upgrade function specified for 
+# different eve parameters.
 __global_upgrade_fn__ = OrderedDict()
 
 
@@ -55,7 +58,8 @@ class Eve(Module):
         # register an forward hook to attach the observation states to eve_parameters
         self.register_forward_hook(Eve._attach_obs_to_eve_parameters)
 
-    def register_eve_parameter(self, name: str, param: Union[Parameter, None]) -> None:
+    def register_eve_parameter(self, name: str, param: Union[Parameter,
+                                                             None]) -> None:
         """Adds an eve parameter to current module.
 
         Refer to :meth:`self.register_parameter()` for more details.
@@ -67,10 +71,12 @@ class Eve(Module):
             parameters.
         """
         assert name.endswith(
-            "_eve"), f"{name} must be ended with `_eve` if you want to register it as a eve_parameter"
+            "_eve"
+        ), f"{name} must be ended with `_eve` if you want to register it as a eve_parameter"
         self.register_parameter(name, param)
 
-    def register_eve_buffer(self, name: str, tensor: Union[Tensor, None]) -> None:
+    def register_eve_buffer(self, name: str, tensor: Union[Tensor,
+                                                           None]) -> None:
         """Registers a eve buffer to current module.
 
         Refer to :meth:`self.register_buffer` for more details.
@@ -81,7 +87,8 @@ class Eve(Module):
             whose name are not ended with `_eve`, will be treated as buffer.
         """
         assert name.endswith(
-            "_eve"), f"{name} must be ended with `_eve` if you want to register it as a eve buffer"
+            "_eve"
+        ), f"{name} must be ended with `_eve` if you want to register it as a eve buffer"
         # all hidden states are not saved along with net's parameters.
         self.register_buffer(name, tensor, persistent=False)
 
@@ -107,7 +114,10 @@ class Eve(Module):
 
         __global_upgrade_fn__[key] = fn
 
-    def named_eve_parameters(self, prefix: str = "", recurse: bool = True) -> Iterator[Tuple[str, Parameter]]:
+    def named_eve_parameters(
+            self,
+            prefix: str = "",
+            recurse: bool = True) -> Iterator[Tuple[str, Parameter]]:
         """Returns a iterator over module's eve parameters, yielding both the
         name of the eve parameter as well as the eve parameter itself.
 
@@ -125,7 +135,10 @@ class Eve(Module):
         for _, param in self.named_eve_parameters(recurse=recurse):
             yield param
 
-    def named_torch_parameters(self, prefix: str = "", recurse: bool = True) -> Iterator[Tuple[str, Parameter]]:
+    def named_torch_parameters(
+            self,
+            prefix: str = "",
+            recurse: bool = True) -> Iterator[Tuple[str, Parameter]]:
         """Returns a iterator over module's torch parameters, yielding both the
         name of the torch parameter as well as the torch parameter itself.
 
@@ -143,7 +156,10 @@ class Eve(Module):
         for _, param in self.named_torch_parameters(recurse=recurse):
             yield param
 
-    def named_eve_buffers(self, prefix: str = "", recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
+    def named_eve_buffers(
+            self,
+            prefix: str = "",
+            recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
         """Returns a iterator over module's eve buffers, yielding both the 
         name of the eve buffers as well as the eve buffer itself.
 
@@ -161,7 +177,10 @@ class Eve(Module):
         for _, buf in self.named_eve_buffers(recurse=recurse):
             yield buf
 
-    def named_torch_buffers(self, prefix: str = "", recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
+    def named_torch_buffers(
+            self,
+            prefix: str = "",
+            recurse: bool = True) -> Iterator[Tuple[str, Tensor]]:
         """Returns a iterator over module's torch buffers, yielding both the 
         name of the torch buffers as well as the torch buffer itself.
 
@@ -300,8 +319,8 @@ class Eve(Module):
             elif hasattr(
                     v,
                     'obs') and v.obs is not None and v.obs.shape == obs.shape:
-                v.obs.mul_(1-cls.obs_momentum).add_(obs,
-                                                    alpha=cls.obs_momentum)
+                v.obs.mul_(1 - cls.obs_momentum).add_(obs,
+                                                      alpha=cls.obs_momentum)
             elif not hasattr(v, 'obs') or v.obs is None:
                 v.obs = obs.detach().clone()
             else:

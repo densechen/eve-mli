@@ -23,7 +23,7 @@ setup(
     description="eve-mli: making learning interesting.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/densechen/eve",
+    url="https://github.com/densechen/eve-mli",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
