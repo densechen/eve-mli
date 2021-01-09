@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import gym
+import eve.app.space as space
 import numpy as np
 import torch as th
 import torch.nn as nn
@@ -14,7 +14,7 @@ from eve.app.policies import (BaseFeaturesExtractor, BasePolicy,
                               StateDependentNoiseDistribution, create_mlp,
                               create_sde_features_extractor,
                               get_actor_critic_arch, register_policy)
-from eve.app.utils import GymEnv, Schedule, polyak_update
+from eve.app.utils import EveEnv, Schedule, polyak_update
 
 # pylint: disable=no-member
 
@@ -48,11 +48,10 @@ class Actor(BasePolicy):
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
-
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,
@@ -239,11 +238,10 @@ class SACPolicy(BasePolicy):
     :param share_features_extractor: Whether to share or not the features extractor
         between the actor and the critic (this saves computation time)
     """
-
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -419,7 +417,7 @@ class SAC(OffPolicyAlgorithm):
     in https://github.com/hill-a/stable-baselines/issues/270
 
     :param policy: The policy model to use (MlpPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param env: The environment to learn from
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress remaining (from 1 to 0)
@@ -461,11 +459,10 @@ class SAC(OffPolicyAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
-
     def __init__(
         self,
         policy: Union[str, Type[SACPolicy]],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         learning_rate: Union[float, Schedule] = 3e-4,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
@@ -516,7 +513,7 @@ class SAC(OffPolicyAlgorithm):
             sde_sample_freq=sde_sample_freq,
             use_sde_at_warmup=use_sde_at_warmup,
             optimize_memory_usage=optimize_memory_usage,
-            supported_action_spaces=(gym.spaces.Box),
+            supported_action_spaces=(space.EveBox),
         )
 
         self.target_entropy = target_entropy
@@ -627,7 +624,7 @@ class SAC(OffPolicyAlgorithm):
                 # Compute the next Q values: min over all critics targets
                 next_q_values = th.cat(self.critic_target(
                     replay_data.next_observations, next_actions),
-                    dim=1)
+                                       dim=1)
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
                 # add entropy term
                 next_q_values = next_q_values - ent_coef * next_log_prob.reshape(
@@ -689,7 +686,7 @@ class SAC(OffPolicyAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "SAC",

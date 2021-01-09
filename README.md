@@ -82,7 +82,7 @@ eve
 │   │   └── td3.py
 │   ├── buffers.py # replay buffer and rollout buffer
 │   ├── callbacks.py 
-│   ├── env.py # wrapper gym.Env
+│   ├── env.py # wrapper EveEnv
 │   ├── exp_manager.py # manage the train of RL.
 │   ├── hyperparams_opt.py # hyperparams of opt
 │   ├── __init__.py

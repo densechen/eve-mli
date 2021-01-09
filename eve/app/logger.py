@@ -36,7 +36,6 @@ class KVWriter(object):
     """
     Key Value writer
     """
-
     def write(self,
               key_values: Dict[str, Any],
               key_excluded: Dict[str, Union[str, Tuple[str, ...]]],
@@ -61,7 +60,6 @@ class SeqWriter(object):
     """
     sequence writer
     """
-
     def write_sequence(self, sequence: List) -> None:
         """
         write_sequence an array to file
@@ -336,7 +334,6 @@ def make_output_format(_format: str,
         raise ValueError(f"Unknown format specified: {_format}")
 
 
-
 # ================================================================
 # Backend
 # ================================================================
@@ -542,6 +539,7 @@ class ScopedConfigure(object):
     def __exit__(self, *args) -> None:
         Logger.CURRENT.close()
         Logger.CURRENT = self.prev_logger
+
 
 # ================================================================
 # API

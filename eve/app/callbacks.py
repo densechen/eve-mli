@@ -5,14 +5,13 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import eve.app.logger as logger
-import gym
 import numpy as np
 import optuna
 from eve.app.env import (DummyVecEnv, Monitor, VecEnv, VecEnvWrapper,
                          VecNormalize, is_wrapped)
 
 
-def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
+def sync_envs_normalization(env: "EveEnv", eval_env: "EveEnv") -> None:
     """
     Sync eval env and train env when using VecNormalize
 
@@ -31,7 +30,7 @@ def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
 
 def evaluate_policy(
     model: "algo.BaseAlgorithm",
-    env: Union[gym.Env, VecEnv],
+    env: "EveEnv",
     n_eval_episodes: int = 10,
     deterministic: bool = True,
     callback: Optional[Callable[[Dict[str, Any], Dict[str, Any]],
@@ -54,7 +53,7 @@ def evaluate_policy(
         wrapper before anything else.
 
     :param model: The RL agent you want to evaluate.
-    :param env: The gym environment. In the case of a ``VecEnv``
+    :param env: The environment. In the case of a ``VecEnv``
         this must contain only one environment.
     :param n_eval_episodes: Number of episode to evaluate the agent
     :param deterministic: Whether to use deterministic or stochastic actions
@@ -131,19 +130,19 @@ def evaluate_policy(
         return episode_rewards, episode_lengths
     return mean_reward, std_reward
 
+
 class BaseCallback(ABC):
     """
     Base class for callback.
 
     :param verbose:
     """
-
     def __init__(self, verbose: int = 0):
         super(BaseCallback, self).__init__()
         # The RL model
         self.model = None  # type: Optional[algo.BaseAlgorithm]
         # An alias for self.model.get_env(), the environment used for training
-        self.training_env = None  # type: Union[gym.Env, VecEnv, None]
+        self.training_env = None  # type: EveEnv
         # Number of time the callback was called
         self.n_calls = 0  # type: int
         # n_envs * n times env.step() was called
@@ -246,7 +245,6 @@ class EventCallback(BaseCallback):
         when an event is triggered.
     :param verbose:
     """
-
     def __init__(self,
                  callback: Optional[BaseCallback] = None,
                  verbose: int = 0):
@@ -290,7 +288,6 @@ class CallbackList(BaseCallback):
     :param callbacks: A list of callbacks that will be called
         sequentially.
     """
-
     def __init__(self, callbacks: List[BaseCallback]):
         super(CallbackList, self).__init__()
         assert isinstance(callbacks, list)
@@ -342,7 +339,6 @@ class CheckpointCallback(BaseCallback):
     :param name_prefix: Common prefix to the saved models
     :param verbose:
     """
-
     def __init__(self,
                  save_freq: int,
                  save_path: str,
@@ -376,7 +372,6 @@ class ConvertCallback(BaseCallback):
     :param callback:
     :param verbose:
     """
-
     def __init__(self,
                  callback: Callable[[Dict[str, Any], Dict[str, Any]], bool],
                  verbose: int = 0):
@@ -408,10 +403,9 @@ class EvalCallback(EventCallback):
     :param warn: Passed to ``evaluate_policy`` (warns if ``eval_env`` has not been
         wrapped with a Monitor wrapper)
     """
-
     def __init__(
         self,
-        eval_env: Union[gym.Env, VecEnv],
+        eval_env: "EveEnv",
         callback_on_new_best: Optional[BaseCallback] = None,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
@@ -564,6 +558,7 @@ class EvalCallback(EventCallback):
         if self.callback:
             self.callback.update_locals(locals_)
 
+
 class StopTrainingOnRewardThreshold(BaseCallback):
     """
     Stop the training once a threshold in episodic reward
@@ -575,7 +570,6 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         to stop training.
     :param verbose:
     """
-
     def __init__(self, reward_threshold: float, verbose: int = 0):
         super(StopTrainingOnRewardThreshold, self).__init__(verbose=verbose)
         self.reward_threshold = reward_threshold
@@ -600,7 +594,6 @@ class EveryNTimesteps(EventCallback):
     :param callback: Callback that will be called
         when the event is triggered.
     """
-
     def __init__(self, n_steps: int, callback: BaseCallback):
         super(EveryNTimesteps, self).__init__(callback)
         self.n_steps = n_steps
@@ -623,7 +616,6 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
     :param max_episodes: Maximum number of episodes to stop training.
     :param verbose: Select whether to print information about when training ended by reaching ``max_episodes``
     """
-
     def __init__(self, max_episodes: int, verbose: int = 0):
         super(StopTrainingOnMaxEpisodes, self).__init__(verbose=verbose)
         self.max_episodes = max_episodes
@@ -663,7 +655,6 @@ class TrialEvalCallback(EvalCallback):
     """
     Callback used for evaluating and reporting a trial.
     """
-
     def __init__(
         self,
         eval_env: VecEnv,
@@ -710,7 +701,6 @@ class SaveVecNormalizeCallback(BaseCallback):
         name_prefix(str): Common prefix to the saved ``VecNormalize``, if None (default)
             only one file will be kept.
     """
-
     def __init__(self,
                  save_freq: int,
                  save_path: str,

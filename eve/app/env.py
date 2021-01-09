@@ -15,8 +15,7 @@ from typing import (Any, Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Type, Union)
 
 import cloudpickle
-import eve.app.space
-import gym
+import eve.app.space as space
 import numpy as np
 import pandas
 import pandas as pd
@@ -37,6 +36,312 @@ VecEnvObs = Union[np.ndarray, Dict[str, np.ndarray], Tuple[np.ndarray, ...]]
 VecEnvStepReturn = Tuple[VecEnvObs, np.ndarray, np.ndarray, List[Dict]]
 
 
+class EveEnv(object):
+    """The main OpenAI class. It encapsulates an environment with
+    arbitrary behind-the-scenes dynamics. An environment can be
+    partially or fully observed.
+
+    The main API methods that users of this class need to know are:
+
+        step
+        reset
+        render
+        close
+        seed
+
+    And set the following attributes:
+
+        action_space: The Space object corresponding to valid actions
+        observation_space: The Space object corresponding to valid observations
+        reward_range: A tuple corresponding to the min and max possible rewards
+
+    Note: a default reward range set to [-inf,+inf] already exists. Set it if you want a narrower range.
+
+    The methods are accessed publicly as "step", "reset", etc...
+    """
+    # Set this in SOME subclasses
+    metadata = {'render.modes': []}
+    reward_range = (-float('inf'), float('inf'))
+    spec = None
+
+    # Set these in ALL subclasses
+    action_space = None
+    observation_space = None
+
+    def step(self, action):
+        """Run one timestep of the environment's dynamics. When end of
+        episode is reached, you are responsible for calling `reset()`
+        to reset this environment's state.
+
+        Accepts an action and returns a tuple (observation, reward, done, info).
+
+        Args:
+            action (object): an action provided by the agent
+
+        Returns:
+            observation (object): agent's observation of the current environment
+            reward (float) : amount of reward returned after previous action
+            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
+            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
+        """
+        raise NotImplementedError
+
+    def reset(self):
+        """Resets the environment to an initial state and returns an initial
+        observation.
+
+        Note that this function should not reset the environment's random
+        number generator(s); random variables in the environment's state should
+        be sampled independently between multiple calls to `reset()`. In other
+        words, each call of `reset()` should yield an environment suitable for
+        a new episode, independent of previous episodes.
+
+        Returns:
+            observation (object): the initial observation.
+        """
+        raise NotImplementedError
+
+    def render(self, mode='human'):
+        """Renders the environment.
+
+        The set of supported modes varies per environment. (And some
+        environments do not support rendering at all.) By convention,
+        if mode is:
+
+        - human: render to the current display or terminal and
+          return nothing. Usually for human consumption.
+        - rgb_array: Return an numpy.ndarray with shape (x, y, 3),
+          representing RGB values for an x-by-y pixel image, suitable
+          for turning into a video.
+        - ansi: Return a string (str) or StringIO.StringIO containing a
+          terminal-style text representation. The text can include newlines
+          and ANSI escape sequences (e.g. for colors).
+
+        Note:
+            Make sure that your class's metadata 'render.modes' key includes
+              the list of supported modes. It's recommended to call super()
+              in implementations to use the functionality of this method.
+
+        Args:
+            mode (str): the mode to render with
+
+        Example:
+
+        class MyEnv(EveEnv):
+            metadata = {'render.modes': ['human', 'rgb_array']}
+
+            def render(self, mode='human'):
+                if mode == 'rgb_array':
+                    return np.array(...) # return RGB frame suitable for video
+                elif mode == 'human':
+                    ... # pop up a window and render
+                else:
+                    super(MyEnv, self).render(mode=mode) # just raise an exception
+        """
+        raise NotImplementedError
+
+    def close(self):
+        """Override close in your subclass to perform any necessary cleanup.
+
+        Environments will automatically close() themselves when
+        garbage collected or when the program exits.
+        """
+        pass
+
+    def seed(self, seed=None):
+        """Sets the seed for this env's random number generator(s).
+
+        Note:
+            Some environments use multiple pseudorandom number generators.
+            We want to capture all such seeds used in order to ensure that
+            there aren't accidental correlations between multiple generators.
+
+        Returns:
+            list<bigint>: Returns the list of seeds used in this env's random
+              number generators. The first value in the list should be the
+              "main" seed, or the value which a reproducer should pass to
+              'seed'. Often, the main seed equals the provided 'seed', but
+              this won't be true if seed=None, for example.
+        """
+        return
+
+    @property
+    def unwrapped(self):
+        """Completely unwrap this env.
+
+        Returns:
+            EveEnv: The base non-wrapped EveEnv instance
+        """
+        return self
+
+    def __str__(self):
+        if self.spec is None:
+            return '<{} instance>'.format(type(self).__name__)
+        else:
+            return '<{}<{}>>'.format(type(self).__name__, self.spec.id)
+
+    def __enter__(self):
+        """Support with-statement for the environment. """
+        return self
+
+    def __exit__(self, *args):
+        """Support with-statement for the environment. """
+        self.close()
+        # propagate exception
+        return False
+
+
+class GoalEnv(EveEnv):
+    """A goal-based environment. It functions just as any regular OpenAI environment but it
+    imposes a required structure on the observation_space. More concretely, the observation
+    space is required to contain at least three elements, namely `observation`, `desired_goal`, and
+    `achieved_goal`. Here, `desired_goal` specifies the goal that the agent should attempt to achieve.
+    `achieved_goal` is the goal that it currently achieved instead. `observation` contains the
+    actual observations of the environment as per usual.
+    """
+    def reset(self):
+        # Enforce that each GoalEnv uses a Goal-compatible observation space.
+        if not isinstance(self.observation_space, space.EveDict):
+            raise TypeError(
+                'GoalEnv requires an observation space of type space.EveDict')
+        for key in ['observation', 'achieved_goal', 'desired_goal']:
+            if key not in self.observation_space.spaces:
+                raise KeyError(
+                    'GoalEnv requires the "{}" key to be part of the observation dictionary.'
+                    .format(key))
+
+    def compute_reward(self, achieved_goal, desired_goal, info):
+        """Compute the step reward. This externalizes the reward function and makes
+        it dependent on a desired goal and the one that was achieved. If you wish to include
+        additional rewards that are independent of the goal, you can include the necessary values
+        to derive it in 'info' and compute it accordingly.
+
+        Args:
+            achieved_goal (object): the goal that was achieved during execution
+            desired_goal (object): the desired goal that we asked the agent to attempt to achieve
+            info (dict): an info dictionary with additional information
+
+        Returns:
+            float: The reward that corresponds to the provided achieved goal w.r.t. to the desired
+            goal. Note that the following should always hold true:
+
+                ob, reward, done, info = env.step()
+                assert reward == env.compute_reward(ob['achieved_goal'], ob['goal'], info)
+        """
+        raise NotImplementedError
+
+
+class Wrapper(EveEnv):
+    """Wraps the environment to allow a modular transformation.
+
+    This class is the base class for all wrappers. The subclass could override
+    some methods to change the behavior of the original environment without touching the
+    original code.
+
+    .. note::
+
+        Don't forget to call ``super().__init__(env)`` if the subclass overrides :meth:`__init__`.
+
+    """
+    def __init__(self, env):
+        self.env = env
+        self.action_space = self.env.action_space
+        self.observation_space = self.env.observation_space
+        self.reward_range = self.env.reward_range
+        self.metadata = self.env.metadata
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(
+                "attempted to get missing private attribute '{}'".format(name))
+        return getattr(self.env, name)
+
+    @property
+    def spec(self):
+        return self.env.spec
+
+    @classmethod
+    def class_name(cls):
+        return cls.__name__
+
+    def step(self, action):
+        return self.env.step(action)
+
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
+    def render(self, mode='human', **kwargs):
+        return self.env.render(mode, **kwargs)
+
+    def close(self):
+        return self.env.close()
+
+    def seed(self, seed=None):
+        return self.env.seed(seed)
+
+    def compute_reward(self, achieved_goal, desired_goal, info):
+        return self.env.compute_reward(achieved_goal, desired_goal, info)
+
+    def __str__(self):
+        return '<{}{}>'.format(type(self).__name__, self.env)
+
+    def __repr__(self):
+        return str(self)
+
+    @property
+    def unwrapped(self):
+        return self.env.unwrapped
+
+
+class ObservationWrapper(Wrapper):
+    def reset(self, **kwargs):
+        observation = self.env.reset(**kwargs)
+        return self.observation(observation)
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        return self.observation(observation), reward, done, info
+
+    def observation(self, observation):
+        raise NotImplementedError
+
+
+class RewardWrapper(Wrapper):
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        return observation, self.reward(reward), done, info
+
+    def reward(self, reward):
+        raise NotImplementedError
+
+
+class ActionWrapper(Wrapper):
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
+    def step(self, action):
+        return self.env.step(self.action(action))
+
+    def action(self, action):
+        raise NotImplementedError
+
+    def reverse_action(self, action):
+        raise NotImplementedError
+
+
+class FlattenObservation(ObservationWrapper):
+    r"""Observation wrapper that flattens the observation."""
+    def __init__(self, env):
+        super(FlattenObservation, self).__init__(env)
+        self.observation_space = space.flatten_space(env.observation_space)
+
+    def observation(self, observation):
+        return space.flatten(self.env.observation_space, observation)
+
+
 class VecEnv(ABC):
     """
     An abstract asynchronous, vectorized environment.
@@ -45,8 +350,8 @@ class VecEnv(ABC):
     :param observation_space: the observation space
     :param action_space: the action space
     """
-    def __init__(self, num_envs: int, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space):
+    def __init__(self, num_envs: int, observation_space: space.EveSpace,
+                 action_space: space.EveSpace):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
@@ -140,7 +445,7 @@ class VecEnv(ABC):
 
     @abstractmethod
     def env_is_wrapped(self,
-                       wrapper_class: Type[gym.Wrapper],
+                       wrapper_class: Type[Wrapper],
                        indices: VecEnvIndices = None) -> List[bool]:
         """
         Check if environments are wrapped with a given wrapper.
@@ -220,8 +525,8 @@ class VecEnvWrapper(VecEnv):
     def __init__(
         self,
         venv: VecEnv,
-        observation_space: Optional[gym.spaces.Space] = None,
-        action_space: Optional[gym.spaces.Space] = None,
+        observation_space: Optional[space.EveSpace] = None,
+        action_space: Optional[space.EveSpace] = None,
     ):
         self.venv = venv
         VecEnv.__init__(
@@ -271,7 +576,7 @@ class VecEnvWrapper(VecEnv):
                                     **method_kwargs)
 
     def env_is_wrapped(self,
-                       wrapper_class: Type[gym.Wrapper],
+                       wrapper_class: Type[Wrapper],
                        indices: VecEnvIndices = None) -> List[bool]:
         return self.venv.env_is_wrapped(wrapper_class, indices=indices)
 
@@ -349,7 +654,7 @@ def copy_obs_dict(obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
     return OrderedDict([(k, np.copy(v)) for k, v in obs.items()])
 
 
-def dict_to_obs(space: gym.spaces.Space,
+def dict_to_obs(space_: space.EveSpace,
                 obs_dict: Dict[Any, np.ndarray]) -> VecEnvObs:
     """
     Convert an internal representation raw_obs into the appropriate type
@@ -361,13 +666,13 @@ def dict_to_obs(space: gym.spaces.Space,
         If space is Dict, function is identity; if space is Tuple, converts dict to Tuple;
         otherwise, space is unstructured and returns the value raw_obs[None].
     """
-    if isinstance(space, gym.spaces.Dict):
+    if isinstance(space_, space.EveDict):
         return obs_dict
-    elif isinstance(space, gym.spaces.Tuple):
+    elif isinstance(space_, space.EveTuple):
         assert len(obs_dict) == len(
-            space.spaces
+            space_.spaces
         ), "size of observation does not match size of observation space"
-        return tuple((obs_dict[i] for i in range(len(space.spaces))))
+        return tuple((obs_dict[i] for i in range(len(space_.spaces))))
     else:
         assert set(obs_dict.keys()) == {
             None
@@ -376,10 +681,10 @@ def dict_to_obs(space: gym.spaces.Space,
 
 
 def obs_space_info(
-    obs_space: gym.spaces.Space
+    obs_space: space.EveSpace
 ) -> Tuple[List[str], Dict[Any, Tuple[int, ...]], Dict[Any, np.dtype]]:
     """
-    Get dict-structured information about a gym.Space.
+    Get dict-structured information about a eve.app.EveSpace.
 
     Dict spaces are represented directly by their dict of subspaces.
     Tuple spaces are converted into a dict with keys indexing into the tuple.
@@ -391,12 +696,12 @@ def obs_space_info(
         shapes: a dict mapping keys to shapes.
         dtypes: a dict mapping keys to dtypes.
     """
-    if isinstance(obs_space, gym.spaces.Dict):
+    if isinstance(obs_space, space.EveDict):
         assert isinstance(
             obs_space.spaces,
             OrderedDict), "Dict space must have ordered subspaces"
         subspaces = obs_space.spaces
-    elif isinstance(obs_space, gym.spaces.Tuple):
+    elif isinstance(obs_space, space.EveTuple):
         subspaces = {i: space for i, space in enumerate(obs_space.spaces)}
     else:
         assert not hasattr(
@@ -430,7 +735,7 @@ class ObsDictWrapper(VecEnvWrapper):
         self.spaces = list(venv.observation_space.spaces.values())
 
         # get dimensions of observation and goal
-        if isinstance(self.spaces[0], gym.spaces.Discrete):
+        if isinstance(self.spaces[0], space.EveDiscrete):
             self.obs_dim = 1
             self.goal_dim = 1
         else:
@@ -441,7 +746,7 @@ class ObsDictWrapper(VecEnvWrapper):
 
         # new observation space with concatenated observation and (desired) goal
         # for the different types of spaces
-        if isinstance(self.spaces[0], gym.spaces.Box):
+        if isinstance(self.spaces[0], space.EveBox):
             low_values = np.concatenate([
                 venv.observation_space.spaces["observation"].low,
                 venv.observation_space.spaces["desired_goal"].low
@@ -450,18 +755,18 @@ class ObsDictWrapper(VecEnvWrapper):
                 venv.observation_space.spaces["observation"].high,
                 venv.observation_space.spaces["desired_goal"].high
             ])
-            self.observation_space = gym.spaces.Box(low_values,
-                                                    high_values,
-                                                    dtype=np.float32)
-        elif isinstance(self.spaces[0], gym.spaces.MultiBinary):
+            self.observation_space = space.EveBox(low_values,
+                                                  high_values,
+                                                  dtype=np.float32)
+        elif isinstance(self.spaces[0], space.EveMultiBinary):
             total_dim = self.obs_dim + self.goal_dim
-            self.observation_space = gym.spaces.MultiBinary(total_dim)
-        elif isinstance(self.spaces[0], gym.spaces.Discrete):
+            self.observation_space = space.EveMultiBinary(total_dim)
+        elif isinstance(self.spaces[0], space.EveDiscrete):
             dimensions = [
                 venv.observation_space.spaces["observation"].n,
                 venv.observation_space.spaces["desired_goal"].n
             ]
-            self.observation_space = gym.spaces.MultiDiscrete(dimensions)
+            self.observation_space = space.EveMultiDiscrete(dimensions)
         else:
             raise NotImplementedError(
                 f"{type(self.spaces[0])} space is not supported")
@@ -547,8 +852,8 @@ def _worker(remote: mp.connection.Connection,
             break
 
 
-GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
-GymStepReturn = Tuple[GymObs, float, bool, Dict]
+EveObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
+EveStepReturn = Tuple[EveObs, float, bool, Dict]
 
 
 class DummyVecEnv(VecEnv):
@@ -562,7 +867,7 @@ class DummyVecEnv(VecEnv):
     :param env_fns: a list of functions
         that return environments to vectorize
     """
-    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+    def __init__(self, env_fns: List[Callable[[], "EveEnv"]]):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space,
@@ -570,7 +875,7 @@ class DummyVecEnv(VecEnv):
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
 
-        if isinstance(env.observation_space, eve.app.space.EveSpace):
+        if isinstance(env.observation_space, space.EveSpace):
             buf_obs_shape = (self.num_envs, env.observation_space.max_neurons)
         else:
             buf_obs_shape = (self.num_envs, )
@@ -654,19 +959,19 @@ class DummyVecEnv(VecEnv):
         ]
 
     def env_is_wrapped(self,
-                       wrapper_class: Type[gym.Wrapper],
+                       wrapper_class: Type[Wrapper],
                        indices: VecEnvIndices = None) -> List[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_envs = self._get_target_envs(indices)
         return [is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 
-    def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
+    def _get_target_envs(self, indices: VecEnvIndices) -> List["EveEnv"]:
         indices = self._get_indices(indices)
         return [self.envs[i] for i in indices]
 
 
 def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]],
-                 space: gym.spaces.Space) -> VecEnvObs:
+                 space: space.EveSpace) -> VecEnvObs:
     """
     Flatten observations, depending on the observation space.
 
@@ -682,7 +987,7 @@ def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]],
               tuple)), "expected list or tuple of observations per environment"
     assert len(obs) > 0, "need observations from at least one environment"
 
-    if isinstance(space, gym.spaces.Dict):
+    if isinstance(space, space.EveDict):
         assert isinstance(
             space.spaces,
             OrderedDict), "Dict space must have ordered subspaces"
@@ -691,7 +996,7 @@ def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]],
         ), "non-dict observation for environment with Dict observation space"
         return OrderedDict([(k, np.stack([o[k] for o in obs]))
                             for k in space.spaces.keys()])
-    elif isinstance(space, gym.spaces.Tuple):
+    elif isinstance(space, space.EveTuple):
         assert isinstance(
             obs[0], tuple
         ), "non-tuple observation for environment with Tuple observation space"
@@ -725,7 +1030,7 @@ class SubprocVecEnv(VecEnv):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
     def __init__(self,
-                 env_fns: List[Callable[[], gym.Env]],
+                 env_fns: List[Callable[[], "EveEnv"]],
                  start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
@@ -825,7 +1130,7 @@ class SubprocVecEnv(VecEnv):
         return [remote.recv() for remote in target_remotes]
 
     def env_is_wrapped(self,
-                       wrapper_class: Type[gym.Wrapper],
+                       wrapper_class: Type[Wrapper],
                        indices: VecEnvIndices = None) -> List[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_remotes = self._get_target_remotes(indices)
@@ -883,9 +1188,8 @@ class RunningMeanStd(object):
         self.count = new_count
 
 
-def check_for_correct_spaces(env: "GymEnv",
-                             observation_space: gym.spaces.Space,
-                             action_space: gym.spaces.Space) -> None:
+def check_for_correct_spaces(env: "EveEnv", observation_space: space.EveSpace,
+                             action_space: space.EveSpace) -> None:
     """
     Checks that the environment has same spaces as provided ones. Used by BaseAlgorithm to check if
     spaces match after loading the model with given env.
@@ -935,10 +1239,10 @@ class VecNormalize(VecEnvWrapper):
         VecEnvWrapper.__init__(self, venv)
 
         assert isinstance(
-            self.observation_space, (gym.spaces.Box, gym.spaces.Dict)
-        ), "VecNormalize only support `gym.spaces.Box` and `gym.spaces.Dict` observation spaces"
+            self.observation_space, (space.EveBox, space.EveDict)
+        ), "VecNormalize only support `space.EveBox` and `space.EveDict` observation spaces"
 
-        if isinstance(self.observation_space, gym.spaces.Dict):
+        if isinstance(self.observation_space, space.EveDict):
             self.obs_keys = set(self.observation_space.spaces.keys())
             self.obs_spaces = self.observation_space.spaces
             self.obs_rms = {
@@ -1163,7 +1467,7 @@ class VecNormalize(VecEnvWrapper):
 ################################
 
 
-class Monitor(gym.Wrapper):
+class Monitor(Wrapper):
     """
     A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
 
@@ -1179,7 +1483,7 @@ class Monitor(gym.Wrapper):
 
     def __init__(
             self,
-            env: gym.Env,
+            env: "EveEnv",
             filename: Optional[str] = None,
             allow_early_resets: bool = True,
             reset_keywords: Tuple[str, ...] = (),
@@ -1220,9 +1524,9 @@ class Monitor(gym.Wrapper):
         self.current_reset_info = {
         }  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> GymObs:
+    def reset(self, **kwargs) -> EveObs:
         """
-        Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
+        Calls the environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
         :param kwargs: Extra keywords saved for the next episode. only if defined by reset_keywords
         :return: the first observation of the environment
@@ -1242,7 +1546,7 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: Union[np.ndarray, int]) -> EveStepReturn:
         """
         Step the environment with the given action
 
@@ -1483,7 +1787,7 @@ def plot_results(dirs: List[str],
 
 
 def unwrap_vec_wrapper(
-        env: Union["GymEnv", VecEnv],
+        env: Union["EveEnv", VecEnv],
         vec_wrapper_class: Type[VecEnvWrapper]) -> Optional[VecEnvWrapper]:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
@@ -1501,7 +1805,7 @@ def unwrap_vec_wrapper(
 
 
 def unwrap_vec_normalize(
-        env: Union["GymEnv", VecEnv]) -> Optional[VecNormalize]:
+        env: Union["EveEnv", VecEnv]) -> Optional[VecNormalize]:
     """
     :param env:
     :return:
@@ -1509,7 +1813,7 @@ def unwrap_vec_normalize(
     return unwrap_vec_wrapper(env, VecNormalize)  # pytype:disable=bad-return-type
 
 
-def is_vecenv_wrapped(env: Union["GymEnv", VecEnv],
+def is_vecenv_wrapped(env: Union["EveEnv", VecEnv],
                       vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
     """
     Check if an environment is already wrapped by a given ``VecEnvWrapper``.
@@ -1521,8 +1825,8 @@ def is_vecenv_wrapped(env: Union["GymEnv", VecEnv],
     return unwrap_vec_wrapper(env, vec_wrapper_class) is not None
 
 
-def unwrap_wrapper(env: gym.Env,
-                   wrapper_class: Type[gym.Wrapper]) -> Optional[gym.Wrapper]:
+def unwrap_wrapper(env: "EveEnv",
+                   wrapper_class: Type[Wrapper]) -> Optional[Wrapper]:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
@@ -1531,14 +1835,14 @@ def unwrap_wrapper(env: gym.Env,
     :return: Environment unwrapped till ``wrapper_class`` if it has been wrapped with it
     """
     env_tmp = env
-    while isinstance(env_tmp, gym.Wrapper):
+    while isinstance(env_tmp, Wrapper):
         if isinstance(env_tmp, wrapper_class):
             return env_tmp
         env_tmp = env_tmp.env
     return None
 
 
-def is_wrapped(env: Type[gym.Env], wrapper_class: Type[gym.Wrapper]) -> bool:
+def is_wrapped(env: Type["EveEnv"], wrapper_class: Type[Wrapper]) -> bool:
     """
     Check if a given environment has been wrapped with a given wrapper.
 
@@ -1550,12 +1854,13 @@ def is_wrapped(env: Type[gym.Env], wrapper_class: Type[gym.Wrapper]) -> bool:
 
 
 def get_wrapper_class(
-        hyperparams: Dict[str, Any]) -> Optional[Callable[[gym.Env], gym.Env]]:
+        hyperparams: Dict[str,
+                          Any]) -> Optional[Callable[["EveEnv"], "EveEnv"]]:
     """
-    Get one or more Gym environment wrapper class specified as a hyper parameter
+    Get one or more environment wrapper class specified as a hyper parameter
     "env_wrapper".
     e.g.
-    env_wrapper: gym_minigrid.wrappers.FlatObsWrapper
+    env_wrapper: _minigrid.wrappers.FlatObsWrapper
 
     for multiple, specify a list:
 
@@ -1566,7 +1871,7 @@ def get_wrapper_class(
     Args:
         hyperparams:
     Returns:
-        maybe a callable to wrap the environment with one or multiple gym.Wrapper
+        maybe a callable to wrap the environment with one or multiple Wrapper
     """
     def get_module_name(wrapper_name):
         return ".".join(wrapper_name.split(".")[:-1])
@@ -1607,7 +1912,7 @@ def get_wrapper_class(
             wrapper_classes.append(wrapper_class)
             wrapper_kwargs.append(kwargs)
 
-        def wrap_env(env: gym.Env) -> gym.Env:
+        def wrap_env(env: "EveEnv") -> "EveEnv":
             """
             :param env:
             :return:
@@ -1627,12 +1932,12 @@ def get_wrapper_class(
 
 
 def make_vec_env(
-    env_id: Union[str, Type[gym.Env]],
+    env_id: Union[str, Type["EveEnv"]],
     n_envs: int = 1,
     seed: Optional[int] = None,
     start_index: int = 0,
     monitor_dir: Optional[str] = None,
-    wrapper_class: Optional[Callable[[gym.Env], gym.Env]] = None,
+    wrapper_class: Optional[Callable[["EveEnv"], "EveEnv"]] = None,
     env_kwargs: Optional[Dict[str, Any]] = None,
     vec_env_cls: Optional[Type[Union[DummyVecEnv, SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
@@ -1664,10 +1969,7 @@ def make_vec_env(
 
     def make_env(rank):
         def _init():
-            if isinstance(env_id, str):
-                env = gym.make(env_id, **env_kwargs)
-            else:
-                env = env_id(**env_kwargs)
+            env = env_id(**env_kwargs)
             if seed is not None:
                 env.seed(seed + rank)
                 env.action_space.seed(seed + rank)
@@ -1729,8 +2031,6 @@ def create_test_env(
     vec_env_kwargs = {}
     vec_env_cls = DummyVecEnv
     if n_envs > 1 or "Bullet" in env_id:
-        # HACK: force SubprocVecEnv for Bullet env
-        # as Pybullet envs does not follow gym.render() interface
         vec_env_cls = SubprocVecEnv
         # start_method = 'spawn' for thread safe
 

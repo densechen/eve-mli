@@ -1,15 +1,17 @@
 import os
 from abc import abstractmethod
-from typing import Callable, Dict, Generator, List, Any, Union
+from typing import Any, Callable, Dict, Generator, List, Union
 
 import eve
 import torch as th
 import torch.nn.functional as F
 from eve.app.space import EveSpace
+from eve.app.upgrader import Upgrader
 from eve.app.utils import get_device
 from eve.core.eve import Eve
 from torch.utils.data import DataLoader, Dataset
-
+import numpy as np
+import eve.app.space as space
 # pylint: disable=no-member
 
 
@@ -71,7 +73,7 @@ class BaseModel(Eve):
 
     # upgrader is used to control the evolution of network.
     # all the eve parameters will be adapted by upgrader.
-    upgrader: eve.app.Upgrader
+    upgrader: Upgrader
 
     # set them if used RL training.
     max_neurons: int  # the widthest part of feature.
@@ -118,6 +120,45 @@ class BaseModel(Eve):
 
         # the function used to reduce info while epoch.
         self.reduce_info_hook = None
+
+    def set_neurons(self, neurons: int):
+        self.max_neurons = neurons
+
+    def set_states(self, states: int):
+        self.max_states = states
+
+    def set_action_space(self, action_space: space.EveSpace = None):
+        """If action space is None, we will use a default set of EveBox.
+        """
+        if action_space is None:
+            if self.max_neurons is not None and self.max_states is not None:
+                self.action_space = space.EveBox(low=0,
+                                                 high=1,
+                                                 shape=[
+                                                     1,
+                                                 ],
+                                                 max_neurons=self.max_neurons,
+                                                 max_states=self.max_states,
+                                                 dtype=np.float32)
+        else:
+            self.action_space = action_space
+
+    def set_observation_space(self, observation_space: space.EveSpace = None):
+        """If observation space is None, we will use a defualt set of EveBox
+        """
+        if observation_space is None:
+            if self.max_neurons is not None and self.max_states is not None:
+                self.observation_space = space.EveBox(
+                    low=-1,
+                    high=1,
+                    shape=[
+                        self.max_states,
+                    ],
+                    max_neurons=self.max_neurons,
+                    max_states=self.max_states,
+                    dtype=np.float32)
+        else:
+            self.observation_space = observation_space
 
     def register_info_hook(self, fn):
         """Registers fn to self.reduce_info_hook.
@@ -284,7 +325,7 @@ class BaseModel(Eve):
     def setup_train(self,
                     optimizer: th.optim.Optimizer = None,
                     scheduler: th.optim.lr_scheduler._LRScheduler = None,
-                    upgrader: eve.app.Upgrader = None,
+                    upgrader: Upgrader = None,
                     *args,
                     **kwargs) -> None:
         """ Setups train.
@@ -387,7 +428,7 @@ class Classifier(BaseModel):
     def setup_train(self,
                     optimizer: th.optim.Optimizer = None,
                     scheduler: th.optim.lr_scheduler._LRScheduler = None,
-                    upgrader: eve.app.Upgrader = None,
+                    upgrader: Upgrader = None,
                     **kwargs):
         """Set the optimizer, scheduler and upgrader.
         """

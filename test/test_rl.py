@@ -1,3 +1,5 @@
+import utils  # pylint: disable=import-error
+
 import os
 
 import gym
@@ -11,14 +13,15 @@ import eve.app
 import eve.app.model
 import eve.app.trainer
 import eve.core
-from eve.app.space import EveBox
+import eve.app.space as space
+import argparse
 
 # pylint: disable=no-member
 
 
 # build a basic network for trainer
 class mnist(eve.core.Eve):
-    def __init__(self):
+    def __init__(self, neuron_wise: bool = False):
         super().__init__()
 
         state_list = [
@@ -40,7 +43,7 @@ class mnist(eve.core.Eve):
         self.node1 = eve.core.IFNode(eve.core.State(self.conv1), binary=False)
         self.quan1 = eve.core.Quantizer(eve.core.State(self.conv1),
                                         upgrade_bits=True,
-                                        neuron_wise=True,
+                                        neuron_wise=neuron_wise,
                                         state_list=state_list)
 
         self.conv2 = nn.Sequential(
@@ -50,7 +53,7 @@ class mnist(eve.core.Eve):
         self.node2 = eve.core.IFNode(eve.core.State(self.conv2), binary=False)
         self.quan2 = eve.core.Quantizer(eve.core.State(self.conv2),
                                         upgrade_bits=True,
-                                        neuron_wise=True,
+                                        neuron_wise=neuron_wise,
                                         state_list=state_list)
 
         self.conv3 = nn.Sequential(
@@ -60,14 +63,14 @@ class mnist(eve.core.Eve):
         self.node3 = eve.core.IFNode(eve.core.State(self.conv3), binary=False)
         self.quan3 = eve.core.Quantizer(eve.core.State(self.conv3),
                                         upgrade_bits=True,
-                                        neuron_wise=True,
+                                        neuron_wise=neuron_wise,
                                         state_list=state_list)
 
         self.linear1 = nn.Linear(16 * 4 * 4, 16)
         self.node4 = eve.core.IFNode(eve.core.State(self.linear1))
         self.quan4 = eve.core.Quantizer(eve.core.State(self.linear1),
                                         upgrade_bits=True,
-                                        neuron_wise=True,
+                                        neuron_wise=neuron_wise,
                                         state_list=state_list)
 
         self.linear2 = nn.Linear(16, 10)
@@ -94,36 +97,6 @@ class mnist(eve.core.Eve):
         linear2 = self.linear2(quan4)
 
         return linear2.squeeze(dim=1)
-
-    @property
-    def max_neurons(self):
-        return 16
-
-    @property
-    def max_states(self):
-        return 1
-
-    @property
-    def action_space(self):
-        return EveBox(low=0,
-                      high=1,
-                      shape=[
-                          1,
-                      ],
-                      max_neurons=self.max_neurons,
-                      max_states=self.max_states,
-                      dtype=np.float32)
-
-    @property
-    def observation_space(self):
-        return EveBox(low=-1,
-                      high=1,
-                      shape=[
-                          self.max_states,
-                      ],
-                      max_neurons=self.max_neurons,
-                      max_states=self.max_states,
-                      dtype=np.float32)
 
 
 class MnistClassifier(eve.app.model.Classifier):
@@ -234,13 +207,28 @@ class MnistTrainer(eve.app.trainer.BaseTrainer):
         return info["acc"] - self.last_eve.mean().item() * 0.1
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--neuron_wise", default=False)
+args = parser.parse_args()
 # define a mnist classifier
-mnist_classifier = MnistClassifier(mnist())
+neuron_wise = args.neuron_wise
+
+mnist_classifier = MnistClassifier(mnist(neuron_wise))
 mnist_classifier.prepare_data(data_root="/media/densechen/data/dataset")
 mnist_classifier.setup_train()  # use default configuration
 
 # set mnist classifier to quantization mode
 mnist_classifier.quantize()
+
+# set neurons and states
+# if neuron wise, we just set neurons as the member of max neurons of the network
+# else set it to 1.
+mnist_classifier.set_neurons(16 if neuron_wise else 1)
+mnist_classifier.set_states(1)
+
+# None will use a default case
+mnist_classifier.set_action_space(None)
+mnist_classifier.set_observation_space(None)
 
 # define a trainer
 MnistTrainer.assign_model(mnist_classifier)
@@ -250,10 +238,10 @@ MnistTrainer.assign_model(mnist_classifier)
 exp_manager = eve.app.ExperimentManager(
     algo="ddpg",
     env_id="mnist_trainer",
-    log_folder="examples/logs",
+    log_folder="../examples/logs",
     n_timesteps=100000,
     save_freq=1000,
-    default_hyperparameter_yaml="examples/hyperparams",
+    default_hyperparameter_yaml="../examples/hyperparams",
     log_interval=100,
 )
 

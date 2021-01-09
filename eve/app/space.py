@@ -1,16 +1,161 @@
+import hashlib
+import os
+import random as _random
+import struct
+import sys
 from collections import OrderedDict
 
 import numpy as np
-from gym import logger
-from gym.spaces import Space
 
 
-class EveSpace(Space):
-    """Wraper gym.Space to EveSpace.
+def np_random(seed=None):
+    if seed is not None and not (isinstance(seed, int) and 0 <= seed):
+        raise ValueError(
+            'Seed must be a non-negative integer or omitted, not {}'.format(
+                seed))
 
-    Some operations will be different if accept an EveSpace.
+    seed = create_seed(seed)
+
+    rng = np.random.RandomState()  # pylint: disable=no-member
+    rng.seed(_int_list_from_bigint(hash_seed(seed)))
+    return rng, seed
+
+
+def hash_seed(seed=None, max_bytes=8):
+    """Any given evaluation is likely to have many PRNG's active at
+    once. (Most commonly, because the environment is running in
+    multiple processes.) There's literature indicating that having
+    linear correlations between seeds of multiple PRNG's can correlate
+    the outputs:
+
+    http://blogs.unity3d.com/2015/01/07/a-primer-on-repeatable-random-numbers/
+    http://stackoverflow.com/questions/1554958/how-different-do-random-seeds-need-to-be
+    http://dl.acm.org/citation.cfm?id=1276928
+
+    Thus, for sanity we hash the seeds before using them. (This scheme
+    is likely not crypto-strength, but it should be good enough to get
+    rid of simple correlations.)
+
+    Args:
+        seed (Optional[int]): None seeds from an operating system specific randomness source.
+        max_bytes: Maximum number of bytes to use in the hashed seed.
     """
-    pass
+    if seed is None:
+        seed = create_seed(max_bytes=max_bytes)
+    hash = hashlib.sha512(str(seed).encode('utf8')).digest()
+    return _bigint_from_bytes(hash[:max_bytes])
+
+
+def create_seed(a=None, max_bytes=8):
+    """Create a strong random seed. Otherwise, Python 2 would seed using
+    the system time, which might be non-robust especially in the
+    presence of concurrency.
+
+    Args:
+        a (Optional[int, str]): None seeds from an operating system specific randomness source.
+        max_bytes: Maximum number of bytes to use in the seed.
+    """
+    # Adapted from https://svn.python.org/projects/python/tags/r32/Lib/random.py
+    if a is None:
+        a = _bigint_from_bytes(os.urandom(max_bytes))
+    elif isinstance(a, str):
+        a = a.encode('utf8')
+        a += hashlib.sha512(a).digest()
+        a = _bigint_from_bytes(a[:max_bytes])
+    elif isinstance(a, int):
+        a = a % 2**(8 * max_bytes)
+    else:
+        raise TypeError('Invalid type for seed: {} ({})'.format(type(a), a))
+
+    return a
+
+
+# TODO: don't hardcode sizeof_int here
+def _bigint_from_bytes(bytes):
+    sizeof_int = 4
+    padding = sizeof_int - len(bytes) % sizeof_int
+    bytes += b'\0' * padding
+    int_count = int(len(bytes) / sizeof_int)
+    unpacked = struct.unpack("{}I".format(int_count), bytes)
+    accum = 0
+    for i, val in enumerate(unpacked):
+        accum += 2**(sizeof_int * 8 * i) * val
+    return accum
+
+
+def _int_list_from_bigint(bigint):
+    # Special case 0
+    if bigint < 0:
+        raise ValueError('Seed must be non-negative, not {}'.format(bigint))
+    elif bigint == 0:
+        return [0]
+
+    ints = []
+    while bigint > 0:
+        bigint, mod = divmod(bigint, 2**32)
+        ints.append(mod)
+    return ints
+
+
+class EveSpace(object):
+    """Defines the observation and action spaces, so you can write generic
+    code that applies to any Env. For example, you can choose a random
+    action.
+
+    WARNING - Custom observation & action spaces can inherit from the `Space`
+    class. However, most use-cases should be covered by the existing space
+    classes (e.g. `Box`, `Discrete`, etc...), and container classes (`Tuple` &
+    `Dict`). Note that parametrized probability distributions (through the
+    `sample()` method), and batching functions (in `eve.vector.VectorEnv`), are
+    only well-defined for instances of spaces provided in eve by default.
+    Moreover, some implementations of Reinforcement Learning algorithms might
+    not handle custom spaces properly. Use custom spaces with care.
+    """
+    def __init__(self, shape=None, dtype=None):
+        import numpy as np  # takes about 300-400ms to import, so we load lazily
+        self.shape = None if shape is None else tuple(shape)
+        self.dtype = None if dtype is None else np.dtype(dtype)
+        self._np_random = None
+
+    @property
+    def np_random(self):
+        """Lazily seed the rng since this is expensive and only needed if
+        sampling from this space.
+        """
+        if self._np_random is None:
+            self.seed()
+
+        return self._np_random
+
+    def sample(self):
+        """Randomly sample an element of this space. Can be 
+        uniform or non-uniform sampling based on boundedness of space."""
+        raise NotImplementedError
+
+    def seed(self, seed=None):
+        """Seed the PRNG of this space. """
+        self._np_random, seed = np_random(seed)
+        return [seed]
+
+    def contains(self, x):
+        """
+        Return boolean specifying if x is a valid
+        member of this space
+        """
+        raise NotImplementedError
+
+    def __contains__(self, x):
+        return self.contains(x)
+
+    def to_jsonable(self, sample_n):
+        """Convert a batch of samples from this space to a JSONable data type."""
+        # By default, assume identity is JSONable
+        return sample_n
+
+    def from_jsonable(self, sample_n):
+        """Convert a JSONable data type to a batch of samples from this space."""
+        # By default, assume identity is JSONable
+        return sample_n
 
 
 class EveBox(EveSpace):
@@ -86,7 +231,7 @@ class EveBox(EveSpace):
         high_precision = _get_precision(self.high.dtype)
         dtype_precision = _get_precision(self.dtype)
         if min(low_precision, high_precision) > dtype_precision:
-            logger.warn("Box bound precision lowered by casting to {}".format(
+            print("Box bound precision lowered by casting to {}".format(
                 self.dtype))
         self.low = self.low.astype(self.dtype)
         self.high = self.high.astype(self.dtype)
@@ -216,8 +361,8 @@ class EveDict(EveSpace):
         self.spaces = spaces
         for space in spaces.values():
             assert isinstance(
-                space,
-                Space), 'Values of the dict should be instances of gym.Space'
+                space, EveSpace
+            ), 'Values of the dict should be instances of gym.Space'
         # None for shape and dtype, since it'll require special handling
         super(EveDict, self).__init__(None, None)
 
@@ -435,8 +580,8 @@ class EveTuple(EveSpace):
         self.spaces = spaces
         for space in spaces:
             assert isinstance(
-                space,
-                Space), "Elements of the tuple must be instances of gym.Space"
+                space, EveSpace
+            ), "Elements of the tuple must be instances of gym.Space"
         super(EveTuple, self).__init__(None, None)
 
     def seed(self, seed=None):

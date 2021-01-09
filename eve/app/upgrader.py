@@ -6,15 +6,14 @@ from itertools import chain
 from typing import Any, Dict, List, Union
 
 import torch
+from eve.core.eve import __global_upgrade_fn__
 from torch import Tensor
 from torch._six import container_abcs
-from eve.core.eve import __global_upgrade_fn__
 from torch.nn import Parameter
 
 
 class _RequiredParameter(object):
     """Singleton class representing a required parameter for an Upgrader."""
-
     def __repr__(self):
         return "<required parameter>"
 
@@ -38,7 +37,6 @@ class Upgrader(object):
         defaults: (dict): a dict containing default values of upgrade
             options (used when a parameter group doesn't specify them).
     """
-
     def __init__(self, params, defaults: Dict[str, Any] = None):
         torch._C._log_api_usage_once("python.upgrader")
         self.defaults = {} if not defaults else defaults

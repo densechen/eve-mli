@@ -1,12 +1,12 @@
 from typing import Any, Dict, Optional, Type, Union
 
-import gym
+import eve.app.space as space
 import torch as th
 import torch.nn.functional as F
 from eve.app import logger
 from eve.app.algo import MaybeCallback, OnPolicyAlgorithm
 from eve.app.policies import ActorCriticPolicy, register_policy
-from eve.app.utils import explained_variance, Schedule, GymEnv
+from eve.app.utils import EveEnv, Schedule, explained_variance
 
 # pylint: disable=no-member
 
@@ -22,7 +22,7 @@ class A2C(OnPolicyAlgorithm):
     Introduction to A2C: https://hackernoon.com/intuitive-rl-intro-to-advantage-actor-critic-a2c-4ff545978752
 
     :param policy: The policy model to use (MlpPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param env: The environment to learn from.
     :param learning_rate: The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
     :param n_steps: The number of steps to run for each environment per update
@@ -51,11 +51,10 @@ class A2C(OnPolicyAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
-
     def __init__(
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         learning_rate: Union[float, Schedule] = 7e-4,
         n_steps: int = 5,
         gamma: float = 0.99,
@@ -97,10 +96,10 @@ class A2C(OnPolicyAlgorithm):
             seed=seed,
             _init_setup_model=False,
             supported_action_spaces=(
-                gym.spaces.Box,
-                gym.spaces.Discrete,
-                gym.spaces.MultiDiscrete,
-                gym.spaces.MultiBinary,
+                space.EveBox,
+                space.EveDiscrete,
+                space.EveMultiDiscrete,
+                space.EveMultiBinary,
             ),
         )
 
@@ -129,7 +128,7 @@ class A2C(OnPolicyAlgorithm):
         for rollout_data in self.rollout_buffer.get(batch_size=None):
 
             actions = rollout_data.actions
-            if isinstance(self.action_space, gym.spaces.Discrete):
+            if isinstance(self.action_space, space.EveDiscrete):
                 # Convert discrete action from float to long
                 actions = actions.long().flatten()
 
@@ -190,7 +189,7 @@ class A2C(OnPolicyAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "A2C",

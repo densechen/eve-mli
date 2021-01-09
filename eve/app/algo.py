@@ -11,10 +11,9 @@ from typing import (Any, Callable, Dict, Iterable, List, Optional, Tuple, Type,
                     Union)
 
 import eve.app.logger as logger
-import gym
+import eve.app.space as space
 import numpy as np
 import torch as th
-import eve.app.space
 from eve.app.buffers import ReplayBuffer, RolloutBuffer, RolloutReturn
 from eve.app.callbacks import (BaseCallback, CallbackList, ConvertCallback,
                                EvalCallback, MaybeCallback)
@@ -23,7 +22,7 @@ from eve.app.env import (DummyVecEnv, Monitor, ObsDictWrapper, VecEnv,
                          unwrap_vec_normalize)
 from eve.app.policies import (ActorCriticPolicy, BasePolicy,
                               get_policy_from_name)
-from eve.app.utils import (GymEnv, Schedule, get_device, get_latest_run_id,
+from eve.app.utils import (EveEnv, Schedule, get_device, get_latest_run_id,
                            get_schedule_fn, load_from_pkl, load_from_zip_file,
                            recursive_getattr, recursive_setattr, safe_mean,
                            save_to_pkl, save_to_zip_file, set_random_seed,
@@ -200,21 +199,6 @@ class VectorizedActionNoise(ActionNoise):
             noise.reset()
 
 
-def maybe_make_env(env: Union[GymEnv, str, None],
-                   verbose: int) -> Optional[GymEnv]:
-    """If env is a string, make the environment; otherwise, return env.
-
-    :param env: The environment to learn from.
-    :param verbose: logging verbosity
-    :returns: A Gym (vector) environment.
-    """
-    if isinstance(env, str):
-        if verbose >= 1:
-            print(f"Creating environment from the given name '{env}'")
-        env = gym.make(env)
-    return env
-
-
 def configure_logger(verbose: int = 0,
                      tensorboard_log: Optional[str] = None,
                      tb_log_name: str = "",
@@ -247,7 +231,6 @@ class BaseAlgorithm(ABC):
 
     :param policy: Policy object
     :param env: The environment to learn from
-                (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: The base policy used by this method
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
@@ -273,7 +256,7 @@ class BaseAlgorithm(ABC):
     def __init__(
         self,
         policy: Type[BasePolicy],
-        env: Union[GymEnv, str, None],
+        env: Union[EveEnv, str, None],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Schedule],
         policy_kwargs: Dict[str, Any] = None,
@@ -286,7 +269,7 @@ class BaseAlgorithm(ABC):
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
-        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
     ):
 
         if isinstance(policy, str) and policy_base is not None:
@@ -298,13 +281,13 @@ class BaseAlgorithm(ABC):
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: Optional[GymEnv]
+        self.env = None  # type: Optional[EveEnv]
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space = None  # type: Optional[gym.spaces.Space]
-        self.action_space = None  # type: Optional[gym.spaces.Space]
+        self.observation_space = None  # type: Optional[space.EveSpace]
+        self.action_space = None  # type: Optional[space.EveSpace]
         self.n_envs = None
         self.num_timesteps = 0
         # Used for updating schedules
@@ -338,9 +321,8 @@ class BaseAlgorithm(ABC):
         if env is not None:
             if isinstance(env, str):
                 if create_eval_env:
-                    self.eval_env = maybe_make_env(env, self.verbose)
+                    self.eval_env = env
 
-            env = maybe_make_env(env, self.verbose)
             env = self._wrap_env(env, self.verbose, monitor_wrapper)
 
             self.observation_space = env.observation_space
@@ -360,13 +342,13 @@ class BaseAlgorithm(ABC):
                     "a single vectorized environment.")
 
             if self.use_sde and not isinstance(self.action_space,
-                                               gym.spaces.Box):
+                                               space.EveBox):
                 raise ValueError(
                     "generalized State-Dependent Exploration (gSDE) can only be used with continuous actions."
                 )
 
     @staticmethod
-    def _wrap_env(env: GymEnv,
+    def _wrap_env(env: EveEnv,
                   verbose: int = 0,
                   monitor_wrapper: bool = True) -> VecEnv:
         """ "
@@ -388,7 +370,7 @@ class BaseAlgorithm(ABC):
                 print("Wrapping the env in a DummyVecEnv.")
             env = DummyVecEnv([lambda: env])
 
-        if isinstance(env.observation_space, gym.spaces.dict.Dict):
+        if isinstance(env.observation_space, space.EveDict):
             env = ObsDictWrapper(env)
 
         return env
@@ -397,7 +379,7 @@ class BaseAlgorithm(ABC):
     def _setup_model(self) -> None:
         """Create networks, buffer and optimizers."""
 
-    def _get_eval_env(self, eval_env: Optional[GymEnv]) -> Optional[GymEnv]:
+    def _get_eval_env(self, eval_env: Optional[EveEnv]) -> Optional[EveEnv]:
         """
         Return the environment that will be used for evaluation.
 
@@ -524,7 +506,7 @@ class BaseAlgorithm(ABC):
     def _setup_learn(
         self,
         total_timesteps: int,
-        eval_env: Optional[GymEnv],
+        eval_env: Optional[EveEnv],
         callback: MaybeCallback = None,
         eval_freq: int = 10000,
         n_eval_episodes: int = 5,
@@ -622,7 +604,7 @@ class BaseAlgorithm(ABC):
         """
         return self._vec_normalize_env
 
-    def set_env(self, env: GymEnv) -> None:
+    def set_env(self, env: EveEnv) -> None:
         """
         Checks the validity of the environment, and if it is coherent, 
         set it as the current environment.
@@ -649,7 +631,7 @@ class BaseAlgorithm(ABC):
         callback: MaybeCallback = None,
         log_interval: int = 100,
         tb_log_name: str = "run",
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
@@ -692,7 +674,7 @@ class BaseAlgorithm(ABC):
     def set_random_seed(self, seed: Optional[int] = None) -> None:
         """
         Set the seed of the pseudo-random generators
-        (python, numpy, pytorch, gym, action_space)
+        (python, numpy, pytorch, action_space)
 
         :param seed:
         """
@@ -777,7 +759,7 @@ class BaseAlgorithm(ABC):
     def load(
         cls,
         path: Union[str, pathlib.Path, io.BufferedIOBase],
-        env: Optional[GymEnv] = None,
+        env: Optional[EveEnv] = None,
         device: Union[th.device, str] = "auto",
         **kwargs,
     ) -> "BaseAlgorithm":
@@ -925,7 +907,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     :param policy: Policy object
     :param env: The environment to learn from
-                (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: The base policy used by this method
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
@@ -973,7 +954,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def __init__(
         self,
         policy: Type[BasePolicy],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Schedule],
         buffer_size: int = int(1e6),
@@ -999,7 +980,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
         remove_time_limit_termination: bool = False,
-        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
     ):
 
         super(OffPolicyAlgorithm, self).__init__(
@@ -1095,7 +1076,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_learn(
         self,
         total_timesteps: int,
-        eval_env: Optional[GymEnv],
+        eval_env: Optional[EveEnv],
         callback: MaybeCallback = None,
         eval_freq: int = 10000,
         n_eval_episodes: int = 5,
@@ -1134,7 +1115,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "run",
@@ -1206,14 +1187,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # else, the action space is [n_envs, actions]
         if self.num_timesteps < learning_starts and not (
                 self.use_sde and self.use_sde_at_warmup):
-            # Warmup phase
-            if isinstance(self.action_space, eve.app.space.EveSpace):
-                unscaled_action = []
-                for _ in range(self.action_space.max_neurons):
-                    unscaled_action.append(self.action_space.sample())
-                unscaled_action = np.array([unscaled_action])
-            else:
-                unscaled_action = np.array([self.action_space.sample()])
+            unscaled_action = []
+            for _ in range(self.action_space.max_neurons):
+                unscaled_action.append(self.action_space.sample())
+            unscaled_action = np.array([unscaled_action])
         else:
             # Note: when using continuous actions,
             # we assume that the policy uses tanh to scale the action
@@ -1223,8 +1200,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                                               deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
-        if isinstance(self.action_space,
-                      (gym.spaces.Box, eve.app.space.EveBox)):
+        if isinstance(self.action_space, space.EveBox):
             scaled_action = self.policy.scale_action(unscaled_action)
 
             # Add noise to the action (improve exploration)
@@ -1411,7 +1387,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     The base for On-Policy algorithms (ex: A2C/PPO).
 
     :param policy: The policy model to use (MlpPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param env: The environment to learn from.
     :param learning_rate: The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
     :param n_steps: The number of steps to run for each environment per update
@@ -1442,7 +1418,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     def __init__(
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         learning_rate: Union[float, Schedule],
         n_steps: int,
         gamma: float,
@@ -1460,7 +1436,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
-        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[space.EveSpace, ...]] = None,
     ):
 
         super(OnPolicyAlgorithm, self).__init__(
@@ -1552,7 +1528,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Rescale and perform action
             clipped_actions = actions
             # Clip the actions to avoid out of bound error
-            if isinstance(self.action_space, gym.spaces.Box):
+            if isinstance(self.action_space, space.EveBox):
                 clipped_actions = np.clip(actions, self.action_space.low,
                                           self.action_space.high)
 
@@ -1568,7 +1544,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self._update_info_buffer(infos)
             n_steps += 1
 
-            if isinstance(self.action_space, gym.spaces.Discrete):
+            if isinstance(self.action_space, space.EveDiscrete):
                 # Reshape in case of discrete action
                 actions = actions.reshape(-1, 1)
             rollout_buffer.add(self._last_obs, actions, rewards,
@@ -1600,7 +1576,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 1,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "OnPolicyAlgorithm",

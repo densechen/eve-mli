@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import gym
+import eve.app.space as space
 import numpy as np
 import torch as th
 import torch.nn as nn
@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from eve.app import logger
 from eve.app.algo import MaybeCallback, OffPolicyAlgorithm
 from eve.app.policies import (BaseFeaturesExtractor, BasePolicy,
-                              FlattenExtractor, create_mlp, register_policy)
-from eve.app.utils import (GymEnv, Schedule, get_linear_fn,
-                           is_vectorized_observation, polyak_update)
+                              FlattenExtractor, create_mlp,
+                              is_vectorized_observation, register_policy)
+from eve.app.utils import EveEnv, Schedule, get_linear_fn, polyak_update
 
 # pylint: disable=no-member
 
@@ -26,11 +26,10 @@ class QNetwork(BasePolicy):
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
-
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         features_extractor: nn.Module,
         features_dim: int,
         net_arch: Optional[List[int]] = None,
@@ -106,11 +105,10 @@ class DQNPolicy(BasePolicy):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
-
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         lr_schedule: Schedule,
         net_arch: Optional[List[int]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -213,7 +211,7 @@ class DQN(OffPolicyAlgorithm):
     except for the optimizer and learning rate that were taken from Stable Baselines defaults.
 
     :param policy: The policy model to use (MlpPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param env: The environment to learn from
     :param learning_rate: The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
     :param buffer_size: size of the replay buffer
@@ -247,11 +245,10 @@ class DQN(OffPolicyAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
-
     def __init__(
         self,
         policy: Union[str, Type[DQNPolicy]],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         learning_rate: Union[float, Schedule] = 1e-4,
         buffer_size: int = 1000000,
         learning_starts: int = 50000,
@@ -298,7 +295,7 @@ class DQN(OffPolicyAlgorithm):
             seed=seed,
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
-            supported_action_spaces=(gym.spaces.Discrete, ),
+            supported_action_spaces=(space.EveDiscrete, ),
         )
 
         self.exploration_initial_eps = exploration_initial_eps
@@ -423,7 +420,7 @@ class DQN(OffPolicyAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "DQN",

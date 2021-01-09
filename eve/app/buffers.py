@@ -5,11 +5,11 @@ from enum import Enum
 from typing import (Any, Dict, Generator, List, NamedTuple, Optional, Tuple,
                     Union)
 
-import gym
+import eve.app.space as space
 import numpy as np
 import psutil
 import torch as th
-import eve.app.space
+
 # pylint: disable=no-member
 
 
@@ -37,63 +37,40 @@ class RolloutReturn(NamedTuple):
     continue_training: bool
 
 
-def get_action_dim(action_space: gym.spaces.Space) -> int:
+def get_action_dim(action_space: space.EveSpace) -> int:
     """
     Get the dimension of the action space.
 
     :param action_space:
     :return:
     """
-    if isinstance(action_space, gym.spaces.Box):
-        return int(np.prod(action_space.shape))
-    elif isinstance(action_space, eve.app.space.EveBox):
-        # add special case for eve
+    if isinstance(action_space, space.EveBox):
         return int(np.prod(action_space.shape[1:]))
-    elif isinstance(action_space, gym.spaces.Discrete):
-        # Action is an int
+    elif isinstance(action_space, space.EveDiscrete):
         return 1
-    elif isinstance(action_space, eve.space.EveDiscrete):
-        return 1
-    elif isinstance(action_space, gym.spaces.MultiDiscrete):
-        # Number of discrete actions
+    elif isinstance(action_space, space.EveMultiDiscrete):
         return int(len(action_space.nvec))
-    elif isinstance(action_space, eve.space.EveMultiDiscrete):
-        return int(len(action_space.nvec))
-    elif isinstance(action_space, gym.spaces.MultiBinary):
-        # Number of binary actions
-        return int(action_space.n)
-    elif isinstance(action_space, eve.space.EveMultiBinary):
+    elif isinstance(action_space, space.EveMultiBinary):
         return int(action_space.n)
     else:
         raise NotImplementedError(
             f"{action_space} action space is not supported")
 
 
-def get_obs_shape(observation_space: gym.spaces.Space) -> Tuple[int, ...]:
+def get_obs_shape(observation_space: space.EveSpace) -> Tuple[int, ...]:
     """
     Get the shape of the observation (useful for the buffers).
 
     :param observation_space:
     :return:
     """
-    if isinstance(observation_space, gym.spaces.Box):
+    if isinstance(observation_space, space.EveBox):
         return observation_space.shape
-    elif isinstance(observation_space, eve.app.space.EveBox):
-        return observation_space.shape
-    elif isinstance(observation_space, gym.spaces.Discrete):
-        # Observation is an int
+    elif isinstance(observation_space, space.EveDiscrete):
         return (1, )
-    elif isinstance(observation_space, eve.app.space.EveDiscrete):
-        return (1, )
-    elif isinstance(observation_space, gym.spaces.MultiDiscrete):
-        # Number of discrete features
+    elif isinstance(observation_space, space.EveMultiDiscrete):
         return (int(len(observation_space.nvec)), )
-    elif isinstance(observation_space, eve.app.space.EveMultiDiscrete):
-        return (int(len(observation_space.nvec)), )
-    elif isinstance(observation_space, gym.spaces.MultiBinary):
-        # Number of binary features
-        return (int(observation_space.n), )
-    elif isinstance(observation_space, eve.app.space.EveMultiBinary):
+    elif isinstance(observation_space, space.EveMultiBinary):
         return (int(observation_space.n), )
     else:
         raise NotImplementedError(
@@ -114,8 +91,8 @@ class BaseBuffer(ABC):
     def __init__(
         self,
         buffer_size: int,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
     ):
@@ -178,7 +155,7 @@ class BaseBuffer(ABC):
     def sample(self, batch_size: int, env: Optional["VecNormalize"] = None):
         """
         :param batch_size: Number of element to sample
-        :param env: associated gym VecEnv
+        :param env: associated VecEnv
             to normalize the observations/rewards when sampling
         :return:
         """
@@ -255,8 +232,8 @@ class ReplayBuffer(BaseBuffer):
     def __init__(
         self,
         buffer_size: int,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
@@ -274,20 +251,13 @@ class ReplayBuffer(BaseBuffer):
 
         self.optimize_memory_usage = optimize_memory_usage
 
-        if isinstance(self.observation_space, eve.app.space.EveSpace):
-            buffer_obs_shape = (
-                self.buffer_size, self.n_envs,
-                self.observation_space.max_neurons) + self.obs_shape
-            buffer_action_shape = (self.buffer_size, self.n_envs,
-                                   self.action_space.max_neurons,
-                                   self.action_dim)
-        else:
-            buffer_obs_shape = (
-                self.buffer_size,
-                self.n_envs,
-            ) + self.obs_shape
-            buffer_action_shape = (self.buffer_size, self.n_envs,
-                                   self.action_dim)
+
+        buffer_obs_shape = (
+            self.buffer_size, self.n_envs,
+            self.observation_space.max_neurons) + self.obs_shape
+        buffer_action_shape = (self.buffer_size, self.n_envs,
+                                self.action_space.max_neurons,
+                                self.action_dim)
 
         self.observations = np.zeros(buffer_obs_shape,
                                      dtype=observation_space.dtype)
@@ -346,7 +316,7 @@ class ReplayBuffer(BaseBuffer):
         See https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
 
         :param batch_size: Number of element to sample
-        :param env: associated gym VecEnv
+        :param env: associated VecEnv
             to normalize the observations/rewards when sampling
         :return:
         """
@@ -409,8 +379,8 @@ class RolloutBuffer(BaseBuffer):
     def __init__(
         self,
         buffer_size: int,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         device: Union[th.device, str] = "cpu",
         gae_lambda: float = 1,
         gamma: float = 0.99,
@@ -430,20 +400,13 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        if isinstance(self.observation_space, eve.app.space.EveSpace):
-            buffer_obs_shape = (
-                self.buffer_size, self.n_envs,
-                self.observation_space.max_neurons) + self.obs_shape
-            buffer_action_shape = (self.buffer_size, self.n_envs,
-                                   self.action_space.max_neurons,
-                                   self.action_dim)
-        else:
-            buffer_obs_shape = (
-                self.buffer_size,
-                self.n_envs,
-            ) + self.obs_shape
-            buffer_action_shape = (self.buffer_size, self.n_envs,
-                                   self.action_dim)
+        buffer_obs_shape = (
+            self.buffer_size, self.n_envs,
+            self.observation_space.max_neurons) + self.obs_shape
+        buffer_action_shape = (self.buffer_size, self.n_envs,
+                                self.action_space.max_neurons,
+                                self.action_dim)
+
         self.observations = np.zeros(buffer_obs_shape, dtype=np.float32)
         self.actions = np.zeros(
             (self.buffer_size, self.n_envs, buffer_action_shape),

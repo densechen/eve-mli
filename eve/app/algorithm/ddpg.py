@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Type, Union
 
 import torch as th
 from eve.app.algorithm.td3 import TD3, MlpPolicy, TD3Policy
-from eve.app.utils import GymEnv, Schedule
+from eve.app.utils import EveEnv, Schedule
 
 # pylint: disable=no-member
 # DDPG can be view as a special case of TD3
@@ -19,7 +19,7 @@ class DDPG(TD3):
     Note: we treat DDPG as a special case of its successor TD3.
 
     :param policy: The policy model to use (MlpPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param env: The environment to learn from
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress remaining (from 1 to 0)
@@ -49,11 +49,10 @@ class DDPG(TD3):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
-
     def __init__(
         self,
         policy: Union[str, Type[TD3Policy]],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         learning_rate: Union[float, Schedule] = 1e-3,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
@@ -114,7 +113,7 @@ class DDPG(TD3):
         total_timesteps: int,
         callback: "MaybeCallback" = None,
         log_interval: int = 4,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "DDPG",

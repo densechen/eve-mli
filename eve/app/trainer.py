@@ -6,29 +6,31 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import deque
 from copy import deepcopy
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Tuple, Type,
-                    Union, Generator, final)
-from copy import deepcopy
+from typing import (Any, Callable, Dict, Generator, Iterable, List, Optional,
+                    Tuple, Type, Union, final)
+
+import eve
 import eve.app.logger as logger
-import gym
+import eve.app.space as space
 import numpy as np
 import torch as th
+import torch.nn.functional as F
 from eve.app.callbacks import (BaseCallback, CallbackList, ConvertCallback,
                                EventCallback, MaybeCallback)
 from eve.app.model import BaseModel
+from eve.app.space import EveSpace
+from eve.app.upgrader import Upgrader
 from eve.app.utils import (Schedule, get_device, get_schedule_fn,
                            load_from_pkl, load_from_zip_file,
                            recursive_getattr, recursive_setattr, safe_mean,
                            save_to_pkl, save_to_zip_file, set_random_seed,
                            update_learning_rate)
-from eve.core.eve import Eve
-import eve
-import torch.nn.functional as F
+from eve.app.env import EveEnv
 
 # pylint: disable=no-member
 
 
-class BaseTrainer(ABC, gym.Env):
+class BaseTrainer(EveEnv):
     r"""
     The base of trainer.
 
@@ -54,7 +56,7 @@ class BaseTrainer(ABC, gym.Env):
 
     # the upgrader is used to tell the trainer how to modified the networks
     # structure along with time.
-    upgrader: eve.app.Upgrader
+    upgrader: Upgrader
 
     # cache the model state dict in RAM to speed up reloading
     state_dict_cache: dict
@@ -158,15 +160,15 @@ class BaseTrainer(ABC, gym.Env):
         return self.model.valid_epoch(*args, **kwargs)
 
     ###
-    # gym.Env related function.
+    # EveEnv related function.
     ###
 
     @property
-    def action_space(self) -> eve.app.space.EveSpace:
+    def action_space(self) -> EveSpace:
         return self.model.action_space
 
     @property
-    def observation_space(self) -> eve.app.space.EveSpace:
+    def observation_space(self) -> EveSpace:
         return self.model.observation_space
 
     @property
@@ -275,7 +277,7 @@ class BaseTrainer(ABC, gym.Env):
     def seed(self, seed: Optional[int] = None) -> None:
         """
         Set the seed of the pseudo-random generators
-        (python, numpy, pytorch, gym, action_space)
+        (python, numpy, pytorch, action_space)
 
         Args:
             seed

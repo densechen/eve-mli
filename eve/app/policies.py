@@ -4,17 +4,16 @@ from functools import partial
 from itertools import zip_longest
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import gym
+import eve.app.space as space
 import numpy as np
 import torch as th
 import torch.nn as nn
+import torch.nn.functional as F
 from eve.app.buffers import get_action_dim
 from eve.app.env import ObsDictWrapper
-from eve.app.utils import (Schedule, get_device, is_vectorized_observation,
-                           preprocess_obs)
+from eve.app.utils import Schedule, get_device
 from eve.core.eve import Eve
 from torch.distributions import Bernoulli, Categorical, Normal
-import eve.app.space
 
 # pylint: disable=no-member
 # pylint: disable=no-member,unexpected-keyword-arg,no-value-for-parameter
@@ -700,7 +699,7 @@ class TanhBijector(object):
 
 
 def make_proba_distribution(
-        action_space: gym.spaces.Space,
+        action_space: space.EveSpace,
         use_sde: bool = False,
         dist_kwargs: Optional[Dict[str, Any]] = None) -> Distribution:
     """
@@ -715,29 +714,70 @@ def make_proba_distribution(
     if dist_kwargs is None:
         dist_kwargs = {}
 
-    if isinstance(action_space, gym.spaces.Box):
+    if isinstance(action_space, space.EveBox):
         assert len(action_space.shape
                    ) == 1, "Error: the action space must be a vector"
         cls = StateDependentNoiseDistribution if use_sde else DiagGaussianDistribution
         return cls(get_action_dim(action_space), **dist_kwargs)
-    elif isinstance(action_space, gym.spaces.Discrete):
+    elif isinstance(action_space, space.EveDiscrete):
         return CategoricalDistribution(action_space.n, **dist_kwargs)
-    elif isinstance(action_space, gym.spaces.MultiDiscrete):
+    elif isinstance(action_space, space.EveMultiDiscrete):
         return MultiCategoricalDistribution(action_space.nvec, **dist_kwargs)
-    elif isinstance(action_space, gym.spaces.MultiBinary):
+    elif isinstance(action_space, space.EveMultiBinary):
         return BernoulliDistribution(action_space.n, **dist_kwargs)
     else:
         raise NotImplementedError(
             "Error: probability distribution, not implemented for action space"
             f"of type {type(action_space)}."
-            " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary."
+            " Must be of type Eve Spaces: Box, Discrete, MultiDiscrete or MultiBinary."
         )
 
 
 """Utilies for Model"""
 
 
-def get_flattened_obs_dim(observation_space: gym.spaces.Space) -> int:
+def preprocess_obs(obs: th.Tensor,
+                   observation_space: space.EveSpace,
+                   normalize_images: bool = True) -> th.Tensor:
+    """
+    Preprocess observation to be to a neural network.
+    For images, it normalizes the values by dividing them by 255 (to have values in [0, 1])
+    For discrete observations, it create a one hot vector.
+
+    :param obs: Observation
+    :param observation_space:
+    :param normalize_images: Whether to normalize images or not
+        (True by default)
+    :return:
+    """
+    if isinstance(observation_space, space.EveBox):
+        return obs.float()
+
+    elif isinstance(observation_space, space.EveDiscrete):
+        # One hot encoding and convert to float to avoid errors
+        return F.one_hot(obs.long(), num_classes=observation_space.n).float()
+
+    elif isinstance(observation_space, space.EveMultiBinary):
+        # Tensor concatenation of one hot encodings of each Categorical sub-space
+        return th.cat(
+            [
+                F.one_hot(obs_.long(),
+                          num_classes=int(
+                              observation_space.nvec[idx])).float()
+                for idx, obs_ in enumerate(th.split(obs.long(), 1, dim=1))
+            ],
+            dim=-1,
+        ).view(obs.shape[0], sum(observation_space.nvec))
+
+    elif isinstance(observation_space, space.EveMultiBinary):
+        return obs.float()
+
+    else:
+        raise NotImplementedError(
+            f"Preprocessing not implemented for {observation_space}")
+
+
+def get_flattened_obs_dim(observation_space: space.EveSpace) -> int:
     """
     Get the dimension of the observation space when flattened.
     It does not apply to image observation space.
@@ -747,16 +787,78 @@ def get_flattened_obs_dim(observation_space: gym.spaces.Space) -> int:
     """
     # See issue https://github.com/openai/gym/issues/1915
     # it may be a problem for Dict/Tuple spaces too...
-    if isinstance(observation_space, gym.spaces.MultiDiscrete):
+    if isinstance(observation_space, space.EveMultiDiscrete):
         return sum(observation_space.nvec)
-    elif isinstance(observation_space, eve.app.space.EveSpace):
-        return eve.app.space.flatdim(observation_space)
+    elif isinstance(observation_space, space.EveSpace):
+        return space.flatdim(observation_space)
     else:
-        # Use Gym internal method
-        return gym.spaces.utils.flatdim(observation_space)
+        return space.flatdim(observation_space)
 
 
-# pylint: disable=no-member
+def is_vectorized_observation(observation: np.ndarray,
+                              observation_space: space.EveSpace) -> bool:
+    """
+    For every observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
+    """
+    if isinstance(observation_space, space.EveBox):
+        # TODO eve: add support for eve
+        if observation.shape == observation_space.shape:
+            return False
+        elif observation.shape[1:] == observation_space.shape:
+            return True
+        else:
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for "
+                + f"Box environment, please use {observation_space.shape} " +
+                "or (n_env, {}) for the observation shape.".format(", ".join(
+                    map(str, observation_space.shape))))
+    elif isinstance(observation_space, space.EveDiscrete):
+        if observation.shape == (
+        ):  # A numpy array of a number, has shape empty tuple '()'
+            return False
+        elif len(observation.shape) == 1:
+            return True
+        else:
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for "
+                +
+                "Discrete environment, please use (1,) or (n_env, 1) for the observation shape."
+            )
+
+    elif isinstance(observation_space, space.EveMultiDiscrete):
+        if observation.shape == (len(observation_space.nvec), ):
+            return False
+        elif len(observation.shape) == 2 and observation.shape[1] == len(
+                observation_space.nvec):
+            return True
+        else:
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
+                +
+                f"environment, please use ({len(observation_space.nvec)},) or "
+                +
+                f"(n_env, {len(observation_space.nvec)}) for the observation shape."
+            )
+    elif isinstance(observation_space, space.EveMultiBinary):
+        if observation.shape == (observation_space.n, ):
+            return False
+        elif len(observation.shape
+                 ) == 2 and observation.shape[1] == observation_space.n:
+            return True
+        else:
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
+                + f"environment, please use ({observation_space.n},) or " +
+                f"(n_env, {observation_space.n}) for the observation shape.")
+    else:
+        raise ValueError(
+            "Error: Cannot determine if the observation is vectorized " +
+            f" with the space type {observation_space}.")
 
 
 class BaseFeaturesExtractor(Eve):
@@ -766,7 +868,9 @@ class BaseFeaturesExtractor(Eve):
     :param observation_space:
     :param features_dim: Number of features extracted.
     """
-    def __init__(self, observation_space: gym.Space, features_dim: int = 0):
+    def __init__(self,
+                 observation_space: space.EveSpace,
+                 features_dim: int = 0):
         super(BaseFeaturesExtractor, self).__init__()
         assert features_dim > 0
         self._observation_space = observation_space
@@ -787,15 +891,11 @@ class FlattenExtractor(BaseFeaturesExtractor):
 
     :param observation_space:
     """
-    def __init__(self, observation_space: Union[gym.Space, "EveSpace"]):
+    def __init__(self, observation_space: space.EveSpace):
         super(FlattenExtractor,
               self).__init__(observation_space,
                              get_flattened_obs_dim(observation_space))
-        if isinstance(observation_space, eve.app.space.EveSpace):
-            start_dim = 2
-        else:
-            start_dim = 1
-        self.flatten = nn.Flatten(start_dim=start_dim)
+        self.flatten = nn.Flatten(start_dim=2)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         return self.flatten(observations)
@@ -1022,8 +1122,8 @@ class BaseModel(Eve, ABC):
     """
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         features_extractor_class: Type[
             BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -1251,7 +1351,7 @@ class BasePolicy(BaseModel):
             observation = np.array(observation)
 
         # TODO eve: add support to eve
-        if isinstance(self.observation_space, eve.app.space.EveSpace):
+        if isinstance(self.observation_space, space.EveSpace):
             shape = (self.observation_space.max_neurons,
                      ) + self.observation_space.shape
         else:
@@ -1271,8 +1371,7 @@ class BasePolicy(BaseModel):
         if state is not None:
             state = state.cpu().numpy()
 
-        if isinstance(self.action_space,
-                      (gym.spaces.Box, eve.app.space.EveBox)):
+        if isinstance(self.action_space, space.EveBox):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
                 actions = self.unscale_action(actions)
@@ -1341,8 +1440,8 @@ class ActorCriticPolicy(BasePolicy):
     """
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
@@ -1596,10 +1695,8 @@ class ActorCriticPolicy(BasePolicy):
             return self.action_dist.proba_distribution(
                 action_logits=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(
-                mean_actions,  # pylint: disable=too-many-function-args
-                self.log_std,
-                latent_sde)
+            return self.action_dist.proba_distribution(  # pylint: disable=too-many-function-args
+                mean_actions, self.log_std, latent_sde)
         else:
             raise ValueError("Invalid action distribution")
 
@@ -1666,8 +1763,8 @@ class ContinuousCritic(BaseModel):
     """
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,

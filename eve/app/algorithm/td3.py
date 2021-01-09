@@ -1,18 +1,17 @@
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import gym
+import eve.app.space as space
 import numpy as np
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from eve.app import logger
-import eve.app.space
 from eve.app.algo import ActionNoise, MaybeCallback, OffPolicyAlgorithm
 from eve.app.buffers import get_action_dim
 from eve.app.policies import (BaseFeaturesExtractor, BasePolicy,
                               ContinuousCritic, FlattenExtractor, create_mlp,
                               get_actor_critic_arch, register_policy)
-from eve.app.utils import GymEnv, Schedule, polyak_update
+from eve.app.utils import EveEnv, Schedule, polyak_update
 
 # pylint: disable=abstract-class-instantiated
 
@@ -33,8 +32,8 @@ class Actor(BasePolicy):
     """
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,
@@ -111,8 +110,8 @@ class TD3Policy(BasePolicy):
     """
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: space.EveSpace,
+        action_space: space.EveSpace,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -270,7 +269,7 @@ class TD3(OffPolicyAlgorithm):
     Introduction to TD3: https://spinningup.openai.com/en/latest/algorithms/td3.html
 
     :param policy: The policy model to use (MlpPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param env: The environment to learn from
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress remaining (from 1 to 0)
@@ -308,7 +307,7 @@ class TD3(OffPolicyAlgorithm):
     def __init__(
         self,
         policy: Union[str, Type[TD3Policy]],
-        env: Union[GymEnv, str],
+        env: Union[EveEnv, str],
         learning_rate: Union[float, Schedule] = 1e-3,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
@@ -354,7 +353,7 @@ class TD3(OffPolicyAlgorithm):
             seed=seed,
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
-            supported_action_spaces=(gym.spaces.Box, eve.app.space.EveBox),
+            supported_action_spaces=(space.EveBox),
         )
 
         self.policy_delay = policy_delay
@@ -463,7 +462,7 @@ class TD3(OffPolicyAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
-        eval_env: Optional[GymEnv] = None,
+        eval_env: Optional[EveEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
         tb_log_name: str = "TD3",

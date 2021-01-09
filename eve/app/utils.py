@@ -9,20 +9,13 @@ import pickle
 import random
 import warnings
 import zipfile
-from collections import deque
 from itertools import zip_longest
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Tuple, Type,
-                    Union)
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
 
 import cloudpickle
-import gym
 import numpy as np
-import pandas as pd
 import torch as th
-import torch.nn as nn
-import torch.nn.functional as F
 import yaml
-import eve.app.space
 
 # pylint: disable=no-member
 TensorDict = Dict[str, th.Tensor]
@@ -71,7 +64,7 @@ def explained_variance(y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
 # A schedule takes the remaining progress as input
 # and ouputs a scalar (e.g. learning rate, clip range, ...)
 Schedule = Callable[[float], float]
-GymEnv = Union[gym.Env, "VecEnv"]
+EveEnv = Union["BaseTrainer", "VecEnv"]
 
 
 def update_learning_rate(optimizer: th.optim.Optimizer,
@@ -208,73 +201,7 @@ def get_latest_run_id(log_path: Optional[str] = None,
     return max_run_id
 
 
-def is_vectorized_observation(observation: np.ndarray,
-                              observation_space: gym.spaces.Space) -> bool:
-    """
-    For every observation type, detects and validates the shape,
-    then returns whether or not the observation is vectorized.
-
-    :param observation: the input observation to validate
-    :param observation_space: the observation space
-    :return: whether the given observation is vectorized or not
-    """
-    if isinstance(observation_space, gym.spaces.Box):
-        # TODO eve: add support for eve
-        if observation.shape == observation_space.shape:
-            return False
-        elif observation.shape[1:] == observation_space.shape:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for "
-                + f"Box environment, please use {observation_space.shape} " +
-                "or (n_env, {}) for the observation shape.".format(", ".join(
-                    map(str, observation_space.shape))))
-    elif isinstance(observation_space, gym.spaces.Discrete):
-        if observation.shape == (
-        ):  # A numpy array of a number, has shape empty tuple '()'
-            return False
-        elif len(observation.shape) == 1:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for "
-                +
-                "Discrete environment, please use (1,) or (n_env, 1) for the observation shape."
-            )
-
-    elif isinstance(observation_space, gym.spaces.MultiDiscrete):
-        if observation.shape == (len(observation_space.nvec), ):
-            return False
-        elif len(observation.shape) == 2 and observation.shape[1] == len(
-                observation_space.nvec):
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
-                +
-                f"environment, please use ({len(observation_space.nvec)},) or "
-                +
-                f"(n_env, {len(observation_space.nvec)}) for the observation shape."
-            )
-    elif isinstance(observation_space, gym.spaces.MultiBinary):
-        if observation.shape == (observation_space.n, ):
-            return False
-        elif len(observation.shape
-                 ) == 2 and observation.shape[1] == observation_space.n:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-                + f"environment, please use ({observation_space.n},) or " +
-                f"(n_env, {observation_space.n}) for the observation shape.")
-    else:
-        raise ValueError(
-            "Error: Cannot determine if the observation is vectorized " +
-            f" with the space type {observation_space}.")
-
-
-def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
+def safe_mean(arr: Union[np.ndarray, list]) -> np.ndarray:
     """
     Compute the mean of an array if there is at least one element.
     For empty array, return NaN. It is used for logging only.
@@ -329,51 +256,6 @@ def polyak_update(params: Iterable[th.nn.Parameter],
                    param.data,
                    alpha=tau,
                    out=target_param.data)
-
-
-# pylint: disable=no-member
-def preprocess_obs(obs: th.Tensor,
-                   observation_space: gym.spaces.Space,
-                   normalize_images: bool = True) -> th.Tensor:
-    """
-    Preprocess observation to be to a neural network.
-    For images, it normalizes the values by dividing them by 255 (to have values in [0, 1])
-    For discrete observations, it create a one hot vector.
-
-    :param obs: Observation
-    :param observation_space:
-    :param normalize_images: Whether to normalize images or not
-        (True by default)
-    :return:
-    """
-    if isinstance(observation_space, (gym.spaces.Box, eve.app.space.EveBox)):
-        return obs.float()
-
-    elif isinstance(observation_space,
-                    (gym.spaces.Discrete, eve.app.space.EveDiscrete)):
-        # One hot encoding and convert to float to avoid errors
-        return F.one_hot(obs.long(), num_classes=observation_space.n).float()
-
-    elif isinstance(observation_space,
-                    (gym.spaces.MultiDiscrete, eve.app.space.EveMultiBinary)):
-        # Tensor concatenation of one hot encodings of each Categorical sub-space
-        return th.cat(
-            [
-                F.one_hot(obs_.long(),
-                          num_classes=int(
-                              observation_space.nvec[idx])).float()
-                for idx, obs_ in enumerate(th.split(obs.long(), 1, dim=1))
-            ],
-            dim=-1,
-        ).view(obs.shape[0], sum(observation_space.nvec))
-
-    elif isinstance(observation_space,
-                    (gym.spaces.MultiBinary, eve.app.space.EveMultiBinary)):
-        return obs.float()
-
-    else:
-        raise NotImplementedError(
-            f"Preprocessing not implemented for {observation_space}")
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:
@@ -800,15 +682,6 @@ def load_from_zip_file(
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
     return data, params, pytorch_variables
-
-
-def flatten_dict_observations(env: gym.Env) -> gym.Env:
-    assert isinstance(env.observation_space, gym.spaces.Dict)
-    try:
-        return gym.wrappers.FlattenObservation(env)
-    except AttributeError:
-        keys = env.observation_space.spaces.keys()
-        return gym.wrappers.FlattenDictWrapper(env, dict_keys=list(keys))  # pylint: disable=no-member
 
 
 def get_trained_models(log_folder: str) -> Dict[str, Tuple[str, str]]:

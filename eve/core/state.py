@@ -140,10 +140,7 @@ class State(object):
         states = [fn(self, input, output) for fn in self.__fn__.values()]
         states = th.stack(states, dim=-1)
 
-        if self.neuron_wise:
-            return states  # [neurons, obs]
-        else:
-            return states.squeeze(dim=0)  # [obs]
+        return states  # [neurons, obs]
 
     @property
     def device(self):

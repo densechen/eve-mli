@@ -11,7 +11,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 import optuna
 import yaml
-
 from eve.app.algo import (BaseAlgorithm, NormalActionNoise,
                           OrnsteinUhlenbeckActionNoise)
 from eve.app.algorithm import ALGOS
@@ -21,7 +20,6 @@ from eve.app.env import (DummyVecEnv, SubprocVecEnv, VecEnv, VecNormalize,
                          get_wrapper_class, make_vec_env)
 from eve.app.hyperparams_opt import HYPERPARAMS_SAMPLER
 from eve.app.utils import constant_fn, get_latest_run_id, linear_schedule
-
 from optuna.integration.skopt import SkoptSampler
 from optuna.pruners import BasePruner, MedianPruner, SuccessiveHalvingPruner
 from optuna.samplers import BaseSampler, RandomSampler, TPESampler
@@ -619,7 +617,7 @@ class ExperimentManager(object):
 
         Args:
             hyperparams (dict):
-            env (Env): 
+            env (EveEnv): 
         """
         # Continue training
         print("Loading pretrained agent")
