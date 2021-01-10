@@ -90,22 +90,27 @@
 </ul>
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="eve.html">eve package</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">eve.core package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.eve">eve.core.eve module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.layer">eve.core.layer module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.node">eve.core.node module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.quan">eve.core.quan module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.quantize_fn">eve.core.quantize_fn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.state">eve.core.state module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core.surrogate_fn">eve.core.surrogate_fn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.core">Module contents</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="eve.html">eve package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="eve.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="eve.app.html">eve.app package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">eve.core package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.eve">eve.core.eve module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.layer">eve.core.layer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.node">eve.core.node module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.quan">eve.core.quan module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.quantize_fn">eve.core.quantize_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.state">eve.core.state module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core.surrogate_fn">eve.core.surrogate_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.core">Module contents</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="eve.app.html">eve.app package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.app.algorithm.html">eve.app.algorithm package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.utils.html">eve.utils package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="eve.utils.html">eve.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="eve.html#module-eve">Module contents</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -342,6 +347,13 @@ name of the torch buffers as well as the torch buffer itself.</p>
 <code class="sig-name descname">requires_torch_grad_</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">requires_grad</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve">eve.core.eve.Eve</a><a class="headerlink" href="#eve.core.eve.Eve.requires_torch_grad_" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt id="eve.core.eve.Eve.zero_obs">
+<code class="sig-name descname">zero_obs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">set_to_none</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.core.eve.Eve.zero_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets observation, of all model eve parameters to zeros.
+See similar function under <code class="xref py py-class docutils literal notranslate"><span class="pre">eve.Upgrader</span></code> for more context.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt id="eve.core.eve.Eve.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.eve.Eve.training" title="Permalink to this definition">¶</a></dt>
@@ -351,13 +363,6 @@ name of the torch buffers as well as the torch buffer itself.</p>
 <dt id="eve.core.eve.Eve.optimizer">
 <code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.eve.Eve.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.eve.Eve.zero_obs">
-<code class="sig-name descname">zero_obs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">set_to_none</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.core.eve.Eve.zero_obs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets observation, of all model eve parameters to zeros.
-See similar function under <code class="xref py py-class docutils literal notranslate"><span class="pre">eve.Upgrader</span></code> for more context.</p>
-</dd></dl>
 
 <dl class="py method">
 <dt id="eve.core.eve.Eve.obs">
@@ -1182,7 +1187,7 @@ return (voltage - voltage_reset).</p>
 
 <dl class="py class">
 <dt id="eve.core.quan.Quantizer">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.quan.</code><code class="sig-name descname">Quantizer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">bits</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">8</span></em>, <em class="sig-param"><span class="n">quantize_fn</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Round'</span></em>, <em class="sig-param"><span class="n">range_tracker</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'average_tracker'</span></em>, <em class="sig-param"><span class="n">average_tracker_momentum</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">upgrade_bits</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">neuron_wise</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">asymmetric</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">signed_quantization</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">learnable_alpha</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">state_list</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quan.Quantizer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.quan.</code><code class="sig-name descname">Quantizer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">bits</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">8</span></em>, <em class="sig-param"><span class="n">quantize_fn</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Round'</span></em>, <em class="sig-param"><span class="n">range_tracker</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'average_tracker'</span></em>, <em class="sig-param"><span class="n">average_tracker_momentum</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">upgrade_bits</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">neuron_wise</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">asymmetric</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">signed_quantization</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">learnable_alpha</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">state_list</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">upgrade_fn</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quan.Quantizer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eve.core.quan.Quan" title="eve.core.quan.Quan"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.quan.Quan</span></code></a></p>
 <p>The base quantizer to hold different quantization function.</p>
 <dl class="field-list simple">
@@ -1209,6 +1214,8 @@ can be learnabled, we will not update it by tracker information.</p></li>
 <li><p><strong>state_list</strong> – a list contains [“name”, fn] to calculate states.
 if fn is None, we will try to load the build-in methods.
 refer <code class="docutils literal notranslate"><span class="pre">eve.core.state</span></code> to see the supported function.</p></li>
+<li><p><strong>upgrade_fn</strong> – the function to update eve parameter, e.i. bits in this module.
+if None, a directly replace operation will be used.</p></li>
 <li><p><strong>kwargs</strong> – the extra arguments to quantization function.</p></li>
 </ul>
 </dd>

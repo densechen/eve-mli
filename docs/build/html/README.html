@@ -87,11 +87,10 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Readme</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rl">RL</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#about-the-project">About the project</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#about-the-authors">About the authors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#next-to-do">Next to do</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#folder-structure">Folder Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#frameworks">Frameworks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
@@ -99,10 +98,6 @@
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="eve.html">eve package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.core.html">eve.core package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.app.html">eve.app package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.app.algorithm.html">eve.app.algorithm package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.utils.html">eve.utils package</a></li>
 </ul>
 
             
@@ -168,9 +163,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="eve-mli-making-learning-interesting">
+  <center>
+<img src="images/logo.png" width="37" height="52" alt="logo" />
+</center><div class="section" id="eve-mli-making-learning-interesting">
 <h1>eve-mli: making learning interesting<a class="headerlink" href="#eve-mli-making-learning-interesting" title="Permalink to this headline">¶</a></h1>
-<img src="images/logo.png" width="37" height="52" alt="logo" align=center /><p><img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/densechen/eve-mli" /> <a class="reference external" href="https://eve-mli.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/eve-mli/badge/?version=latest" /></a> <a class="reference external" href="https://pypi.org/project/eve-mli"><img alt="PyPI" src="https://img.shields.io/pypi/v/eve-mli" /></a> <a class="reference external" href="https://pypi.org/project/eve-mli"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/eve-mli" /></a></p>
+<p><img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/densechen/eve-mli" /> <a class="reference external" href="https://eve-mli.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/eve-mli/badge/?version=latest" /></a> <a class="reference external" href="https://pypi.org/project/eve-mli"><img alt="PyPI" src="https://img.shields.io/pypi/v/eve-mli" /></a> <a class="reference external" href="https://pypi.org/project/eve-mli"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/eve-mli" /></a></p>
 <p>Eve is an open-source deep learning framework used to devise various architectures in a more flexible and interesting way.</p>
 <p>We provide a jupyter notebook to show the basic usage and the advanced features of Eve in <code class="docutils literal notranslate"><span class="pre">./examples</span></code>.</p>
 <p><strong>Any contributions to Eve is welcome!</strong></p>
@@ -180,14 +177,14 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install eve-mli
 </pre></div>
 </div>
-<p>Developers can download and install the latest version from</p>
+<p>Developers can download and install the latest version from:</p>
 <p><a class="reference external" href="https://github.com/densechen/eve-mli">GitHub</a>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/densechen/eve-mli.git
 <span class="nb">cd</span> eve-mli
 python setup.py install
 </pre></div>
 </div>
-<p>or <a class="reference external" href="https://gitee.com/densechen/eve-mli.git">Gitee</a>:</p>
+<p><a class="reference external" href="https://gitee.com/densechen/eve-mli.git">Gitee</a>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://gitee.com/densechen/eve-mli.git
 <span class="nb">cd</span> eve-mli
 python setup.py install
@@ -197,73 +194,38 @@ python setup.py install
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -c <span class="s2">&quot;import eve; print(eve.__version__)&quot;</span>
 </pre></div>
 </div>
-<p><em>Currently, the APIs may be changed frequently. Install directly from github is suggested.</em></p>
+</div>
+<div class="section" id="rl">
+<h2>RL<a class="headerlink" href="#rl" title="Permalink to this headline">¶</a></h2>
+<p>| algo  | neuron wise | episode | multi-env | continuous | discrete |
+| :—: | :———: | :—–: | :——-: | :——–: | :——: |
+|  a2c  |      ✅      |    ❌    |     ✅     |     ✅      |    ✅     |
+| ddpg  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
+|  dqn  |      ✅      |    ❌    |     ❌     |     ❌      |    ✅     |
+|  ppo  |      ✅      |    ✅    |     ✅     |     ✅      |    ✅     |
+|  sac  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
+|  td3  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |</p>
 </div>
 <div class="section" id="about-the-project">
 <h2>About the project<a class="headerlink" href="#about-the-project" title="Permalink to this headline">¶</a></h2>
-<p>This project is mainly based on <a class="reference external" href="https://github.com/pytorch/pytorch">PyTorch</a> and <a class="reference external" href="https://github.com/DLR-RM/stable-baselines3">stable-baselines3</a>.
-<em>eve.Cores.Eve</em> succeeds <em>torch.nn.Module</em> and keeps all the features of latter.
-We design a <em>Trainer</em> to maintain training process and further wrapper it as a <em>gym.envs</em> to play with reinforcement learning.</p>
 <p>The documentation can be found <a class="reference external" href="https://eve-mli.readthedocs.io">here</a>.
 (Auto-building of documentation may fail sometimes, you can build it manually via <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">docs;</span> <span class="pre">make</span> <span class="pre">html</span></code>)</p>
+<p>The project remains in development. We encourage more volunteers to come together!</p>
+<p><strong>The first official version of eve-mli will be released very soon.</strong></p>
 </div>
 <div class="section" id="about-the-authors">
 <h2>About the authors<a class="headerlink" href="#about-the-authors" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://densechen.github.io">Dengsheng Chen</a>
 Master &#64; National University of Defense Technology
 densechen&#64;foxmail.com</p>
-<p>The project remains in development. We encourage more volunteers to come together, and make learning more interesting!</p>
 </div>
-<div class="section" id="next-to-do">
-<h2>Next to do<a class="headerlink" href="#next-to-do" title="Permalink to this headline">¶</a></h2>
-<p>GOOD NEWS: all the basic functions and modules have been tested, and we will to rewrite some code to make the framework more easier to use in the next serval weeks.</p>
-<p><strong>The first official version of eve-mli will be released very soon.</strong></p>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/pytorch/pytorch">PyTorch</a></p>
+<p><a class="reference external" href="https://github.com/DLR-RM/stable-baselines3">stable-baselines3</a></p>
+<p><a class="reference external" href="https://github.com/fangwei123456/spikingjelly">spikingjelly</a></p>
+<p><a class="reference external" href="https://github.com/666DZY666/Model-Compression-Deploy">Model-Compression-Deploy</a></p>
 </div>
-<div class="section" id="folder-structure">
-<h2>Folder Structure<a class="headerlink" href="#folder-structure" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>eve
-├── app
-│   ├── algo.py <span class="c1"># base class for online and offline policy algorithm.</span>
-│   ├── algorithm
-│   │   ├── a2c.py
-│   │   ├── ddpg.py
-│   │   ├── dqn.py
-│   │   ├── __init__.py
-│   │   ├── ppo.py
-│   │   ├── sac.py
-│   │   └── td3.py
-│   ├── buffers.py <span class="c1"># replay buffer and rollout buffer</span>
-│   ├── callbacks.py 
-│   ├── env.py <span class="c1"># wrapper EveEnv</span>
-│   ├── exp_manager.py <span class="c1"># manage the train of RL.</span>
-│   ├── hyperparams_opt.py <span class="c1"># hyperparams of opt</span>
-│   ├── __init__.py
-│   ├── logger.py 
-│   ├── model.py <span class="c1"># the base model to define a network for trainer</span>
-│   ├── policies.py <span class="c1"># basic actor and critic network structure</span>
-│   ├── space.py <span class="c1"># EveSpace, which is a re-wrapper of gym.Space</span>
-│   ├── trainer.py <span class="c1"># basic class for train differnt model</span>
-│   ├── upgrader.py <span class="c1"># the upgrader is used to control the eve_parameter like optimizer used to update torch_parameter</span>
-│   └── utils.py
-├── core
-│   ├── eve.py <span class="c1"># wrapper nn.Module to Eve</span>
-│   ├── __init__.py
-│   ├── layer.py <span class="c1"># define various layers.</span>
-│   ├── node.py <span class="c1"># IFNode and LIFNode, used in spiking neural network.</span>
-│   ├── quan.py <span class="c1"># Quantizer</span>
-│   ├── quantize_fn.py
-│   ├── state.py <span class="c1"># The class to fetch different runtime state of feature.</span>
-│   └── surrogate_fn.py
-├── __init__.py
-└── utils
-    ├── __init__.py
-    └── legacy.py
-</pre></div>
-</div>
-</div>
-<div class="section" id="frameworks">
-<h2>Frameworks<a class="headerlink" href="#frameworks" title="Permalink to this headline">¶</a></h2>
-<img src="images/arch.png" width="600" height="320" alt="arch" align=center /></div>
 </div>
 
 

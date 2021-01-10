@@ -90,32 +90,34 @@
 </ul>
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="eve.html">eve package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.core.html">eve.core package</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">eve.app package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="eve.app.algorithm.html">eve.app.algorithm package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="eve.html">eve package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="eve.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">eve.app package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algo">eve.app.algo module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.buffers">eve.app.buffers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.callbacks">eve.app.callbacks module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.env">eve.app.env module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.exp_manager">eve.app.exp_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.hyperparams_opt">eve.app.hyperparams_opt module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.logger">eve.app.logger module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.model">eve.app.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.policies">eve.app.policies module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.space">eve.app.space module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.trainer">eve.app.trainer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.upgrader">eve.app.upgrader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.utils">eve.app.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app">Module contents</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algo">eve.app.algo module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.buffers">eve.app.buffers module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.callbacks">eve.app.callbacks module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.env">eve.app.env module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.exp_manager">eve.app.exp_manager module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.hyperparams_opt">eve.app.hyperparams_opt module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.logger">eve.app.logger module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.model">eve.app.model module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.policies">eve.app.policies module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.space">eve.app.space module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.trainer">eve.app.trainer module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.upgrader">eve.app.upgrader module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.utils">eve.app.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-eve.app">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="eve.core.html">eve.core package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="eve.utils.html">eve.utils package</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="eve.app.algorithm.html">eve.app.algorithm package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eve.utils.html">eve.utils package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.html#module-eve">Module contents</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -1045,11 +1047,6 @@ following the current policy.</p></li>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py method">
-<dt id="eve.app.buffers.RolloutBuffer.get">
-<code class="sig-name descname">get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Generator<span class="p">[</span><a class="reference internal" href="#eve.app.buffers.RolloutBufferSamples" title="eve.app.buffers.RolloutBufferSamples">eve.app.buffers.RolloutBufferSamples</a><span class="p">, </span>None<span class="p">, </span>None<span class="p">]</span><a class="headerlink" href="#eve.app.buffers.RolloutBuffer.get" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -4116,10 +4113,10 @@ from the probability distribution given its parameters.</p>
 so we can sum components of the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> or the entropy.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tensor</strong> – shape: (n_batch, n_actions) or (n_batch,)</p>
+<dd class="field-odd"><p><strong>tensor</strong> – shape: (n_batch, neurons, n_actions) or (n_batch, neurons)</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>shape: (n_batch,)</p>
+<dd class="field-even"><p>shape: (n_batch, neurons)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5257,7 +5254,6 @@ given the observations.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obs</strong> – </p></li>
-<li><p><strong>state</strong> – can be None, used in RNN model.</p></li>
 <li><p><strong>actions</strong> – </p></li>
 </ul>
 </dd>
