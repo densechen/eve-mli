@@ -82,7 +82,8 @@ class QNetwork(BasePolicy):
                  deterministic: bool = True) -> th.Tensor:
         q_values = self.forward(observation)
         # Greedy action
-        action = q_values.argmax(dim=1).reshape(-1)
+        # action = q_values.argmax(dim=1).reshape(-1)
+        action = q_values.argmax(dim=-1)
         return action
 
     def _get_data(self) -> Dict[str, Any]:
@@ -279,7 +280,7 @@ class DQN(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
-        sample_episode: bool=False,
+        sample_episode: bool = False,
     ):
 
         super(DQN, self).__init__(
@@ -352,40 +353,51 @@ class DQN(OffPolicyAlgorithm):
         losses = []
         for _ in range(gradient_steps):
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(
+            replay_datas = self.replay_buffer.sample(
                 batch_size, env=self._vec_normalize_env)
 
-            with th.no_grad():
-                # Compute the next Q-values using the target network
-                next_q_values = self.q_net_target(
-                    replay_data.next_observations)
-                # Follow greedy policy: use the one with the highest value
-                next_q_values, _ = next_q_values.max(dim=1)
-                # Avoid potential broadcast issue
-                next_q_values = next_q_values.reshape(-1, 1)
-                # 1-step TD target
-                target_q_values = replay_data.rewards + (
-                    1 - replay_data.dones) * self.gamma * next_q_values
+            self.policy.reset(set_to_none=True)
+            for replay_data in replay_datas:
+                with th.no_grad():
+                    # Compute the next Q-values using the target network
+                    next_q_values = self.q_net_target(
+                        replay_data.next_observations)
+                    # Follow greedy policy: use the one with the highest value
+                    next_q_values, _ = next_q_values.max(dim=-1)
+                    # Avoid potential broadcast issue
+                    # next_q_values = next_q_values.reshape(-1, 1)
+                    # mean along neurons seens meaningless, it is not supported neuron wise yet.
+                    next_q_values = next_q_values.mean(dim=1).flatten()
 
-            # Get current Q-values estimates
-            current_q_values = self.q_net(replay_data.observations)
+                    # 1-step TD target
+                    target_q_values = replay_data.rewards + (
+                        1 - replay_data.dones) * self.gamma * next_q_values
 
-            # Retrieve the q-values for the actions from the replay buffer
-            current_q_values = th.gather(current_q_values,
-                                         dim=1,
-                                         index=replay_data.actions.long())
+                # Get current Q-values estimates
+                current_q_values = self.q_net(replay_data.observations)
 
-            # Compute Huber loss (less sensitive to outliers)
-            loss = F.smooth_l1_loss(current_q_values, target_q_values)
-            losses.append(loss.item())
+                # Retrieve the q-values for the actions from the replay buffer
+                # FIXME: it is correct to use mean here?
+                current_q_values = current_q_values.mean(
+                    dim=1)  # discard the last dimension
+                current_q_values = th.gather(current_q_values,
+                                             dim=-1,
+                                             index=replay_data.actions.long())
 
-            # Optimize the policy
-            self.policy.optimizer.zero_grad()
-            loss.backward()
-            # Clip gradient norm
-            th.nn.utils.clip_grad_norm_(self.policy.parameters(),
-                                        self.max_grad_norm)
-            self.policy.optimizer.step()
+                # mean along neurons seens meaningless, it is not supported neuron wise yet.
+                current_q_values = current_q_values.mean(dim=1).flatten()
+
+                # Compute Huber loss (less sensitive to outliers)
+                loss = F.smooth_l1_loss(current_q_values, target_q_values)
+                losses.append(loss.item())
+
+                # Optimize the policy
+                self.policy.optimizer.zero_grad()
+                loss.backward()
+                # Clip gradient norm
+                th.nn.utils.clip_grad_norm_(self.policy.parameters(),
+                                            self.max_grad_norm)
+                self.policy.optimizer.step()
 
         # Increase update counter
         self._n_updates += gradient_steps
@@ -398,7 +410,6 @@ class DQN(OffPolicyAlgorithm):
     def predict(
         self,
         observation: np.ndarray,
-        state: Optional[np.ndarray] = None,
         mask: Optional[np.ndarray] = None,
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
@@ -406,23 +417,26 @@ class DQN(OffPolicyAlgorithm):
         Overrides the base_class predict function to include epsilon-greedy exploration.
 
         :param observation: the input observation
-        :param state: The last states (can be None, used in recurrent policies)
         :param mask: The last masks (can be None, used in recurrent policies)
         :param deterministic: Whether or not to return deterministic actions.
         :return: the model's action and the next state
             (used in recurrent policies)
         """
         if not deterministic and np.random.rand() < self.exploration_rate:
-            if is_vectorized_observation(observation, self.observation_space):
-                n_batch = observation.shape[0]
-                action = np.array(
-                    [self.action_space.sample() for _ in range(n_batch)])
-            else:
-                action = np.array(self.action_space.sample())
+            action = []
+            for _ in range(self.action_space.max_neurons):
+                if is_vectorized_observation(observation,
+                                             self.observation_space):
+                    n_batch = observation.shape[0]
+                    a = np.array(
+                        [self.action_space.sample() for _ in range(n_batch)])
+                else:
+                    a = np.array(self.action_space.sample())
+                action.append(a)
+            action = np.stack(action, axis=1)
         else:
-            action, state = self.policy.predict(observation, state, mask,
-                                                deterministic)
-        return action, state
+            action = self.policy.predict(observation, mask, deterministic)
+        return action
 
     def learn(
         self,

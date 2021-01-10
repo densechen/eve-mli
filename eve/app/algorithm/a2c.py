@@ -21,6 +21,12 @@ from eve.app.policies import ActorCriticPolicy, register_policy
 from eve.app.utils import EveEnv, Schedule, explained_variance
 
 # pylint: disable=no-member
+# This file is here just to define MlpPolicy
+# that work for A2C
+
+MlpPolicy = ActorCriticPolicy
+
+register_policy("MlpPolicy", ActorCriticPolicy)
 
 
 class A2C(OnPolicyAlgorithm):
@@ -139,7 +145,9 @@ class A2C(OnPolicyAlgorithm):
         self._update_learning_rate(self.policy.optimizer)
 
         # This will only loop once (get all data in one go)
-        for rollout_data in self.rollout_buffer.get(batch_size=None):
+        rollout_datas = self.rollout_buffer.sample(batch_size=None)
+        self.policy.reset(set_to_none=True)
+        for rollout_data in rollout_datas:
 
             actions = rollout_data.actions
             if isinstance(self.action_space, space.EveDiscrete):
@@ -147,10 +155,12 @@ class A2C(OnPolicyAlgorithm):
                 actions = actions.long().flatten()
 
             # TODO: avoid second computation of everything because of the gradient
-            # TODO (eve): add state into arguments
             values, log_prob, entropy = self.policy.evaluate_actions(
-                rollout_data.observations, None, actions)
-            values = values.flatten()
+                rollout_data.observations, actions)
+
+            values = values.mean(dim=1).flatten()
+            log_prob = log_prob.mean(dim=1).flatten()
+            entropy = entropy.mean(dim=1).flatten()
 
             # Normalize advantage (not present in the original implementation)
             advantages = rollout_data.advantages
@@ -222,11 +232,3 @@ class A2C(OnPolicyAlgorithm):
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
         )
-
-
-# This file is here just to define MlpPolicy
-# that work for A2C
-
-MlpPolicy = ActorCriticPolicy
-
-register_policy("MlpPolicy", ActorCriticPolicy)

@@ -44,6 +44,17 @@ Vailidate installation:
 python -c "import eve; print(eve.__version__)"
 ```
 
+## RL
+
+| algo  | neuron wise | episode | multi-env | continuous | discrete |
+| :---: | :---------: | :-----: | :-------: | :--------: | :------: |
+|  a2c  |      ✅      |    ❌    |     ✅     |     ✅      |    ✅     |
+| ddpg  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
+|  dqn  |      ✅      |    ❌    |     ❌     |     ❌      |    ✅     |
+|  ppo  |      ✅      |    ✅    |     ✅     |     ✅      |    ✅     |
+|  sac  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
+|  td3  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
+
 ## About the project
 
 The documentation can be found [here](https://eve-mli.readthedocs.io).

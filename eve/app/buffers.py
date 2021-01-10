@@ -193,6 +193,9 @@ class BaseBuffer(ABC):
         :return: if episode sample, return a list with episode length and 
             contains BufferSamples, else, return BufferSamples.
         """
+        if batch_size is None:
+            batch_size = self.buffer_size * self.n_envs
+
         returns = []
         if self.sample_episode:
             upper_bound = len(self.episode_interval)
@@ -307,8 +310,15 @@ class ReplayBuffer(BaseBuffer):
         buffer_obs_shape = (
             self.buffer_size, self.n_envs,
             self.observation_space.max_neurons) + self.obs_shape
-        buffer_action_shape = (self.buffer_size, self.n_envs,
-                               self.action_space.max_neurons, self.action_dim)
+        if isinstance(self.action_space, space.EveDiscrete):
+            # in discrete mode, we can only take one action from many actions.
+            # so, remove the last dimension of self.action_dim.
+            buffer_action_shape = (self.buffer_size, self.n_envs,
+                                   self.action_space.max_neurons)
+        else:
+            buffer_action_shape = (self.buffer_size, self.n_envs,
+                                   self.action_space.max_neurons,
+                                   self.action_dim)
 
         self.observations = np.zeros(buffer_obs_shape,
                                      dtype=observation_space.dtype)

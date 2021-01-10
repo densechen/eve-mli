@@ -391,9 +391,6 @@ class TD3(OffPolicyAlgorithm):
             replay_datas = self.replay_buffer.sample(
                 batch_size, env=self._vec_normalize_env)
 
-            if not isinstance(replay_datas, list):
-                replay_datas = [replay_datas]
-
             self.policy.reset(set_to_none=True)
             for replay_data in replay_datas:
                 with th.no_grad():

@@ -170,8 +170,6 @@ class PPO(OnPolicyAlgorithm):
             approx_kl_divs = []
 
             rollout_datas = self.rollout_buffer.sample(self.batch_size)
-            if not isinstance(rollout_datas, list):
-                rollout_datas = [rollout_datas]
             # Do a complete pass on the rollout buffer
             self.policy.reset(set_to_none=True)
             for rollout_data in rollout_datas:
@@ -186,10 +184,8 @@ class PPO(OnPolicyAlgorithm):
                 if self.use_sde:
                     self.policy.reset_noise(self.batch_size)
 
-                # TODO (eve): add state to arguments
                 values, log_prob, entropy = self.policy.evaluate_actions(
                     rollout_data.observations, actions)
-                # values = values.flatten()
 
                 values = values.mean(dim=1).flatten()
                 log_prob = log_prob.mean(dim=1).flatten()

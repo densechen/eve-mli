@@ -1,6 +1,6 @@
 mnist_trainer:
   normalize: true
-  n_envs: 1
+  n_envs: 2
   n_timesteps: !!float 2e6
   policy: "MlpPolicy"
   ent_coef: 0.0

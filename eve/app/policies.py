@@ -647,10 +647,10 @@ class StateDependentNoiseDistribution(Distribution):
                           self.exploration_mat.repeat(len(latent_sde), 1, 1))
         # Use batch matrix multiplication for efficient computation
         # (batch_size, n_features) -> (batch_size, 1, n_features)
-        latent_sde = latent_sde.unsqueeze(1)
+        # latent_sde = latent_sde.unsqueeze(1)
         # (batch_size, 1, n_actions)
-        noise = th.bmm(latent_sde, self.exploration_matrices)
-        return noise.squeeze(1)
+        noise = th.bmm(latent_sde, self.exploration_matrices.squeeze(dim=1))
+        return noise
 
     def actions_from_params(self,
                             mean_actions: th.Tensor,
@@ -822,7 +822,7 @@ def is_vectorized_observation(observation: np.ndarray,
     if isinstance(observation_space, space.EveBox):
         if observation.shape == observation_space.shape:
             return False
-        elif observation.shape[1:] == observation_space.shape:
+        elif observation.shape[2:] == observation_space.shape:
             return True
         else:
             raise ValueError(

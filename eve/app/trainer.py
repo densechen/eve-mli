@@ -202,6 +202,10 @@ class BaseTrainer(EveEnv):
 
     def take_action(self, action: np.ndarray) -> None:
         action = th.as_tensor(action, device=self.device)
+        # in same discrete environment, the action may be zero dimension
+        # then, expand it to one dimension.
+        if action.dim() == 0:
+            action = action.view(-1)
 
         action = action[:self.last_eve.numel()].view_as(self.last_eve)
 
