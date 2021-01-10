@@ -1,0 +1,1131 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eve.app.algorithm package &mdash; eve-mli 0.0.1.rc documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="eve.core package" href="eve.core.html" />
+    <link rel="prev" title="eve.app package" href="eve.app.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> eve-mli
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+</ul>
+<p class="caption"><span class="caption-text">APIs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="eve.html">eve package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eve.core.html">eve.core package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="eve.app.html">eve.app package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="eve.app.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">eve.app.algorithm package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm.a2c">eve.app.algorithm.a2c module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm.ddpg">eve.app.algorithm.ddpg module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm.dqn">eve.app.algorithm.dqn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm.ppo">eve.app.algorithm.ppo module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm.sac">eve.app.algorithm.sac module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm.td3">eve.app.algorithm.td3 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-eve.app.algorithm">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.algo">eve.app.algo module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.buffers">eve.app.buffers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.callbacks">eve.app.callbacks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.env">eve.app.env module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.exp_manager">eve.app.exp_manager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.hyperparams_opt">eve.app.hyperparams_opt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.logger">eve.app.logger module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.model">eve.app.model module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.policies">eve.app.policies module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.space">eve.app.space module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.trainer">eve.app.trainer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.upgrader">eve.app.upgrader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app.utils">eve.app.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eve.app.html#module-eve.app">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">eve.app.algorithm package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm.a2c">eve.app.algorithm.a2c module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm.ddpg">eve.app.algorithm.ddpg module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm.dqn">eve.app.algorithm.dqn module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm.ppo">eve.app.algorithm.ppo module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm.sac">eve.app.algorithm.sac module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm.td3">eve.app.algorithm.td3 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eve.app.algorithm">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="eve.utils.html">eve.utils package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eve-mli</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="eve.html">eve package</a> &raquo;</li>
+        
+          <li><a href="eve.app.html">eve.app package</a> &raquo;</li>
+        
+      <li>eve.app.algorithm package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/eve.app.algorithm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="eve-app-algorithm-package">
+<h1>eve.app.algorithm package<a class="headerlink" href="#eve-app-algorithm-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-eve.app.algorithm.a2c">
+<span id="eve-app-algorithm-a2c-module"></span><h2>eve.app.algorithm.a2c module<a class="headerlink" href="#module-eve.app.algorithm.a2c" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="eve.app.algorithm.a2c.A2C">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.a2c.</code><code class="sig-name descname">A2C</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Type<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.policies.ActorCriticPolicy" title="eve.app.policies.ActorCriticPolicy">eve.app.policies.ActorCriticPolicy</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">env</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.0007</span></em>, <em class="sig-param"><span class="n">n_steps</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">gamma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.99</span></em>, <em class="sig-param"><span class="n">gae_lambda</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">ent_coef</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">vf_coef</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">max_grad_norm</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">rms_prop_eps</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1e-05</span></em>, <em class="sig-param"><span class="n">use_rms_prop</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">use_sde</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">sde_sample_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">normalize_advantage</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">tensorboard_log</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">create_eval_env</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">policy_kwargs</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">device</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>torch.device<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">_init_setup_model</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_episode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.a2c.A2C" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.algo.OnPolicyAlgorithm" title="eve.app.algo.OnPolicyAlgorithm"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algo.OnPolicyAlgorithm</span></code></a></p>
+<p>Advantage Actor Critic (A2C)</p>
+<p>Paper: <a class="reference external" href="https://arxiv.org/abs/1602.01783">https://arxiv.org/abs/1602.01783</a>
+Code: This implementation borrows code from <a class="reference external" href="https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail">https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail</a> and
+and Stable Baselines (<a class="reference external" href="https://github.com/hill-a/stable-baselines">https://github.com/hill-a/stable-baselines</a>)</p>
+<p>Introduction to A2C: <a class="reference external" href="https://hackernoon.com/intuitive-rl-intro-to-advantage-actor-critic-a2c-4ff545978752">https://hackernoon.com/intuitive-rl-intro-to-advantage-actor-critic-a2c-4ff545978752</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – The policy model to use (MlpPolicy, …)</p></li>
+<li><p><strong>env</strong> – The environment to learn from.</p></li>
+<li><p><strong>learning_rate</strong> – The learning rate, it can be a function
+of the current progress remaining (from 1 to 0)</p></li>
+<li><p><strong>n_steps</strong> – The number of steps to run for each environment per update
+(i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)</p></li>
+<li><p><strong>gamma</strong> – Discount factor</p></li>
+<li><p><strong>gae_lambda</strong> – Factor for trade-off of bias vs variance for Generalized Advantage Estimator
+Equivalent to classic advantage when set to 1.</p></li>
+<li><p><strong>ent_coef</strong> – Entropy coefficient for the loss calculation</p></li>
+<li><p><strong>vf_coef</strong> – Value function coefficient for the loss calculation</p></li>
+<li><p><strong>max_grad_norm</strong> – The maximum value for the gradient clipping</p></li>
+<li><p><strong>rms_prop_eps</strong> – RMSProp epsilon. It stabilizes square root computation in denominator
+of RMSProp update</p></li>
+<li><p><strong>use_rms_prop</strong> – Whether to use RMSprop (default) or Adam as optimizer</p></li>
+<li><p><strong>use_sde</strong> – Whether to use generalized State Dependent Exploration (gSDE)
+instead of action noise exploration (default: False)</p></li>
+<li><p><strong>sde_sample_freq</strong> – Sample a new noise matrix every n steps when using gSDE
+Default: -1 (only sample at the beginning of the rollout)</p></li>
+<li><p><strong>normalize_advantage</strong> – Whether to normalize or not the advantage</p></li>
+<li><p><strong>tensorboard_log</strong> – the log location for tensorboard (if None, no logging)</p></li>
+<li><p><strong>create_eval_env</strong> – Whether to create a second environment that will be
+used for evaluating the agent periodically. (Only available when passing string for the environment)</p></li>
+<li><p><strong>policy_kwargs</strong> – additional arguments to be passed to the policy on creation</p></li>
+<li><p><strong>verbose</strong> – the verbosity level: 0 no output, 1 info, 2 debug</p></li>
+<li><p><strong>seed</strong> – Seed for the pseudo random generators</p></li>
+<li><p><strong>device</strong> – Device (cpu, cuda, …) on which the code should be run.
+Setting it to auto, the code will be run on the GPU if possible.</p></li>
+<li><p><strong>_init_setup_model</strong> – Whether or not to build the network at the creation of the instance</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.a2c.A2C.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.a2c.A2C.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update policy using the currently gathered
+rollout buffer (one gradient step over whole data).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.a2c.A2C.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">total_timesteps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>Callable<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span><span class="p">, </span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em>, <em class="sig-param"><span class="n">eval_env</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">eval_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_eval_episodes</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tb_log_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'A2C'</span></em>, <em class="sig-param"><span class="n">eval_log_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reset_num_timesteps</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eve.app.algorithm.a2c.A2C" title="eve.app.algorithm.a2c.A2C">A2C</a><a class="headerlink" href="#eve.app.algorithm.a2c.A2C.learn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eve.app.algorithm.ddpg">
+<span id="eve-app-algorithm-ddpg-module"></span><h2>eve.app.algorithm.ddpg module<a class="headerlink" href="#module-eve.app.algorithm.ddpg" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="eve.app.algorithm.ddpg.DDPG">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.ddpg.</code><code class="sig-name descname">DDPG</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Type<span class="p">[</span><a class="reference internal" href="#eve.app.algorithm.td3.TD3Policy" title="eve.app.algorithm.td3.TD3Policy">eve.app.algorithm.td3.TD3Policy</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">env</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">buffer_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000000</span></em>, <em class="sig-param"><span class="n">learning_starts</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em>, <em class="sig-param"><span class="n">tau</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.005</span></em>, <em class="sig-param"><span class="n">gamma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.99</span></em>, <em class="sig-param"><span class="n">train_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_episodes_rollout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">action_noise</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ActionNoise<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tensorboard_log</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">create_eval_env</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">policy_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">device</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>torch.device<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">_init_setup_model</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_episode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.ddpg.DDPG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.app.algorithm.td3.TD3" title="eve.app.algorithm.td3.TD3"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algorithm.td3.TD3</span></code></a></p>
+<p>Deep Deterministic Policy Gradient (DDPG).</p>
+<p>Deterministic Policy Gradient: <a class="reference external" href="http://proceedings.mlr.press/v32/silver14.pdf">http://proceedings.mlr.press/v32/silver14.pdf</a>
+DDPG Paper: <a class="reference external" href="https://arxiv.org/abs/1509.02971">https://arxiv.org/abs/1509.02971</a>
+Introduction to DDPG: <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/ddpg.html">https://spinningup.openai.com/en/latest/algorithms/ddpg.html</a></p>
+<p>Note: we treat DDPG as a special case of its successor TD3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – The policy model to use (MlpPolicy, …)</p></li>
+<li><p><strong>env</strong> – The environment to learn from</p></li>
+<li><p><strong>learning_rate</strong> – learning rate for adam optimizer,
+the same learning rate will be used for all networks (Q-Values, Actor and Value function)
+it can be a function of the current progress remaining (from 1 to 0)</p></li>
+<li><p><strong>buffer_size</strong> – size of the replay buffer</p></li>
+<li><p><strong>learning_starts</strong> – how many steps of the model to collect transitions for before learning starts</p></li>
+<li><p><strong>batch_size</strong> – Minibatch size for each gradient update</p></li>
+<li><p><strong>tau</strong> – the soft update coefficient (“Polyak update”, between 0 and 1)</p></li>
+<li><p><strong>gamma</strong> – the discount factor</p></li>
+<li><p><strong>train_freq</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> steps. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>gradient_steps</strong> – How many gradient steps to do after each rollout
+(see <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> and <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code>)
+Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> means to do as many gradient steps as steps done in the environment
+during the rollout.</p></li>
+<li><p><strong>n_episodes_rollout</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code> episodes.
+Note that this cannot be used at the same time as <code class="docutils literal notranslate"><span class="pre">train_freq</span></code>. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>action_noise</strong> – the action noise type (None by default), this can help
+for hard exploration problem. Cf common.noise for the different action noise type.</p></li>
+<li><p><strong>create_eval_env</strong> – Whether to create a second environment that will be
+used for evaluating the agent periodically. (Only available when passing string for the environment)</p></li>
+<li><p><strong>policy_kwargs</strong> – additional arguments to be passed to the policy on creation</p></li>
+<li><p><strong>verbose</strong> – the verbosity level: 0 no output, 1 info, 2 debug</p></li>
+<li><p><strong>seed</strong> – Seed for the pseudo random generators</p></li>
+<li><p><strong>device</strong> – Device (cpu, cuda, …) on which the code should be run.
+Setting it to auto, the code will be run on the GPU if possible.</p></li>
+<li><p><strong>_init_setup_model</strong> – Whether or not to build the network at the creation of the instance</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.ddpg.DDPG.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">total_timesteps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">MaybeCallback</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em>, <em class="sig-param"><span class="n">eval_env</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">eval_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_eval_episodes</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tb_log_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'DDPG'</span></em>, <em class="sig-param"><span class="n">eval_log_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reset_num_timesteps</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; OffPolicyAlgorithm<a class="headerlink" href="#eve.app.algorithm.ddpg.DDPG.learn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eve.app.algorithm.dqn">
+<span id="eve-app-algorithm-dqn-module"></span><h2>eve.app.algorithm.dqn module<a class="headerlink" href="#module-eve.app.algorithm.dqn" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="eve.app.algorithm.dqn.QNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.dqn.</code><code class="sig-name descname">QNetwork</code><span class="sig-paren">(</span><em class="sig-param">observation_space: eve.app.space.EveSpace</em>, <em class="sig-param">action_space: eve.app.space.EveSpace</em>, <em class="sig-param">features_extractor: torch.nn.modules.module.Module</em>, <em class="sig-param">features_dim: int</em>, <em class="sig-param">net_arch: Optional[List[int]] = None</em>, <em class="sig-param">activation_fn: Type[torch.nn.modules.module.Module] = &lt;class 'torch.nn.modules.activation.ReLU'&gt;</em>, <em class="sig-param">normalize_images: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.policies.BasePolicy" title="eve.app.policies.BasePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.policies.BasePolicy</span></code></a></p>
+<p>Action-Value (Q-Value) network for DQN</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation_space</strong> – Observation space</p></li>
+<li><p><strong>action_space</strong> – Action space</p></li>
+<li><p><strong>net_arch</strong> – The specification of the policy and value networks.</p></li>
+<li><p><strong>activation_fn</strong> – Activation function</p></li>
+<li><p><strong>normalize_images</strong> – Whether to normalize images or not,
+dividing by 255.0 (True by default)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.dqn.QNetwork.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict the q-values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>obs</strong> – Observation</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The estimated Q-Value for each action.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.QNetwork.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.QNetwork.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.QNetwork.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.QNetwork.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.QNetwork.optimizer">
+<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.app.algorithm.dqn.QNetwork.optimizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.app.algorithm.dqn.DQNPolicy">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.dqn.</code><code class="sig-name descname">DQNPolicy</code><span class="sig-paren">(</span><em class="sig-param">observation_space: eve.app.space.EveSpace, action_space: eve.app.space.EveSpace, lr_schedule: Callable[[float], float], net_arch: Optional[List[int]] = None, activation_fn: Type[torch.nn.modules.module.Module] = &lt;class 'torch.nn.modules.activation.ReLU'&gt;, features_extractor_class: Type[eve.app.policies.BaseFeaturesExtractor] = &lt;class 'eve.app.policies.FlattenExtractor'&gt;, features_extractor_kwargs: Optional[Dict[str, Any]] = None, normalize_images: bool = True, optimizer_class: Type[torch.optim.optimizer.Optimizer] = &lt;class 'torch.optim.adam.Adam'&gt;, optimizer_kwargs: Optional[Dict[str, Any]] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.policies.BasePolicy" title="eve.app.policies.BasePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.policies.BasePolicy</span></code></a></p>
+<p>Policy class with Q-Value Net and target net for DQN</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation_space</strong> – Observation space</p></li>
+<li><p><strong>action_space</strong> – Action space</p></li>
+<li><p><strong>lr_schedule</strong> – Learning rate schedule (could be constant)</p></li>
+<li><p><strong>net_arch</strong> – The specification of the policy and value networks.</p></li>
+<li><p><strong>activation_fn</strong> – Activation function</p></li>
+<li><p><strong>features_extractor_class</strong> – Features extractor to use.</p></li>
+<li><p><strong>features_extractor_kwargs</strong> – Keyword arguments
+to pass to the features extractor.</p></li>
+<li><p><strong>normalize_images</strong> – Whether to normalize images or not,
+dividing by 255.0 (True by default)</p></li>
+<li><p><strong>optimizer_class</strong> – The optimizer to use,
+<code class="docutils literal notranslate"><span class="pre">th.optim.Adam</span></code> by default</p></li>
+<li><p><strong>optimizer_kwargs</strong> – Additional keyword arguments,
+excluding the learning rate, to pass to the optimizer</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.make_q_net">
+<code class="sig-name descname">make_q_net</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eve.app.algorithm.dqn.QNetwork" title="eve.app.algorithm.dqn.QNetwork">eve.app.algorithm.dqn.QNetwork</a><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.make_q_net" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">deterministic</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.DQNPolicy.optimizer">
+<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.app.algorithm.dqn.DQNPolicy.optimizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.dqn.MlpPolicy">
+<code class="sig-prename descclassname">eve.app.algorithm.dqn.</code><code class="sig-name descname">MlpPolicy</code><a class="headerlink" href="#eve.app.algorithm.dqn.MlpPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#eve.app.algorithm.dqn.DQNPolicy" title="eve.app.algorithm.dqn.DQNPolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algorithm.dqn.DQNPolicy</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.app.algorithm.dqn.DQN">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.dqn.</code><code class="sig-name descname">DQN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Type<span class="p">[</span><a class="reference internal" href="#eve.app.algorithm.dqn.DQNPolicy" title="eve.app.algorithm.dqn.DQNPolicy">eve.app.algorithm.dqn.DQNPolicy</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">env</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.0001</span></em>, <em class="sig-param"><span class="n">buffer_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000000</span></em>, <em class="sig-param"><span class="n">learning_starts</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">50000</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">32</span></em>, <em class="sig-param"><span class="n">tau</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">gamma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.99</span></em>, <em class="sig-param"><span class="n">train_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em>, <em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">n_episodes_rollout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">target_update_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10000</span></em>, <em class="sig-param"><span class="n">exploration_fraction</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">exploration_initial_eps</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">exploration_final_eps</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.05</span></em>, <em class="sig-param"><span class="n">max_grad_norm</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">tensorboard_log</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">create_eval_env</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">policy_kwargs</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">device</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>torch.device<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">_init_setup_model</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_episode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.dqn.DQN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.algo.OffPolicyAlgorithm" title="eve.app.algo.OffPolicyAlgorithm"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algo.OffPolicyAlgorithm</span></code></a></p>
+<p>Deep Q-Network (DQN)</p>
+<p>Paper: <a class="reference external" href="https://arxiv.org/abs/1312.5602">https://arxiv.org/abs/1312.5602</a>, <a class="reference external" href="https://www.nature.com/articles/nature14236">https://www.nature.com/articles/nature14236</a>
+Default hyperparameters are taken from the nature paper,
+except for the optimizer and learning rate that were taken from Stable Baselines defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – The policy model to use (MlpPolicy, …)</p></li>
+<li><p><strong>env</strong> – The environment to learn from</p></li>
+<li><p><strong>learning_rate</strong> – The learning rate, it can be a function
+of the current progress remaining (from 1 to 0)</p></li>
+<li><p><strong>buffer_size</strong> – size of the replay buffer</p></li>
+<li><p><strong>learning_starts</strong> – how many steps of the model to collect transitions for before learning starts</p></li>
+<li><p><strong>batch_size</strong> – Minibatch size for each gradient update</p></li>
+<li><p><strong>tau</strong> – the soft update coefficient (“Polyak update”, between 0 and 1) default 1 for hard update</p></li>
+<li><p><strong>gamma</strong> – the discount factor</p></li>
+<li><p><strong>train_freq</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> steps. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>gradient_steps</strong> – How many gradient steps to do after each rollout
+(see <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> and <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code>)
+Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> means to do as many gradient steps as steps done in the environment
+during the rollout.</p></li>
+<li><p><strong>n_episodes_rollout</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code> episodes.
+Note that this cannot be used at the same time as <code class="docutils literal notranslate"><span class="pre">train_freq</span></code>. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>target_update_interval</strong> – update the target network every <code class="docutils literal notranslate"><span class="pre">target_update_interval</span></code>
+environment steps.</p></li>
+<li><p><strong>exploration_fraction</strong> – fraction of entire training period over which the exploration rate is reduced</p></li>
+<li><p><strong>exploration_initial_eps</strong> – initial value of random action probability</p></li>
+<li><p><strong>exploration_final_eps</strong> – final value of random action probability</p></li>
+<li><p><strong>max_grad_norm</strong> – The maximum value for the gradient clipping</p></li>
+<li><p><strong>tensorboard_log</strong> – the log location for tensorboard (if None, no logging)</p></li>
+<li><p><strong>create_eval_env</strong> – Whether to create a second environment that will be
+used for evaluating the agent periodically. (Only available when passing string for the environment)</p></li>
+<li><p><strong>policy_kwargs</strong> – additional arguments to be passed to the policy on creation</p></li>
+<li><p><strong>verbose</strong> – the verbosity level: 0 no output, 1 info, 2 debug</p></li>
+<li><p><strong>seed</strong> – Seed for the pseudo random generators</p></li>
+<li><p><strong>device</strong> – Device (cpu, cuda, …) on which the code should be run.
+Setting it to auto, the code will be run on the GPU if possible.</p></li>
+<li><p><strong>_init_setup_model</strong> – Whether or not to build the network at the creation of the instance</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.dqn.DQN.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.dqn.DQN.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.dqn.DQN.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">observation</span><span class="p">:</span> <span class="n">numpy.ndarray</span></em>, <em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>numpy.ndarray<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mask</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>numpy.ndarray<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">deterministic</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>numpy.ndarray<span class="p">, </span>Optional<span class="p">[</span>numpy.ndarray<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#eve.app.algorithm.dqn.DQN.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overrides the base_class predict function to include epsilon-greedy exploration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation</strong> – the input observation</p></li>
+<li><p><strong>state</strong> – The last states (can be None, used in recurrent policies)</p></li>
+<li><p><strong>mask</strong> – The last masks (can be None, used in recurrent policies)</p></li>
+<li><p><strong>deterministic</strong> – Whether or not to return deterministic actions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the model’s action and the next state
+(used in recurrent policies)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.dqn.DQN.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">total_timesteps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>Callable<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span><span class="p">, </span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em>, <em class="sig-param"><span class="n">eval_env</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">eval_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_eval_episodes</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tb_log_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'DQN'</span></em>, <em class="sig-param"><span class="n">eval_log_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reset_num_timesteps</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="eve.app.html#eve.app.algo.OffPolicyAlgorithm" title="eve.app.algo.OffPolicyAlgorithm">eve.app.algo.OffPolicyAlgorithm</a><a class="headerlink" href="#eve.app.algorithm.dqn.DQN.learn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eve.app.algorithm.ppo">
+<span id="eve-app-algorithm-ppo-module"></span><h2>eve.app.algorithm.ppo module<a class="headerlink" href="#module-eve.app.algorithm.ppo" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="eve.app.algorithm.ppo.PPO">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.ppo.</code><code class="sig-name descname">PPO</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Type<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.policies.ActorCriticPolicy" title="eve.app.policies.ActorCriticPolicy">eve.app.policies.ActorCriticPolicy</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">env</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.0003</span></em>, <em class="sig-param"><span class="n">n_steps</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2048</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">64</span></em>, <em class="sig-param"><span class="n">n_epochs</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">gamma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.99</span></em>, <em class="sig-param"><span class="n">gae_lambda</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.95</span></em>, <em class="sig-param"><span class="n">clip_range</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">clip_range_vf</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ent_coef</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">vf_coef</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">max_grad_norm</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">use_sde</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">sde_sample_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">target_kl</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tensorboard_log</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">create_eval_env</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">policy_kwargs</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">device</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>torch.device<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">_init_setup_model</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_episode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.ppo.PPO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.algo.OnPolicyAlgorithm" title="eve.app.algo.OnPolicyAlgorithm"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algo.OnPolicyAlgorithm</span></code></a></p>
+<p>Proximal Policy Optimization algorithm (PPO) (clip version)</p>
+<p>Paper: <a class="reference external" href="https://arxiv.org/abs/1707.06347">https://arxiv.org/abs/1707.06347</a>
+Code: This implementation borrows code from OpenAI Spinning Up (<a class="reference external" href="https://github.com/openai/spinningup/">https://github.com/openai/spinningup/</a>)
+<a class="reference external" href="https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail">https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail</a> and
+and Stable Baselines (PPO2 from <a class="reference external" href="https://github.com/hill-a/stable-baselines">https://github.com/hill-a/stable-baselines</a>)</p>
+<p>Introduction to PPO: <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/ppo.html">https://spinningup.openai.com/en/latest/algorithms/ppo.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – The policy model to use (MlpPolicy, …)</p></li>
+<li><p><strong>env</strong> – The environment to learn from.</p></li>
+<li><p><strong>learning_rate</strong> – The learning rate, it can be a function
+of the current progress remaining (from 1 to 0)</p></li>
+<li><p><strong>n_steps</strong> – The number of steps to run for each environment per update
+(i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)</p></li>
+<li><p><strong>batch_size</strong> – Minibatch size</p></li>
+<li><p><strong>n_epochs</strong> – Number of epoch when optimizing the surrogate loss</p></li>
+<li><p><strong>gamma</strong> – Discount factor</p></li>
+<li><p><strong>gae_lambda</strong> – Factor for trade-off of bias vs variance for Generalized Advantage Estimator</p></li>
+<li><p><strong>clip_range</strong> – Clipping parameter, it can be a function of the current progress
+remaining (from 1 to 0).</p></li>
+<li><p><strong>clip_range_vf</strong> – Clipping parameter for the value function,
+it can be a function of the current progress remaining (from 1 to 0).
+This is a parameter specific to the OpenAI implementation. If None is passed (default),
+no clipping will be done on the value function.
+IMPORTANT: this clipping depends on the reward scaling.</p></li>
+<li><p><strong>ent_coef</strong> – Entropy coefficient for the loss calculation</p></li>
+<li><p><strong>vf_coef</strong> – Value function coefficient for the loss calculation</p></li>
+<li><p><strong>max_grad_norm</strong> – The maximum value for the gradient clipping</p></li>
+<li><p><strong>use_sde</strong> – Whether to use generalized State Dependent Exploration (gSDE)
+instead of action noise exploration (default: False)</p></li>
+<li><p><strong>sde_sample_freq</strong> – Sample a new noise matrix every n steps when using gSDE
+Default: -1 (only sample at the beginning of the rollout)</p></li>
+<li><p><strong>target_kl</strong> – Limit the KL divergence between updates,
+because the clipping is not enough to prevent large update
+see issue #213 (cf <a class="reference external" href="https://github.com/hill-a/stable-baselines/issues/213">https://github.com/hill-a/stable-baselines/issues/213</a>)
+By default, there is no limit on the kl div.</p></li>
+<li><p><strong>tensorboard_log</strong> – the log location for tensorboard (if None, no logging)</p></li>
+<li><p><strong>create_eval_env</strong> – Whether to create a second environment that will be
+used for evaluating the agent periodically. (Only available when passing string for the environment)</p></li>
+<li><p><strong>policy_kwargs</strong> – additional arguments to be passed to the policy on creation</p></li>
+<li><p><strong>verbose</strong> – the verbosity level: 0 no output, 1 info, 2 debug</p></li>
+<li><p><strong>seed</strong> – Seed for the pseudo random generators</p></li>
+<li><p><strong>device</strong> – Device (cpu, cuda, …) on which the code should be run.
+Setting it to auto, the code will be run on the GPU if possible.</p></li>
+<li><p><strong>_init_setup_model</strong> – Whether or not to build the network at the creation of the instance</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.ppo.PPO.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.ppo.PPO.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update policy using the currently gathered rollout buffer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.ppo.PPO.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">total_timesteps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>Callable<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span><span class="p">, </span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">eval_env</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">eval_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_eval_episodes</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tb_log_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'PPO'</span></em>, <em class="sig-param"><span class="n">eval_log_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reset_num_timesteps</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eve.app.algorithm.ppo.PPO" title="eve.app.algorithm.ppo.PPO">PPO</a><a class="headerlink" href="#eve.app.algorithm.ppo.PPO.learn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eve.app.algorithm.sac">
+<span id="eve-app-algorithm-sac-module"></span><h2>eve.app.algorithm.sac module<a class="headerlink" href="#module-eve.app.algorithm.sac" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="eve.app.algorithm.sac.Actor">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.sac.</code><code class="sig-name descname">Actor</code><span class="sig-paren">(</span><em class="sig-param">observation_space: eve.app.space.EveSpace, action_space: eve.app.space.EveSpace, net_arch: List[int], features_extractor: torch.nn.modules.module.Module, features_dim: int, activation_fn: Type[torch.nn.modules.module.Module] = &lt;class 'torch.nn.modules.activation.ReLU'&gt;, use_sde: bool = False, log_std_init: float = -3, full_std: bool = True, sde_net_arch: Optional[List[int]] = None, use_expln: bool = False, clip_mean: float = 2.0, normalize_images: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.sac.Actor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.policies.BasePolicy" title="eve.app.policies.BasePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.policies.BasePolicy</span></code></a></p>
+<p>Actor network (policy) for SAC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation_space</strong> – Obervation space</p></li>
+<li><p><strong>action_space</strong> – Action space</p></li>
+<li><p><strong>net_arch</strong> – Network architecture</p></li>
+<li><p><strong>features_extractor</strong> – Network to extract features
+(a CNN when using images, a nn.Flatten() layer otherwise)</p></li>
+<li><p><strong>features_dim</strong> – Number of features</p></li>
+<li><p><strong>activation_fn</strong> – Activation function</p></li>
+<li><p><strong>use_sde</strong> – Whether to use State Dependent Exploration or not</p></li>
+<li><p><strong>log_std_init</strong> – Initial value for the log standard deviation</p></li>
+<li><p><strong>full_std</strong> – Whether to use (n_features x n_actions) parameters
+for the std instead of only (n_features,) when using gSDE.</p></li>
+<li><p><strong>sde_net_arch</strong> – Network architecture for extracting features
+when using gSDE. If None, the latent features from the policy will be used.
+Pass an empty list to use the states as features.</p></li>
+<li><p><strong>use_expln</strong> – Use <code class="docutils literal notranslate"><span class="pre">expln()</span></code> function instead of <code class="docutils literal notranslate"><span class="pre">exp()</span></code> when using gSDE to ensure
+a positive standard deviation (cf paper). It allows to keep variance
+above zero and prevent it from growing too fast. In practice, <code class="docutils literal notranslate"><span class="pre">exp()</span></code> is usually enough.</p></li>
+<li><p><strong>clip_mean</strong> – Clip the mean output when using gSDE to avoid numerical instability.</p></li>
+<li><p><strong>normalize_images</strong> – Whether to normalize images or not,
+dividing by 255.0 (True by default)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.Actor.get_std">
+<code class="sig-name descname">get_std</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.sac.Actor.get_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the standard deviation of the action distribution.
+Only useful when using gSDE.
+It corresponds to <code class="docutils literal notranslate"><span class="pre">th.exp(log_std)</span></code> in the normal case,
+but is slightly different when using <code class="docutils literal notranslate"><span class="pre">expln</span></code> function
+(cf StateDependentNoiseDistribution doc).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.Actor.reset_noise">
+<code class="sig-name descname">reset_noise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.sac.Actor.reset_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample new weights for the exploration matrix, when using gSDE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>batch_size</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.Actor.get_action_dist_params">
+<code class="sig-name descname">get_action_dist_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>torch.Tensor<span class="p">, </span>torch.Tensor<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>torch.Tensor<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#eve.app.algorithm.sac.Actor.get_action_dist_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the parameters for the action distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>obs</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mean, standard deviation and optional keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.Actor.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">deterministic</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.sac.Actor.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.Actor.action_log_prob">
+<code class="sig-name descname">action_log_prob</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>torch.Tensor<span class="p">, </span>torch.Tensor<span class="p">]</span><a class="headerlink" href="#eve.app.algorithm.sac.Actor.action_log_prob" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.Actor.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.sac.Actor.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.Actor.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.sac.Actor.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.Actor.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.app.algorithm.sac.Actor.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.Actor.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.sac.Actor.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.Actor.optimizer">
+<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.app.algorithm.sac.Actor.optimizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.app.algorithm.sac.SACPolicy">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.sac.</code><code class="sig-name descname">SACPolicy</code><span class="sig-paren">(</span><em class="sig-param">observation_space: eve.app.space.EveSpace, action_space: eve.app.space.EveSpace, lr_schedule: Callable[[float], float], net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None, activation_fn: Type[torch.nn.modules.module.Module] = &lt;class 'torch.nn.modules.activation.ReLU'&gt;, use_sde: bool = False, log_std_init: float = -3, sde_net_arch: Optional[List[int]] = None, use_expln: bool = False, clip_mean: float = 2.0, features_extractor_class: Type[eve.app.policies.BaseFeaturesExtractor] = &lt;class 'eve.app.policies.FlattenExtractor'&gt;, features_extractor_kwargs: Optional[Dict[str, Any]] = None, normalize_images: bool = True, optimizer_class: Type[torch.optim.optimizer.Optimizer] = &lt;class 'torch.optim.adam.Adam'&gt;, optimizer_kwargs: Optional[Dict[str, Any]] = None, n_critics: int = 2, share_features_extractor: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.policies.BasePolicy" title="eve.app.policies.BasePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.policies.BasePolicy</span></code></a></p>
+<p>Policy class (with both actor and critic) for SAC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation_space</strong> – Observation space</p></li>
+<li><p><strong>action_space</strong> – Action space</p></li>
+<li><p><strong>lr_schedule</strong> – Learning rate schedule (could be constant)</p></li>
+<li><p><strong>net_arch</strong> – The specification of the policy and value networks.</p></li>
+<li><p><strong>activation_fn</strong> – Activation function</p></li>
+<li><p><strong>use_sde</strong> – Whether to use State Dependent Exploration or not</p></li>
+<li><p><strong>log_std_init</strong> – Initial value for the log standard deviation</p></li>
+<li><p><strong>sde_net_arch</strong> – Network architecture for extracting features
+when using gSDE. If None, the latent features from the policy will be used.
+Pass an empty list to use the states as features.</p></li>
+<li><p><strong>use_expln</strong> – Use <code class="docutils literal notranslate"><span class="pre">expln()</span></code> function instead of <code class="docutils literal notranslate"><span class="pre">exp()</span></code> when using gSDE to ensure
+a positive standard deviation (cf paper). It allows to keep variance
+above zero and prevent it from growing too fast. In practice, <code class="docutils literal notranslate"><span class="pre">exp()</span></code> is usually enough.</p></li>
+<li><p><strong>clip_mean</strong> – Clip the mean output when using gSDE to avoid numerical instability.</p></li>
+<li><p><strong>features_extractor_class</strong> – Features extractor to use.</p></li>
+<li><p><strong>features_extractor_kwargs</strong> – Keyword arguments
+to pass to the features extractor.</p></li>
+<li><p><strong>normalize_images</strong> – Whether to normalize images or not,
+dividing by 255.0 (True by default)</p></li>
+<li><p><strong>optimizer_class</strong> – The optimizer to use,
+<code class="docutils literal notranslate"><span class="pre">th.optim.Adam</span></code> by default</p></li>
+<li><p><strong>optimizer_kwargs</strong> – Additional keyword arguments,
+excluding the learning rate, to pass to the optimizer</p></li>
+<li><p><strong>n_critics</strong> – Number of critic networks to create.</p></li>
+<li><p><strong>share_features_extractor</strong> – Whether to share or not the features extractor
+between the actor and the critic (this saves computation time)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.SACPolicy.reset_noise">
+<code class="sig-name descname">reset_noise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.reset_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample new weights for the exploration matrix, when using gSDE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>batch_size</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.SACPolicy.make_actor">
+<code class="sig-name descname">make_actor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features_extractor</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.policies.BaseFeaturesExtractor" title="eve.app.policies.BaseFeaturesExtractor">eve.app.policies.BaseFeaturesExtractor</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eve.app.algorithm.sac.Actor" title="eve.app.algorithm.sac.Actor">eve.app.algorithm.sac.Actor</a><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.make_actor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.SACPolicy.make_critic">
+<code class="sig-name descname">make_critic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features_extractor</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.policies.BaseFeaturesExtractor" title="eve.app.policies.BaseFeaturesExtractor">eve.app.policies.BaseFeaturesExtractor</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="eve.app.html#eve.app.policies.ContinuousCritic" title="eve.app.policies.ContinuousCritic">eve.app.policies.ContinuousCritic</a><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.make_critic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.SACPolicy.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">deterministic</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.SACPolicy.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.SACPolicy.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.SACPolicy.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.SACPolicy.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.SACPolicy.optimizer">
+<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.app.algorithm.sac.SACPolicy.optimizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.sac.MlpPolicy">
+<code class="sig-prename descclassname">eve.app.algorithm.sac.</code><code class="sig-name descname">MlpPolicy</code><a class="headerlink" href="#eve.app.algorithm.sac.MlpPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#eve.app.algorithm.sac.SACPolicy" title="eve.app.algorithm.sac.SACPolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algorithm.sac.SACPolicy</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.app.algorithm.sac.SAC">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.sac.</code><code class="sig-name descname">SAC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Type<span class="p">[</span><a class="reference internal" href="#eve.app.algorithm.sac.SACPolicy" title="eve.app.algorithm.sac.SACPolicy">eve.app.algorithm.sac.SACPolicy</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">env</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.0003</span></em>, <em class="sig-param"><span class="n">buffer_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000000</span></em>, <em class="sig-param"><span class="n">learning_starts</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">256</span></em>, <em class="sig-param"><span class="n">tau</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.005</span></em>, <em class="sig-param"><span class="n">gamma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.99</span></em>, <em class="sig-param"><span class="n">train_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">n_episodes_rollout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">action_noise</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.algo.ActionNoise" title="eve.app.algo.ActionNoise">eve.app.algo.ActionNoise</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ent_coef</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">target_update_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">target_entropy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">use_sde</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">sde_sample_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">use_sde_at_warmup</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">tensorboard_log</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">create_eval_env</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">policy_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">device</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>torch.device<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">_init_setup_model</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_episode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.sac.SAC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.algo.OffPolicyAlgorithm" title="eve.app.algo.OffPolicyAlgorithm"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algo.OffPolicyAlgorithm</span></code></a></p>
+<p>Soft Actor-Critic (SAC)
+Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor,
+This implementation borrows code from original implementation (<a class="reference external" href="https://github.com/haarnoja/sac">https://github.com/haarnoja/sac</a>)
+from OpenAI Spinning Up (<a class="reference external" href="https://github.com/openai/spinningup">https://github.com/openai/spinningup</a>), from the softlearning repo
+(<a class="reference external" href="https://github.com/rail-berkeley/softlearning/">https://github.com/rail-berkeley/softlearning/</a>)
+and from Stable Baselines (<a class="reference external" href="https://github.com/hill-a/stable-baselines">https://github.com/hill-a/stable-baselines</a>)
+Paper: <a class="reference external" href="https://arxiv.org/abs/1801.01290">https://arxiv.org/abs/1801.01290</a>
+Introduction to SAC: <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/sac.html">https://spinningup.openai.com/en/latest/algorithms/sac.html</a></p>
+<p>Note: we use double q target and not value target as discussed
+in <a class="reference external" href="https://github.com/hill-a/stable-baselines/issues/270">https://github.com/hill-a/stable-baselines/issues/270</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – The policy model to use (MlpPolicy, …)</p></li>
+<li><p><strong>env</strong> – The environment to learn from</p></li>
+<li><p><strong>learning_rate</strong> – learning rate for adam optimizer,
+the same learning rate will be used for all networks (Q-Values, Actor and Value function)
+it can be a function of the current progress remaining (from 1 to 0)</p></li>
+<li><p><strong>buffer_size</strong> – size of the replay buffer</p></li>
+<li><p><strong>learning_starts</strong> – how many steps of the model to collect transitions for before learning starts</p></li>
+<li><p><strong>batch_size</strong> – Minibatch size for each gradient update</p></li>
+<li><p><strong>tau</strong> – the soft update coefficient (“Polyak update”, between 0 and 1)</p></li>
+<li><p><strong>gamma</strong> – the discount factor</p></li>
+<li><p><strong>train_freq</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> steps. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>gradient_steps</strong> – How many gradient steps to do after each rollout
+(see <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> and <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code>)
+Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> means to do as many gradient steps as steps done in the environment
+during the rollout.</p></li>
+<li><p><strong>n_episodes_rollout</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code> episodes.
+Note that this cannot be used at the same time as <code class="docutils literal notranslate"><span class="pre">train_freq</span></code>. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>action_noise</strong> – the action noise type (None by default), this can help
+for hard exploration problem. Cf common.noise for the different action noise type.</p></li>
+<li><p><strong>ent_coef</strong> – Entropy regularization coefficient. (Equivalent to
+inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
+Set it to ‘auto’ to learn it automatically (and ‘auto_0.1’ for using 0.1 as initial value)</p></li>
+<li><p><strong>target_update_interval</strong> – update the target network every <code class="docutils literal notranslate"><span class="pre">target_network_update_freq</span></code>
+gradient steps.</p></li>
+<li><p><strong>target_entropy</strong> – target entropy when learning <code class="docutils literal notranslate"><span class="pre">ent_coef</span></code> (<code class="docutils literal notranslate"><span class="pre">ent_coef</span> <span class="pre">=</span> <span class="pre">'auto'</span></code>)</p></li>
+<li><p><strong>use_sde</strong> – Whether to use generalized State Dependent Exploration (gSDE)
+instead of action noise exploration (default: False)</p></li>
+<li><p><strong>sde_sample_freq</strong> – Sample a new noise matrix every n steps when using gSDE
+Default: -1 (only sample at the beginning of the rollout)</p></li>
+<li><p><strong>use_sde_at_warmup</strong> – Whether to use gSDE instead of uniform sampling
+during the warm up phase (before learning starts)</p></li>
+<li><p><strong>create_eval_env</strong> – Whether to create a second environment that will be
+used for evaluating the agent periodically. (Only available when passing string for the environment)</p></li>
+<li><p><strong>policy_kwargs</strong> – additional arguments to be passed to the policy on creation</p></li>
+<li><p><strong>verbose</strong> – the verbosity level: 0 no output, 1 info, 2 debug</p></li>
+<li><p><strong>seed</strong> – Seed for the pseudo random generators</p></li>
+<li><p><strong>device</strong> – Device (cpu, cuda, …) on which the code should be run.
+Setting it to auto, the code will be run on the GPU if possible.</p></li>
+<li><p><strong>_init_setup_model</strong> – Whether or not to build the network at the creation of the instance</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.SAC.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">64</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.sac.SAC.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.sac.SAC.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">total_timesteps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>Callable<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span><span class="p">, </span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em>, <em class="sig-param"><span class="n">eval_env</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">eval_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_eval_episodes</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tb_log_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'SAC'</span></em>, <em class="sig-param"><span class="n">eval_log_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reset_num_timesteps</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="eve.app.html#eve.app.algo.OffPolicyAlgorithm" title="eve.app.algo.OffPolicyAlgorithm">eve.app.algo.OffPolicyAlgorithm</a><a class="headerlink" href="#eve.app.algorithm.sac.SAC.learn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eve.app.algorithm.td3">
+<span id="eve-app-algorithm-td3-module"></span><h2>eve.app.algorithm.td3 module<a class="headerlink" href="#module-eve.app.algorithm.td3" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="eve.app.algorithm.td3.Actor">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.td3.</code><code class="sig-name descname">Actor</code><span class="sig-paren">(</span><em class="sig-param">observation_space: eve.app.space.EveSpace, action_space: eve.app.space.EveSpace, net_arch: List[int], features_extractor: torch.nn.modules.module.Module, features_dim: int, activation_fn: Type[torch.nn.modules.module.Module] = &lt;class 'torch.nn.modules.activation.ReLU'&gt;, normalize_images: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.td3.Actor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.policies.BasePolicy" title="eve.app.policies.BasePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.policies.BasePolicy</span></code></a></p>
+<p>Actor network (policy) for TD3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation_space</strong> – Obervation space</p></li>
+<li><p><strong>action_space</strong> – Action space</p></li>
+<li><p><strong>net_arch</strong> – Network architecture</p></li>
+<li><p><strong>features_extractor</strong> – Network to extract features
+(a CNN when using images, a nn.Flatten() layer otherwise)</p></li>
+<li><p><strong>features_dim</strong> – Number of features</p></li>
+<li><p><strong>activation_fn</strong> – Activation function</p></li>
+<li><p><strong>normalize_images</strong> – Whether to normalize images or not,
+dividing by 255.0 (True by default)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.td3.Actor.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">deterministic</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.td3.Actor.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.Actor.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.td3.Actor.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.Actor.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.td3.Actor.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.Actor.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.app.algorithm.td3.Actor.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.Actor.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.td3.Actor.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.Actor.optimizer">
+<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.app.algorithm.td3.Actor.optimizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.app.algorithm.td3.TD3Policy">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.td3.</code><code class="sig-name descname">TD3Policy</code><span class="sig-paren">(</span><em class="sig-param">observation_space: eve.app.space.EveSpace, action_space: eve.app.space.EveSpace, lr_schedule: Callable[[float], float], net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None, activation_fn: Type[torch.nn.modules.module.Module] = &lt;class 'torch.nn.modules.activation.ReLU'&gt;, features_extractor_class: Type[eve.app.policies.BaseFeaturesExtractor] = &lt;class 'eve.app.policies.FlattenExtractor'&gt;, features_extractor_kwargs: Optional[Dict[str, Any]] = None, normalize_images: bool = True, optimizer_class: Type[torch.optim.optimizer.Optimizer] = &lt;class 'torch.optim.adam.Adam'&gt;, optimizer_kwargs: Optional[Dict[str, Any]] = None, n_critics: int = 2, share_features_extractor: bool = True</em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.policies.BasePolicy" title="eve.app.policies.BasePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.policies.BasePolicy</span></code></a></p>
+<p>Policy class (with both actor and critic) for TD3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation_space</strong> – Observation space</p></li>
+<li><p><strong>action_space</strong> – Action space</p></li>
+<li><p><strong>lr_schedule</strong> – Learning rate schedule (could be constant)</p></li>
+<li><p><strong>net_arch</strong> – The specification of the policy and value networks.</p></li>
+<li><p><strong>activation_fn</strong> – Activation function</p></li>
+<li><p><strong>features_extractor_class</strong> – Features extractor to use.</p></li>
+<li><p><strong>features_extractor_kwargs</strong> – Keyword arguments
+to pass to the features extractor.</p></li>
+<li><p><strong>normalize_images</strong> – Whether to normalize images or not,
+dividing by 255.0 (True by default)</p></li>
+<li><p><strong>optimizer_class</strong> – The optimizer to use,
+<code class="docutils literal notranslate"><span class="pre">th.optim.Adam</span></code> by default</p></li>
+<li><p><strong>optimizer_kwargs</strong> – Additional keyword arguments,
+excluding the learning rate, to pass to the optimizer</p></li>
+<li><p><strong>n_critics</strong> – Number of critic networks to create.</p></li>
+<li><p><strong>share_features_extractor</strong> – Whether to share or not the features extractor
+between the actor and the critic (this saves computation time)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.td3.TD3Policy.make_actor">
+<code class="sig-name descname">make_actor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features_extractor</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.policies.BaseFeaturesExtractor" title="eve.app.policies.BaseFeaturesExtractor">eve.app.policies.BaseFeaturesExtractor</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eve.app.algorithm.td3.Actor" title="eve.app.algorithm.td3.Actor">eve.app.algorithm.td3.Actor</a><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.make_actor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.td3.TD3Policy.make_critic">
+<code class="sig-name descname">make_critic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features_extractor</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.policies.BaseFeaturesExtractor" title="eve.app.policies.BaseFeaturesExtractor">eve.app.policies.BaseFeaturesExtractor</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="eve.app.html#eve.app.policies.ContinuousCritic" title="eve.app.policies.ContinuousCritic">eve.app.policies.ContinuousCritic</a><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.make_critic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.td3.TD3Policy.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">observation</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">deterministic</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.TD3Policy.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.TD3Policy.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.TD3Policy.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.TD3Policy.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.TD3Policy.optimizer">
+<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.app.algorithm.td3.TD3Policy.optimizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.app.algorithm.td3.MlpPolicy">
+<code class="sig-prename descclassname">eve.app.algorithm.td3.</code><code class="sig-name descname">MlpPolicy</code><a class="headerlink" href="#eve.app.algorithm.td3.MlpPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#eve.app.algorithm.td3.TD3Policy" title="eve.app.algorithm.td3.TD3Policy"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algorithm.td3.TD3Policy</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.app.algorithm.td3.TD3">
+<em class="property">class </em><code class="sig-prename descclassname">eve.app.algorithm.td3.</code><code class="sig-name descname">TD3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">policy</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Type<span class="p">[</span><a class="reference internal" href="#eve.app.algorithm.td3.TD3Policy" title="eve.app.algorithm.td3.TD3Policy">eve.app.algorithm.td3.TD3Policy</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">env</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>float<span class="p">, </span>Callable<span class="p">[</span><span class="p">[</span>float<span class="p">]</span><span class="p">, </span>float<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">buffer_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000000</span></em>, <em class="sig-param"><span class="n">learning_starts</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em>, <em class="sig-param"><span class="n">tau</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.005</span></em>, <em class="sig-param"><span class="n">gamma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.99</span></em>, <em class="sig-param"><span class="n">train_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_episodes_rollout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">action_noise</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.algo.ActionNoise" title="eve.app.algo.ActionNoise">eve.app.algo.ActionNoise</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">policy_delay</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">2</span></em>, <em class="sig-param"><span class="n">target_policy_noise</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">target_noise_clip</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">tensorboard_log</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">create_eval_env</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">policy_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">seed</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">device</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>torch.device<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">_init_setup_model</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_episode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.app.algorithm.td3.TD3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="eve.app.html#eve.app.algo.OffPolicyAlgorithm" title="eve.app.algo.OffPolicyAlgorithm"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.app.algo.OffPolicyAlgorithm</span></code></a></p>
+<p>Twin Delayed DDPG (TD3)
+Addressing Function Approximation Error in Actor-Critic Methods.</p>
+<p>Original implementation: <a class="reference external" href="https://github.com/sfujim/TD3">https://github.com/sfujim/TD3</a>
+Paper: <a class="reference external" href="https://arxiv.org/abs/1802.09477">https://arxiv.org/abs/1802.09477</a>
+Introduction to TD3: <a class="reference external" href="https://spinningup.openai.com/en/latest/algorithms/td3.html">https://spinningup.openai.com/en/latest/algorithms/td3.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> – The policy model to use (MlpPolicy, …)</p></li>
+<li><p><strong>env</strong> – The environment to learn from</p></li>
+<li><p><strong>learning_rate</strong> – learning rate for adam optimizer,
+the same learning rate will be used for all networks (Q-Values, Actor and Value function)
+it can be a function of the current progress remaining (from 1 to 0)</p></li>
+<li><p><strong>buffer_size</strong> – size of the replay buffer</p></li>
+<li><p><strong>learning_starts</strong> – how many steps of the model to collect transitions for before learning starts</p></li>
+<li><p><strong>batch_size</strong> – Minibatch size for each gradient update</p></li>
+<li><p><strong>tau</strong> – the soft update coefficient (“Polyak update”, between 0 and 1)</p></li>
+<li><p><strong>gamma</strong> – the discount factor</p></li>
+<li><p><strong>train_freq</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> steps. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>gradient_steps</strong> – How many gradient steps to do after each rollout
+(see <code class="docutils literal notranslate"><span class="pre">train_freq</span></code> and <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code>)
+Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> means to do as many gradient steps as steps done in the environment
+during the rollout.</p></li>
+<li><p><strong>n_episodes_rollout</strong> – Update the model every <code class="docutils literal notranslate"><span class="pre">n_episodes_rollout</span></code> episodes.
+Note that this cannot be used at the same time as <code class="docutils literal notranslate"><span class="pre">train_freq</span></code>. Set to <cite>-1</cite> to disable.</p></li>
+<li><p><strong>action_noise</strong> – the action noise type (None by default), this can help
+for hard exploration problem. Cf common.noise for the different action noise type.</p></li>
+<li><p><strong>policy_delay</strong> – Policy and target networks will only be updated once every policy_delay steps
+per training steps. The Q values will be updated policy_delay more often (update every training step).</p></li>
+<li><p><strong>target_policy_noise</strong> – Standard deviation of Gaussian noise added to target policy
+(smoothing noise)</p></li>
+<li><p><strong>target_noise_clip</strong> – Limit for absolute value of target policy smoothing noise.</p></li>
+<li><p><strong>create_eval_env</strong> – Whether to create a second environment that will be
+used for evaluating the agent periodically. (Only available when passing string for the environment)</p></li>
+<li><p><strong>policy_kwargs</strong> – additional arguments to be passed to the policy on creation</p></li>
+<li><p><strong>verbose</strong> – the verbosity level: 0 no output, 1 info, 2 debug</p></li>
+<li><p><strong>seed</strong> – Seed for the pseudo random generators</p></li>
+<li><p><strong>device</strong> – Device (cpu, cuda, …) on which the code should be run.
+Setting it to auto, the code will be run on the GPU if possible.</p></li>
+<li><p><strong>_init_setup_model</strong> – Whether or not to build the network at the creation of the instance</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="eve.app.algorithm.td3.TD3.train">
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gradient_steps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">100</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.app.algorithm.td3.TD3.train" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.app.algorithm.td3.TD3.learn">
+<code class="sig-name descname">learn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">total_timesteps</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">callback</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>None<span class="p">, </span>Callable<span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span><span class="p">, </span><a class="reference internal" href="eve.app.html#eve.app.callbacks.BaseCallback" title="eve.app.callbacks.BaseCallback">eve.app.callbacks.BaseCallback</a><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log_interval</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">4</span></em>, <em class="sig-param"><span class="n">eval_env</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span>BaseTrainer<span class="p">, </span>VecEnv<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">eval_freq</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">n_eval_episodes</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">tb_log_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'TD3'</span></em>, <em class="sig-param"><span class="n">eval_log_path</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reset_num_timesteps</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="eve.app.html#eve.app.algo.OffPolicyAlgorithm" title="eve.app.algo.OffPolicyAlgorithm">eve.app.algo.OffPolicyAlgorithm</a><a class="headerlink" href="#eve.app.algorithm.td3.TD3.learn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eve.app.algorithm">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-eve.app.algorithm" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="eve.core.html" class="btn btn-neutral float-right" title="eve.core package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="eve.app.html" class="btn btn-neutral float-left" title="eve.app package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        
+        &copy; <a href="copyright.html">Copyright</a> 2020, densechen
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
