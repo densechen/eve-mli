@@ -87,7 +87,6 @@ class lsq(Function):
 
         grad_x = middle * grad_output
 
-        # HACK: alpha must be positive.
         return grad_x, grad_alpha, None, None, None, None
 
 
@@ -170,7 +169,6 @@ class llsq(Function):
         grad_alpha = th.zeros_like(alpha)
         grad_alpha = th.where(b, -(alpha**2), grad_alpha) + th.where(
             s, alpha**2, grad_alpha)
-        # HACK: alpha must be positive.
         return grad_output, grad_alpha, None, None, None, None
 
 

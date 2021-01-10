@@ -725,7 +725,6 @@ def obs_space_info(
     dtypes = {}
     for key, box in subspaces.items():
         keys.append(key)
-        # TODO (eve): add support of eve space.
         shapes[key] = box.shape
         dtypes[key] = box.dtype
     return keys, shapes, dtypes
