@@ -2,7 +2,6 @@ import utils  # pylint: disable=import-error
 
 import os
 
-import gym
 import numpy as np
 import torch as th
 import torch.nn as nn
@@ -215,7 +214,7 @@ args = parser.parse_args()
 neuron_wise = args.neuron_wise
 
 mnist_classifier = MnistClassifier(mnist(neuron_wise))
-mnist_classifier.prepare_data(data_root="/media/densechen/data/dataset")
+mnist_classifier.prepare_data(data_root="/home/densechen/dataset")
 mnist_classifier.setup_train()  # use default configuration
 
 # set mnist classifier to quantization mode

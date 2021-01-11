@@ -2,7 +2,6 @@ import utils  # pylint: disable=import-error
 
 import os
 
-import gym
 import numpy as np
 import torch as th
 import torch.nn as nn
