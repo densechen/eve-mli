@@ -67,7 +67,7 @@ class Quantizer(Quan):
         signed_quantization: if ``True``, the quantization range can be negative.
         learnable_alpha: if the alpha should be learnable. in some quantization
             functions, the alpha value can be updated by gradient. if the alpha
-            can be learnabled, we will not update it by tracker information.
+            can be learnable, we will not update it by tracker information.
         state_list: a list contains ["name", fn] to calculate states.
             if fn is None, we will try to load the build-in methods.
             refer ``eve.core.state`` to see the supported function.
@@ -81,6 +81,7 @@ class Quantizer(Quan):
         if learnable_alpha is enabled, the range tracker will be disabled to 
         avoid the conflict of grad update of alpha.
     """
+
     def __init__(
         self,
         state: State,
@@ -92,7 +93,7 @@ class Quantizer(Quan):
         neuron_wise: bool = False,
         asymmetric: bool = False,
         signed_quantization: bool = False,
-        learnable_alpha: bool = False,
+        learnable_alpha: bool = None,
         state_list: List = None,
         upgrade_fn: Callable = None,
         **kwargs,
@@ -103,6 +104,13 @@ class Quantizer(Quan):
         self.kwargs = kwargs
         self.asymmetric = asymmetric
         self.signed_quantization = signed_quantization
+
+        # set default learnable values
+        if learnable_alpha is None and isinstance(quantize_fn, str) and quantize_fn in ["lsq", "llsq"]:
+            learnable_alpha = True
+        elif learnable_alpha is None:
+            learnable_alpha = False
+
         self.learnable_alpha = learnable_alpha
         self.max_bits = bits
         self.neuron_wise = neuron_wise

@@ -242,11 +242,9 @@ class PiecewiseLeakyReLU(SurrogateFnBase):
         self.w = w
         self.c = c
 
-    @staticmethod
     def spiking_function(self, x: Tensor) -> Tensor:
         return piecewise_leaky_relu().apply(x, self.w, self.c)
 
-    @staticmethod
     def primitive_function(self, x: Tensor) -> Tensor:
         c, w = self.c, self.w
         mask0 = (x < -w).to(x)

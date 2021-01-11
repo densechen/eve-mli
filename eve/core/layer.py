@@ -167,15 +167,10 @@ class QuanBNFuseConv2d(nn.Conv2d):
             batch_mean = th.mean(output, dim=dims)
             batch_var = th.var(output, dim=dims)
             with th.no_grad():
-                if self.first_bn == 0:
-                    self.first_bn.add_(1)
-                    self.running_mean.add_(batch_mean)
-                    self.running_var.add_(batch_var)
-                else:
-                    self.running_mean.mul_(1 - self.momentum).add_(
-                        batch_mean * self.momentum)
-                    self.running_var.mul_(1 - self.momentum).add_(
-                        batch_var * self.momentum)
+                self.running_mean.mul_(1 - self.momentum).add_(
+                    batch_mean * self.momentum)
+                self.running_var.mul_(1 - self.momentum).add_(
+                    batch_var * self.momentum)
 
             if self.bias is not None:
                 bias = reshape_to_bias(
