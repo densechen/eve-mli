@@ -29,8 +29,16 @@ from eve.core.state import State
 
 
 class Quan(Eve):
+    # state to record infomation.
+    state: State
+
     def __init__(self):
         super().__init__()
+
+    def _reset(self, set_to_none: bool = False):
+        super()._reset(set_to_none=set_to_none)
+        if hasattr(self, "state") and isinstance(self.state, State):
+            self.state.reset(set_to_none=set_to_none)
 
     @abstractmethod
     def quantization_forward(self, x: Tensor) -> Tensor:
@@ -68,9 +76,6 @@ class Quantizer(Quan):
         learnable_alpha: if the alpha should be learnable. in some quantization
             functions, the alpha value can be updated by gradient. if the alpha
             can be learnable, we will not update it by tracker information.
-        state_list: a list contains ["name", fn] to calculate states.
-            if fn is None, we will try to load the build-in methods.
-            refer ``eve.core.state`` to see the supported function.
         upgrade_fn: the function to update eve parameter, e.i. bits in this module.
             if None, a directly replace operation will be used. 
         kwargs: the extra arguments to quantization function.
@@ -94,13 +99,16 @@ class Quantizer(Quan):
         asymmetric: bool = False,
         signed_quantization: bool = False,
         learnable_alpha: bool = None,
-        state_list: List = None,
         upgrade_fn: Callable = None,
         **kwargs,
     ):
         super().__init__()
 
         self.state = state
+
+        # set neuron wise for state which support neuron wise mode
+        self.state.set_neuron_wise(neuron_wise)
+
         self.kwargs = kwargs
         self.asymmetric = asymmetric
         self.signed_quantization = signed_quantization
@@ -118,8 +126,9 @@ class Quantizer(Quan):
         self.state.set_neuron_wise(self.neuron_wise)
 
         # bit eve is in range [0, 1]
-        bits_eve = self.state._align_dims(
-            th.Tensor([1.0] * (self.state.neurons if self.neuron_wise else 1)))
+        bits_eve = th.Tensor(
+            [1.0] * (self.state.neurons if self.neuron_wise else 1))
+        bits_eve = bits_eve.reshape(self.state.align_dims)
         self.register_eve_parameter("bits_eve",
                                     Parameter(bits_eve, upgrade_bits))
 
@@ -136,19 +145,14 @@ class Quantizer(Quan):
 
         self.register_upgrade_fn(self.bits_eve, upgrade_fn)
 
-        # register the state observation needed for bits_eve.
-        if state_list is not None:
-            for name, fn in state_list:
-                self.state.register_state_fn(name, fn)
-
         # used for tracker
         self.register_buffer("min_val", None, persistent=False)
         self.register_buffer("max_val", None, persistent=False)
 
         # alpha
-        self.alpha = nn.Parameter(
-            self.state._align_dims(th.Tensor([1.0] * self.state.neurons)),
-            learnable_alpha)
+        alpha = th.Tensor([1.0] * self.state.neurons)
+        alpha = alpha.reshape(self.state.align_dims)
+        self.alpha = nn.Parameter(alpha, learnable_alpha)
 
         # register forward pre hook to do range tracker.
         self.average_tracker_momentum = average_tracker_momentum
@@ -199,6 +203,8 @@ class Quantizer(Quan):
     def asymmetric_quantization_param(self):
         quantized_range = self.positive - self.negative
         float_range = self.max_val - self.min_val
+        float_range = float_range.reshape(self.state.align_dims)
+        
         self.alpha.data.zero_().add_(
             float_range * quantized_range /
             (quantized_range * quantized_range + 1e-8))
@@ -209,6 +215,7 @@ class Quantizer(Quan):
     def symmetric_quantization_param(self):
         quantized_range = th.max(th.abs(self.positive), th.abs(self.negative))
         float_range = th.max(th.abs(self.min_val), th.abs(self.max_val))
+        float_range = float_range.reshape(self.state.align_dims)
 
         # in bits == 0, the quantized_range equals zero too.
         # we multiply quantized_range both in Numerator and Denominator to keep the
@@ -223,11 +230,19 @@ class Quantizer(Quan):
     def average_tracker(cls, input: Tensor):
         # input is tuple, take the first element.
         input = input[0]
-        # flatten input
-        input = input.transpose(0, 1).flatten(start_dim=1)  # [neurons, -1]
 
-        min_val = cls.state._align_dims(input.min(1, keepdim=False)[0])
-        max_val = cls.state._align_dims(input.max(1, keepdim=False)[0])
+        # min_val = cls.state._align_dims(input.min(1, keepdim=False)[0])
+        # max_val = cls.state._align_dims(input.max(1, keepdim=False)[0])
+        min_val = input
+        max_val = input
+        dims = {"data": cls.state.data_reduce_dims,
+                "param": cls.state.param_reduce_dims}[cls.state.apply_on]
+
+        for dim in dims:
+            min_val = min_val.min(dim, keepdim=True)[0]
+            max_val = max_val.max(dim, keepdim=True)[0]
+        min_val = min_val.view(-1)
+        max_val = max_val.view(-1)
 
         if cls.learnable_alpha:
             if cls.asymmetric:
@@ -254,11 +269,18 @@ class Quantizer(Quan):
     @staticmethod
     @th.no_grad()
     def global_tracker(cls, input: Tensor):
-        # flatten input
-        input = input.transpose(0, 1).flatten()
+        # input is tuple, take the first element.
+        input = input[0]
 
-        min_val = cls.state._align_dims(input.min(1, keepdim=False)[0])
-        max_val = cls.state._align_dims(input.max(1, keepdim=False)[0])
+        min_val = input
+        max_val = input
+        dims = {"data": cls.state.data_reduce_dims,
+                "param": cls.state.param_reduce_dims}[cls.state.apply_on]
+        for dim in dims:
+            min_val = min_val.min(dim, keepdim=True)[0]
+            max_val = max_val.max(dim, keepdim=True)[0]
+        min_val = min_val.view(-1)
+        max_val = max_val.view(-1)
 
         if cls.learnable_alpha:
             if cls.asymmetric:

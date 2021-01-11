@@ -27,40 +27,12 @@ from eve.core.state import State
 # pylint: disable=access-member-before-definition
 
 
-class QuanConv2d(nn.Conv2d):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=1,
-        padding=0,
-        dilation=1,
-        groups=1,
-        bias=True,
-        padding_mode="zeros",
-        **kwargs,
-    ):
-        """
-        Args:
-            kwargs: the argument used to define quantizer, except state. 
-        """
-        super(QuanConv2d, self).__init__(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride,
-            padding,
-            dilation,
-            groups,
-            bias,
-            padding_mode,
-        )
+class QuanModule(Eve):
+    def assign_quantizer(self, quantizer: Quantizer):
+        self.quantizer = quantizer
 
-        state = State(self)
 
-        self.quantizer = Quantizer(state, **kwargs)
-
+class QuanConv2d(nn.Conv2d, QuanModule):
     def forward(self, input):
         quan_weight = self.quantizer(self.weight)
 
@@ -68,40 +40,7 @@ class QuanConv2d(nn.Conv2d):
                         self.padding, self.dilation, self.groups)
 
 
-class QuanConvTranspose2d(nn.ConvTranspose2d):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride=1,
-                 padding=0,
-                 output_padding=0,
-                 dilation=1,
-                 groups=1,
-                 bias=True,
-                 padding_mode="zeros",
-                 **kwargs):
-        """
-        Args:
-            kwargs: the argument used to define quantizer, except state. 
-        """
-        super(QuanConvTranspose2d, self).__init__(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride,
-            padding,
-            output_padding,
-            dilation,
-            groups,
-            bias,
-            padding_mode,
-        )
-
-        state = State(self)
-
-        self.quantizer = Quantizer(state, **kwargs)
-
+class QuanConvTranspose2d(nn.ConvTranspose2d, QuanModule):
     def forward(self, input):
         quan_weight = self.quantizer(self.weight)
         return F.conv_transpose2d(input, quan_weight, self.bias, self.stride,
@@ -109,7 +48,7 @@ class QuanConvTranspose2d(nn.ConvTranspose2d):
                                   self.groups, self.dilation)
 
 
-class QuanBNFuseConv2d(nn.Conv2d):
+class QuanBNFuseConv2d(nn.Conv2d, QuanModule):
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -138,9 +77,6 @@ class QuanBNFuseConv2d(nn.Conv2d):
         self.register_buffer("running_var", th.ones(out_channels))
         nn.init.uniform_(self.gamma)
         nn.init.zeros_(self.beta)
-
-        state = State(self)
-        self.quantizer = Quantizer(state, **kwargs)
 
     def forward(self, input):
         def reshape_to_activation(input):
@@ -213,14 +149,7 @@ class QuanBNFuseConv2d(nn.Conv2d):
         return output
 
 
-class QuanLinear(nn.Linear):
-    def __init__(self, in_features, out_features, bias=True, **kwargs):
-        super(QuanLinear, self).__init__(in_features, out_features, bias)
-
-        state = State(self)
-
-        self.quantizer = Quantizer(state, **kwargs)
-
+class QuanLinear(nn.Linear, QuanModule):
     def forward(self, input):
         quan_weight = self.quantizer(self.weight)
         return F.linear(input, quan_weight, self.bias)
@@ -231,6 +160,7 @@ class Dropout(Eve):
 
     The dropout mask will not be changed among a spike trains under spiking mode.
     """
+
     def __init__(self, p=0.5):
         super().__init__()
         if p < 0 or p > 1:
@@ -289,6 +219,7 @@ class Encoder(Eve):
     .. note:: 
         Only take effect under spiking mode. In non-spiking mode, it returns input directly.
     """
+
     def __init__(self, timesteps: int = 1):
         super().__init__()
 
@@ -321,6 +252,7 @@ class Encoder(Eve):
 class RateEncoder(Encoder):
     """Just return the input as encoding trains.
     """
+
     def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_eve is None:
             self.raw_input_eve = x
@@ -389,6 +321,7 @@ class LatencyEncoder(Encoder):
 class PoissonEncoder(Encoder):
     """Widely used in spiking neuronal network.
     """
+
     def spiking_forward(self, x: Tensor) -> Tensor:
         if self.raw_input_eve is None:
             self.raw_input_eve = x

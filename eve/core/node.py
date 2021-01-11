@@ -31,11 +31,14 @@ from eve.core.state import State
 class Node(Eve):
     r"""The base class of different spiking neuron node.
     """
+
     def __init__(self):
         super().__init__()
 
     def _reset(self, set_to_none: bool = False) -> None:
         super()._reset(set_to_none=True)
+        if hasattr(self, "state") and isinstance(self.state, State):
+            self.state.reset(set_to_none=set_to_none)
 
     @abstractmethod
     def spiking_forward(self, dv: Tensor) -> Tensor:
@@ -86,6 +89,7 @@ class IFNode(Node):
         neurons' voltage, otherwise, we will DISABLE the surrogate function and
         return (voltage - voltage_reset).
     """
+
     def __init__(self,
                  state: State,
                  voltage_threshold: float = 1.0,
@@ -99,6 +103,10 @@ class IFNode(Node):
                  **kwargs):
         super().__init__()
         self.state = state
+
+        # set neuron wise for state which support neuron wise mode
+        self.state.set_neuron_wise(neuron_wise)
+
         self.neurons = self.state.neurons
         self.neuron_wise = neuron_wise
         self.time_dependent = time_dependent
@@ -119,14 +127,14 @@ class IFNode(Node):
 
         voltage_threshold = th.Tensor(
             [voltage_threshold] * (self.neurons if self.neuron_wise else 1))
-        voltage_threshold = self.state._align_dims(voltage_threshold)
+        voltage_threshold = voltage_threshold.reshape(self.state.align_dims)
 
         self.voltage_threshold = nn.Parameter(
             voltage_threshold, requires_grad=learnable_threshold)
         if voltage_reset is not None:
             voltage_reset = th.Tensor(
                 [voltage_reset] * (self.neurons if self.neuron_wise else 1))
-            voltage_reset = self.state._align_dims(voltage_reset)
+            voltage_reset = voltage_reset.reshape(self.state.align_dims)
             self.voltage_reset = nn.Parameter(voltage_reset,
                                               requires_grad=learnable_reset)
         else:
@@ -206,6 +214,7 @@ class LIFNode(IFNode):
         neurons' voltage, otherwise, we will DISABLE the surrogate function and
         return (voltage - voltage_reset).
     """
+
     def __init__(
         self,
         *args,

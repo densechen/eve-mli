@@ -32,13 +32,15 @@ class Net(Eve):
 
 
 classifier = Classifier(Net())
-classifier.prepare_data(data_root="/media/densechen/data/dataset")
+classifier.prepare_data(data_root="/home/densechen/dataset")
 
 classifier.setup_train()
 
 # train it via trainer
 from eve.app.trainer import BaseTrainer
 
-trainer = BaseTrainer(classifier)
+BaseTrainer.assign_model(classifier)
 
-trainer.fit(200)
+trainer = BaseTrainer()
+
+print(trainer.fit())

@@ -226,7 +226,7 @@ class piecewise_leaky_relu(Function):
 
     @staticmethod
     def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
-        x = ctx.saved_tensors
+        x, = ctx.saved_tensors
         w, c = ctx.others
 
         mask_width = (x.abs() < w)

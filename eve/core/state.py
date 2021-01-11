@@ -10,281 +10,298 @@
 # / / /_______\      \ \  / / /_______\      \/_/    / / /_______/\__\/\__\/_/___\
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
+from abc import abstractmethod
 from collections import OrderedDict, namedtuple
 from copy import deepcopy
 from inspect import signature
-from typing import Callable, List
+from typing import Any, Callable, List, Union
 
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
+from torch.nn.modules.conv import _ConvNd
 from eve.core.eve import Eve
 
+
 # pylint: disable=not-callable, no-member
+class Statistic(object):
+    """Basic class to trace differetn variable state.
+    """
+
+    def reset(self, set_to_none: bool = False):
+        """reset statistic variables.
+        """
+
+    def on_init(self, state: "State"):
+        """ This function will be called at `State.__init__()`
+        """
+
+    def on_step(self, state: "State", input: Tensor, output: Tensor):
+        """This function will be called at `State.gather_states()`
+        """
 
 
 class State(object):
-    """Records various state objects.
+    """A special auxiliary module to manage different data and parameter state.
 
     Args:
-        module: the module contains convolution layer or linear layer.
-            NOTE: if the module contains multi-conv or linear layers, only the 
-            last layer will take into account.
+        module: the module which used to extra state.
+        apply_on: data or param.
+        align_dims: use to align a variabl with single dimension to as many
+            dimensions as state. if None, we will infer it from filter type.
+        param_reduce_dims: use to reduce param to singgle dimension.
+            if None, we will infer it from filter type.
+        data_reduce_dims: use to reduce data to single dimension.
+            if None, we will infer it from filter type.
 
-    .. note::
+    Examples:
 
-        We will apply a empirely normalization method for implemented state.
-        You shoud reset this class if you want to begin a new record via :meth:`State.reset()`.
+        >>> tensor = th.randn(4)
+        >>> tensor.reshape(align_dims)
+
+        >>> tensor = th.randn(3, 4, 5)
+        >>> tensor.mean(data_reduce_dims)
     """
-    global_idx = 0.0
-    global_feat_out = 0.0
-    global_feat_in = 0.0
-    global_param_num = 0.0
-    global_stride = 0.0
-    global_kernel_size = 0.0
 
-    def __init__(self, module: Eve):
-        super(State, self).__init__()
+    __global_statistics = []  # type: List[Statistic], class used to instantiate
 
-        # store it if some special state needed.
+    local_statistics = []  # type: List[Statistic], class already initialized.
+
+    # use to align a variable with one dimension to as many dimensions as state
+    align_dims: List[int]
+
+    # to reduce param to one dimension one.
+    param_reduce_dims: List[int]
+
+    # to reduce data to one dimension one.
+    data_reduce_dims: List[int]
+
+    neuron_wise: bool
+
+    def __init__(self,
+                 module: Eve,
+                 apply_on: str = "data",
+                 align_dims: List[int] = None,
+                 param_reduce_dims: List[int] = None,
+                 data_reduce_dims: List[int] = None,
+                 neuron_wise: bool = False,
+                 statistic: Union[Statistic, str] = None,
+                 ):
+        super().__init__()
+
+        # store the original model if same special state needed.
         self.module = module
+        assert apply_on in ["data", "param"]
+        self.apply_on = apply_on
 
-        filter_module = None
-        norm_module = None
-        last_m = None
-        for m in module.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+        for m in reversed(list(module.modules())):
+            if isinstance(m, _ConvNd):
                 filter_module = m
-            elif isinstance(last_m, nn.Conv2d) and isinstance(
-                    m, nn.BatchNorm2d):
-                norm_module = m
-            elif isinstance(last_m, nn.Linear) and isinstance(
-                    m, nn.BatchNorm1d):
-                norm_module = m
-            last_m = m
-        assert filter_module, "{} does not contains any conv2d or linear layer.".format(
-            module)
+                break
+            elif isinstance(m, nn.Linear):
+                filter_module = m
+                break
+        else:
+            raise TypeError(
+                f"{th.typename(module)} is not a valid type for filter module")
 
         self.filter_module = filter_module
-        self.norm_module = norm_module
 
-        # update global values
-        State.global_idx += 1
-        self.idx = deepcopy(State.global_idx)
+        self.neuron_wise = neuron_wise
 
-        State.global_feat_out += self.neurons
-        State.global_feat_in += self.filter_module.weight.shape[1]
-        State.global_param_num += self.filter_module.weight.numel()
-        State.global_stride += self.filter_module.stride[
-            0] if self.filter_type == nn.Conv2d else 0
-        State.global_kernel_size += self.filter_module.kernel_size[
-            0] if self.filter_type == nn.Conv2d else 0
+        if align_dims is None:
+            if self.filter_type == nn.Linear:
+                align_dims = {"data": [1, 1, -1],
+                              "param": [-1, 1]}[self.apply_on]
+            elif self.filter_type == nn.Conv2d:
+                align_dims = {"data": [1, -1, 1, 1],
+                              "param": [-1, 1, 1, 1]}[self.apply_on]
+        self.align_dims = align_dims
 
-        self.neuron_wise = False
-        self.__fn__ = OrderedDict()
+        if param_reduce_dims is None:
+            if self.filter_type == nn.Linear:
+                param_reduce_dims = [1, ]
+            elif self.filter_type == nn.Conv2d:
+                param_reduce_dims = [1, 2, 3]
+        self.param_reduce_dims = param_reduce_dims
 
-    def set_neuron_wise(self, mode=True):
-        self.neuron_wise = mode
+        if data_reduce_dims is None:
+            if self.filter_type == nn.Linear:
+                data_reduce_dims = [0, 1, ]
+            elif self.filter_type == nn.Conv2d:
+                data_reduce_dims = [0, 2, 3]
+        self.data_reduce_dims = data_reduce_dims
 
-    def _align_dims(self, x):
-        if isinstance(self.filter_module, nn.Linear):
-            return x.view(1, 1, -1)
-        elif isinstance(self.filter_module, nn.Conv2d):
-            return x.view(1, -1, 1, 1)
-        else:
-            raise TypeError(f"{self.filter_module} not defined.")
+        if statistic is not None:
+            for s in statistic:
+                if isinstance(s, str):
+                    s = __build_in_statistic__[s]
+                self.local_statistics.append(s())
+        for s in State.__global_statistics:
+            self.local_statistics.append(s())
+
+        # setup the init operation
+        for s in self.local_statistics:
+            s.on_init(self)
 
     @staticmethod
-    def reset():
-        State.global_idx = 0.0
-        State.global_feat_out = 0.0
-        State.global_feat_in = 0.0
-        State.global_param_num = 0.0
-        State.global_stride = 0.0
-        State.global_kernel_size = 0.0
-
-    def state_list(self):
-        return list(self.__fn__.keys())
-
-    def register_state_fn(self, name: str, fn: Callable = None) -> None:
-        """ Registers a function to calcute specified state.
-
-        Args:
-            name: the name of states. We obey the named relus that, if fn
-                returns state for each neuron, we will add a `_neuron_wise`
-                postfix in the name, otherwise, the fn should return a 
-                single value.
-            fn: the function to calcute the state.
-
-        fn must have the following signature:
-            >>> def fn(state, input=None, output=None):
-            >>>     ...
-            >>>     return state
-
-        .. note::
-
-            If fn is ``None``, we will try to register a build-in method with
-            the same name.
+    def register_global_statistic(statistic: Union[Statistic, str]):
+        """Register statistic to share among all states.
         """
-        assert name.endswith(
-            "_fn"), f"fn name should be ended with `_fn`, but got {name}"
-        if fn is None:
-            fn = self.__getattribute__(name)
+        if isinstance(statistic, Statistic):
+            State.__global_statistics.append(statistic)
+        elif isinstance(statistic, str):
+            State.__global_statistics.append(__build_in_statistic__[statistic])
 
-        def foo(cls, input=None, output=None):
-            pass
+    def set_neuron_wise(self, mode: bool = True):
+        self.neuron_wise = mode
 
-        foo_sig = signature(foo)
-        fn_sig = signature(fn)
+    def reset(self, set_to_none: bool = False):
+        for s in self.local_statistics:
+            s.reset(set_to_none=set_to_none)
 
-        assert foo_sig == fn_sig, f"the signature of fn must be {foo_sig}, got {fn_sig}"
-
-        self.__fn__[name] = fn
-
-    @th.no_grad()
-    def gather_states(self,
-                      input: Tensor = None,
-                      output: Tensor = None) -> namedtuple:
-        """Run over all states functions and stack all states along the last dim.
+    @ th.no_grad()
+    def gather_states(
+        self, input: Tensor, output: Tensor
+    ) -> Tensor:
+        """Run over all statistic functions and stack all states along the last dim.
         """
-        if len(self.__fn__) == 0:
+        if len(self.local_statistics) == 0:
             return None
-        states = [fn(self, input, output) for fn in self.__fn__.values()]
+
+        states = [s.on_step(self, input, output)
+                  for s in self.local_statistics]
         states = th.stack(states, dim=-1)
 
-        return states  # [neurons, obs]
+        return states  # [x, obs]
 
-    @property
+    @ property
     def device(self):
         return self.filter_module.weight.device
 
-    @property
+    @ property
     def neurons(self):
         return len(self.filter_module.weight)
 
-    @property
+    @ property
     def filter_type(self):
         return type(self.filter_module)
 
-    @property
+    @ property
     def filter_weight(self):
-        # if self.norm_module is not None, fold the weight to filter_module
-        if self.norm_module is not None:
-            var = self.norm_module.running_var
+        return self.filter_module.weight
 
-            if self.norm_module.affine:
-                gamma = self.norm_module.weight
-            else:
-                gamma = th.ones(self.norm_module.num_features,
-                                device=var.device)
-            A = gamma.div(th.sqrt(var + self.norm_module.eps))
-            A_expand = A.expand_as(self.filter_module.weight.transpose(
-                0, -1)).transpose(0, -1)
-            weight_fold = self.filter_module.weight * A_expand
-            return weight_fold
-        else:
-            return self.filter_module.weight
 
-    @property
-    def filter_bias(self):
-        # if self.norm_module is not None, fold the weight to filter_module
-        if self.norm_module is not None and self.filter_module.bias is not None:
-            mu = self.norm_module.running_mean
-            var = self.norm_module.running_var
+class cnt(Statistic):
+    __cnt = 0.0
 
-            if self.norm_module.affine:
-                gamma = self.norm_module.weight
-                beta = self.norm_module.bias
-            else:
-                gamma = th.ones(self.norm_module.num_features,
-                                device=var.device)
-                beta = th.ones(self.norm_module.num_features,
-                               device=var.device)
-            A = gamma.div(th.sqrt(var + self.norm_module.eps))
-            if self.filter_module.bias is not None:
-                bias_fold = (self.filter_module.bias - mu) * A + beta
-            else:
-                bias_fold = (-mu) * A + beta
-            return bias_fold
-        else:
-            return self.filter_module.bias
+    def on_init(self, state: State):
+        self._cnt = cnt.__cnt
+        cnt.__cnt += 1
 
-    @staticmethod
-    def k_fn(cls, input=None, output=None):
-        return th.tensor([cls.idx / State.global_idx] *
-                         (cls.neurons if cls.neuron_wise else 1),
-                         device=cls.device)
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        return th.tensor([self._cnt / cnt.__cnt] * (state.neurons if state.neuron_wise else 1), device=state.device)
 
-    @staticmethod
-    def feat_out_fn(cls, input=None, output=None):
-        return th.tensor([cls.neurons / State.global_feat_out] *
-                         (cls.neurons if cls.neuron_wise else 1),
-                         device=cls.device)
 
-    @staticmethod
-    def feat_in_fn(cls, input=None, output=None):
-        return th.tensor(
-            [cls.filter_module.weight.shape[1] / State.global_feat_in] *
-            (cls.neurons if cls.neuron_wise else 1),
-            device=cls.device)
+class feat_out(Statistic):
+    __feat_out = 0.0
 
-    @staticmethod
-    def param_num_fn(cls, input=None, output=None):
-        return th.tensor(
-            [cls.filter_module.weight.numel() / State.global_param_num] *
-            (cls.neurons if cls.neuron_wise else 1),
-            device=cls.device)
+    def on_init(self, state: State):
+        self._feat_out = state.neurons
+        feat_out.__feat_out += self._feat_out
 
-    @staticmethod
-    def stride_fn(cls, input=None, output=None):
-        if cls.filter_type == nn.Linear:
-            stride = 0.0
-        else:
-            stride = cls.filter_module.stride[0]
-        return th.tensor([stride / State.global_stride] *
-                         (cls.neurons if cls.neuron_wise else 1),
-                         device=cls.device)
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        return th.tensor([self._feat_out / feat_out.__feat_out] * (state.neurons if state.neuron_wise else 1), device=state.device)
 
-    @staticmethod
-    def kernel_size_fn(cls, input=None, output=None):
-        if cls.filter_type == nn.Linear:
-            kernel_size = 0.0
-        else:
-            kernel_size = cls.filter_module.kernel_size[0]
-        return th.tensor([kernel_size / State.global_kernel_size] *
-                         (cls.neurons if cls.neuron_wise else 1),
-                         device=cls.device)
 
-    @staticmethod
-    def l1_norm_fn(cls, input=None, output=None):
-        if cls.filter_type == nn.Linear:
-            # filter shape is [featout, featin]
-            weight = cls.filter_weight
-            l1_norm = weight.abs().mean(dim=1)  # [featout]
-        elif cls.filter_type == nn.Conv2d:
-            # filter shape is [outchannel, inchannel, w, h]
-            weight = cls.filter_weight
-            l1_norm = weight.abs().mean(dim=(1, 2, 3))  # [featout]
+class feat_in(Statistic):
+    __feat_in = 0.0
+
+    def on_init(self, state: State):
+        self._feat_in = state.filter_module.weight.shape[1]
+        feat_in.__feat_in += self._feat_in
+
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        return th.tensor([self._feat_in / feat_in.__feat_in] * (state.neurons if state.neuron_wise else 1), device=state.device)
+
+
+class param_num(Statistic):
+    __param_num = 0.0
+
+    def on_init(self, state: State):
+        self._param_num = state.filter_module.numel()
+        param_num.__param_num += self._param_num
+
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        return th.tensor([self._param_num / param_num.__param_num] * (state.neurons if state.neuron_wise else 1), device=state.device)
+
+
+class stride(Statistic):
+    __stride = 0.0
+
+    def on_init(self, state: State):
+        if state.filter_type == nn.Linear:
+            self._stride = 0.0
+        elif state.filter_type == _ConvNd:
+            self._stride = state.filter_module.stride[0]
         else:
             raise NotImplementedError
 
-        return l1_norm if cls.neuron_wise else l1_norm.mean(0, keepdim=True)
+        stride.__stride += self._stride
 
-    @staticmethod
-    def kl_div_fn(cls, input=None, output=None):
-        """input is a list containing all input non-position value.
-        """
-        dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[cls.filter_type]
-        kl_div = F.kl_div(input[0], output,
-                          reduction="none").mean(dim, keepdim=False)
-        return kl_div if cls.neuron_wise else kl_div.mean(0, keepdim=True)
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        return th.tensor([self._stride / stride.__stride] * (state.neurons if state.neuron_wise else 1), device=state.device)
 
-    @staticmethod
-    def fire_rate_fn(cls, input=None, output=None):
-        dim = {nn.Conv2d: [0, 2, 3], nn.Linear: [0, 1]}[cls.filter_type]
-        fire_rate = (output > 0.0).float().mean(dim, keepdim=False)
 
-        return fire_rate if cls.neuron_wise else fire_rate.mean(0,
-                                                                keepdim=True)
+class kernel_size(Statistic):
+    __kernel_size = 0.0
+
+    def on_init(self, state: State):
+        if state.filter_type == nn.Linear:
+            self._kernel_size = 0
+        elif state.filter_type == _ConvNd:
+            self._kernel_size = state.filter_module.kernel_size[0]
+        else:
+            raise NotImplementedError
+
+        kernel_size.__kernel_size += self._kernel_size
+
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        return th.tensor([self._kernel_size / kernel_size.__kernel_size] * (state.neurons if state.neuron_wise else 1), device=state.device)
+
+
+class l1_norm(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        weight = state.filter_weight
+
+        _l1_norm = weight.abs().mean(dim=state.param_reduce_dims)
+        return _l1_norm if state.neuron_wise else _l1_norm.mean(0, keepdim=True)
+
+
+class kl_div(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        _kl_div = F.kl_div(input[0], output, reduction="none").mean(
+            state.data_reduce_dims, keepdim=False)
+        return _kl_div if state.neuron_wise else _kl_div.mean(0, keepdim=True)
+
+
+class fire_rate(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        _fire_rate = (output > 0.0).float().mean(
+            state.data_reduce_dims, keepdim=False)
+
+        return _fire_rate if state.neuron_wise else _fire_rate.mean(0, keepdim=True)
+
+
+__build_in_statistic__ = {
+    "cnt": cnt,
+    "feat_out": feat_out,
+    "feat_in": feat_in,
+    "param_num": param_num,
+    "stride": stride,
+    "kernel_size": kernel_size,
+    "l1_norm": l1_norm,
+    "kl_div": kl_div,
+    "fire_rate": fire_rate,
+}
