@@ -1,0 +1,518 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Network Architecture Searching with Eve &mdash; eve-mli 0.0.1.rc documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="eve package" href="eve.html" />
+    <link rel="prev" title="Network Pruning" href="pruning/pruning.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> eve-mli
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html">Spiking Neural Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quantization/quantization.html">Quantization Neural Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pruning/pruning.html">Pruning Neural Network</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NAS</a></li>
+</ul>
+<p class="caption"><span class="caption-text">APIs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eve.html">eve package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eve-mli</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Network Architecture Searching with Eve</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/nas.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="network-architecture-searching-with-eve">
+<h1>Network Architecture Searching with Eve<a class="headerlink" href="#network-architecture-searching-with-eve" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span> <span class="k">as</span> <span class="nn">th</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="kn">import</span> <span class="nn">eve</span>
+<span class="kn">import</span> <span class="nn">eve.app</span>
+<span class="kn">import</span> <span class="nn">eve.app.model</span>
+<span class="kn">import</span> <span class="nn">eve.app.trainer</span>
+<span class="kn">import</span> <span class="nn">eve.core</span>
+<span class="kn">import</span> <span class="nn">eve.app.space</span> <span class="k">as</span> <span class="nn">space</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># build a basic network for trainer</span>
+<span class="k">class</span> <span class="nc">mnist</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Eve</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neuron_wise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">register_global_statistic</span><span class="p">(</span><span class="s2">&quot;l1_norm&quot;</span><span class="p">)</span>
+        <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">register_global_statistic</span><span class="p">(</span><span class="s2">&quot;kl_div&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="c1"># use IFNode to act as ReLU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node1</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">IFNode</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">),</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quan1</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Quantizer</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">),</span>
+                                        <span class="n">upgrade_bits</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">neuron_wise</span><span class="o">=</span><span class="n">neuron_wise</span><span class="p">,)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node2</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">IFNode</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">),</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quan2</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Quantizer</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">),</span>
+                                        <span class="n">upgrade_bits</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">neuron_wise</span><span class="o">=</span><span class="n">neuron_wise</span><span class="p">,)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node3</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">IFNode</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv3</span><span class="p">),</span> <span class="n">binary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quan3</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Quantizer</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv3</span><span class="p">),</span>
+                                        <span class="n">upgrade_bits</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">neuron_wise</span><span class="o">=</span><span class="n">neuron_wise</span><span class="p">,)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">16</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node4</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">IFNode</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quan4</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Quantizer</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear1</span><span class="p">),</span>
+                                        <span class="n">upgrade_bits</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">neuron_wise</span><span class="o">=</span><span class="n">neuron_wise</span><span class="p">,)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">conv1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">node1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node1</span><span class="p">(</span><span class="n">conv1</span><span class="p">)</span>
+        <span class="n">quan1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quan1</span><span class="p">(</span><span class="n">node1</span><span class="p">)</span>
+
+        <span class="n">conv2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">quan1</span><span class="p">)</span>
+        <span class="n">node2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node2</span><span class="p">(</span><span class="n">conv2</span><span class="p">)</span>
+        <span class="n">quan2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quan2</span><span class="p">(</span><span class="n">node2</span><span class="p">)</span>
+
+        <span class="n">conv3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv3</span><span class="p">(</span><span class="n">quan2</span><span class="p">)</span>
+        <span class="n">node3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node3</span><span class="p">(</span><span class="n">conv3</span><span class="p">)</span>
+        <span class="n">quan3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quan3</span><span class="p">(</span><span class="n">node3</span><span class="p">)</span>
+
+        <span class="n">quan3</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">quan3</span><span class="p">,</span> <span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">linear1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear1</span><span class="p">(</span><span class="n">quan3</span><span class="p">)</span>
+        <span class="n">node4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node4</span><span class="p">(</span><span class="n">linear1</span><span class="p">)</span>
+        <span class="n">quan4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quan4</span><span class="p">(</span><span class="n">node4</span><span class="p">)</span>
+
+        <span class="n">linear2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear2</span><span class="p">(</span><span class="n">quan4</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">linear2</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MnistClassifier</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Classifier</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">random_split</span>
+        <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">transforms</span>
+        <span class="kn">from</span> <span class="nn">torchvision.datasets</span> <span class="kn">import</span> <span class="n">MNIST</span>
+
+        <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">data_root</span><span class="p">,</span>
+                              <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">())</span>
+        <span class="n">test_dataset</span> <span class="o">=</span> <span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">data_root</span><span class="p">,</span>
+                             <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                             <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_dataset</span> <span class="o">=</span> <span class="n">random_split</span><span class="p">(</span>
+            <span class="n">train_dataset</span><span class="p">,</span> <span class="p">[</span><span class="mi">55000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_dataset</span> <span class="o">=</span> <span class="n">test_dataset</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset</span><span class="p">,</span>
+                                           <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                                           <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                           <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataset</span><span class="p">,</span>
+                                          <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                                          <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                          <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_dataset</span><span class="p">,</span>
+                                           <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                                           <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MnistTrainer</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">BaseTrainer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate current trainer, reload trainer and then return the initial obs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            obs: np.ndarray, the initial observation of trainer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># do a fast valid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">finetune_acc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">()[</span><span class="s2">&quot;acc&quot;</span><span class="p">]</span>
+            <span class="c1"># eval model</span>
+            <span class="k">if</span> <span class="n">finetune_acc</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">finetune_acc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">finetune_acc</span> <span class="o">=</span> <span class="n">finetune_acc</span>
+            <span class="c1"># reset model to explore more posibility</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_from_RAM</span><span class="p">()</span>
+
+        <span class="c1"># save best model which achieve higher reward</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulate_reward</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_reward</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache_to_RAM</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">best_reward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulate_reward</span>
+
+        <span class="c1"># clear accumulate reward</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulate_reward</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># reset related last value</span>
+        <span class="c1"># WRAN: don&#39;t forget to reset self._obs_gen and self._last_eve_obs to None.</span>
+        <span class="c1"># somtimes, the episode may be interrupted, but the gen do not reset.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_eve</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs_generator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upgrader</span><span class="o">.</span><span class="n">zero_obs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_step</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch_obs</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override close in your subclass to perform any necessary cleanup.</span>
+
+<span class="sd">        Environments will automatically close() themselves when</span>
+<span class="sd">        garbage collected or when the program exits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># load best model first</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_from_RAM</span><span class="p">()</span>
+
+        <span class="n">finetune_acc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">()[</span><span class="s2">&quot;acc&quot;</span><span class="p">]</span>
+
+        <span class="n">bits</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">bound</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">upgrader</span><span class="o">.</span><span class="n">eve_parameters</span><span class="p">():</span>
+            <span class="n">bits</span> <span class="o">=</span> <span class="n">bits</span> <span class="o">+</span> <span class="n">th</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="n">bound</span> <span class="o">=</span> <span class="n">bound</span> <span class="o">+</span> <span class="mi">8</span>
+
+        <span class="n">bits</span> <span class="o">=</span> <span class="n">bits</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;baseline: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">baseline_acc</span><span class="si">}</span><span class="s2">, ours: </span><span class="si">{</span><span class="n">finetune_acc</span><span class="si">}</span><span class="s2">, bits: </span><span class="si">{</span><span class="n">bits</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">bound</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard_log</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">save_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;save_path&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensorboard_log</span><span class="p">,</span> <span class="s2">&quot;model.ckpt&quot;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">save_path</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;save trained model to </span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reward</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;A simple reward function.</span>
+
+<span class="sd">        You have to rewrite this function based on your tasks.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upgrader</span><span class="o">.</span><span class="n">zero_obs</span><span class="p">()</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_step</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_eve</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.4</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># define a mnist classifier</span>
+<span class="n">neuron_wise</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">sample_episode</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">mnist_classifier</span> <span class="o">=</span> <span class="n">MnistClassifier</span><span class="p">(</span><span class="n">mnist</span><span class="p">(</span><span class="n">neuron_wise</span><span class="p">))</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">prepare_data</span><span class="p">(</span><span class="n">data_root</span><span class="o">=</span><span class="s2">&quot;/home/densechen/dataset&quot;</span><span class="p">)</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">setup_train</span><span class="p">()</span>  <span class="c1"># use default configuration</span>
+
+<span class="c1"># set mnist classifier to quantization mode</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">quantize</span><span class="p">()</span>
+
+<span class="c1"># set neurons and states</span>
+<span class="c1"># if neuron wise, we just set neurons as the member of max neurons of the network</span>
+<span class="c1"># else set it to 1.</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">set_neurons</span><span class="p">(</span><span class="mi">16</span> <span class="k">if</span> <span class="n">neuron_wise</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">set_states</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># None will use a default case</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">set_action_space</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">mnist_classifier</span><span class="o">.</span><span class="n">set_observation_space</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="c1"># define a trainer</span>
+<span class="n">MnistTrainer</span><span class="o">.</span><span class="n">assign_model</span><span class="p">(</span><span class="n">mnist_classifier</span><span class="p">)</span>
+
+<span class="c1"># define a experiment manager</span>
+
+<span class="n">exp_manager</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">ExperimentManager</span><span class="p">(</span>
+    <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;ddpg&quot;</span><span class="p">,</span>
+    <span class="n">env_id</span><span class="o">=</span><span class="s2">&quot;mnist_trainer&quot;</span><span class="p">,</span>
+    <span class="n">env</span><span class="o">=</span><span class="n">MnistTrainer</span><span class="p">,</span>
+    <span class="n">log_folder</span><span class="o">=</span><span class="s2">&quot;examples/logs&quot;</span><span class="p">,</span>
+    <span class="n">n_timesteps</span><span class="o">=</span><span class="mi">100000</span><span class="p">,</span>
+    <span class="n">save_freq</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">default_hyperparameter_yaml</span><span class="o">=</span><span class="s2">&quot;hyperparams&quot;</span><span class="p">,</span>
+    <span class="n">log_interval</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">sample_episode</span><span class="o">=</span><span class="n">sample_episode</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">exp_manager</span><span class="o">.</span><span class="n">setup_experiment</span><span class="p">()</span>
+
+<span class="n">exp_manager</span><span class="o">.</span><span class="n">learn</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">exp_manager</span><span class="o">.</span><span class="n">save_trained_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">OrderedDict</span><span class="p">([(</span><span class="s1">&#39;buffer_size&#39;</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;gamma&#39;</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;gradient_steps&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;learning_starts&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;n_episodes_rollout&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="mf">1000000.0</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;noise_std&#39;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;noise_type&#39;</span><span class="p">,</span> <span class="s1">&#39;normal&#39;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;policy&#39;</span><span class="p">,</span> <span class="s1">&#39;MlpPolicy&#39;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;policy_kwargs&#39;</span><span class="p">,</span> <span class="s1">&#39;dict(net_arch=[400, 300])&#39;</span><span class="p">)])</span>
+<span class="n">Using</span> <span class="mi">1</span> <span class="n">environments</span>
+<span class="n">Overwriting</span> <span class="n">n_timesteps</span> <span class="k">with</span> <span class="n">n</span><span class="o">=</span><span class="mi">100000</span>
+<span class="n">Applying</span> <span class="n">normal</span> <span class="n">noise</span> <span class="k">with</span> <span class="n">std</span> <span class="mf">0.1</span>
+<span class="n">Using</span> <span class="n">cuda</span> <span class="n">device</span>
+<span class="n">Log</span> <span class="n">path</span><span class="p">:</span> <span class="n">examples</span><span class="o">/</span><span class="n">logs</span><span class="o">/</span><span class="n">ddpg</span><span class="o">/</span><span class="n">mnist_trainer_2</span>
+<span class="o">---------------------------------</span>
+<span class="o">|</span> <span class="n">rollout</span><span class="o">/</span>           <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">ep_len_mean</span>     <span class="o">|</span> <span class="mi">4</span>        <span class="o">|</span>
+<span class="o">|</span>    <span class="n">ep_rew_mean</span>     <span class="o">|</span> <span class="mf">1.67</span>     <span class="o">|</span>
+<span class="o">|</span> <span class="n">time</span><span class="o">/</span>              <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">episodes</span>        <span class="o">|</span> <span class="mi">100</span>      <span class="o">|</span>
+<span class="o">|</span>    <span class="n">fps</span>             <span class="o">|</span> <span class="mi">38</span>       <span class="o">|</span>
+<span class="o">|</span>    <span class="n">time_elapsed</span>    <span class="o">|</span> <span class="mi">10</span>       <span class="o">|</span>
+<span class="o">|</span>    <span class="n">total</span> <span class="n">timesteps</span> <span class="o">|</span> <span class="mi">400</span>      <span class="o">|</span>
+<span class="o">---------------------------------</span>
+<span class="o">---------------------------------</span>
+<span class="o">|</span> <span class="n">rollout</span><span class="o">/</span>           <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">ep_len_mean</span>     <span class="o">|</span> <span class="mi">4</span>        <span class="o">|</span>
+<span class="o">|</span>    <span class="n">ep_rew_mean</span>     <span class="o">|</span> <span class="mf">2.18</span>     <span class="o">|</span>
+<span class="o">|</span> <span class="n">time</span><span class="o">/</span>              <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">episodes</span>        <span class="o">|</span> <span class="mi">200</span>      <span class="o">|</span>
+<span class="o">|</span>    <span class="n">fps</span>             <span class="o">|</span> <span class="mi">37</span>       <span class="o">|</span>
+<span class="o">|</span>    <span class="n">time_elapsed</span>    <span class="o">|</span> <span class="mi">21</span>       <span class="o">|</span>
+<span class="o">|</span>    <span class="n">total</span> <span class="n">timesteps</span> <span class="o">|</span> <span class="mi">800</span>      <span class="o">|</span>
+<span class="o">---------------------------------</span>
+<span class="o">---------------------------------</span>
+<span class="o">|</span> <span class="n">rollout</span><span class="o">/</span>           <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">ep_len_mean</span>     <span class="o">|</span> <span class="mi">4</span>        <span class="o">|</span>
+<span class="o">|</span>    <span class="n">ep_rew_mean</span>     <span class="o">|</span> <span class="mf">1.43</span>     <span class="o">|</span>
+<span class="o">|</span> <span class="n">time</span><span class="o">/</span>              <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">episodes</span>        <span class="o">|</span> <span class="mi">300</span>      <span class="o">|</span>
+<span class="o">|</span>    <span class="n">fps</span>             <span class="o">|</span> <span class="mi">4</span>        <span class="o">|</span>
+<span class="o">|</span>    <span class="n">time_elapsed</span>    <span class="o">|</span> <span class="mi">258</span>      <span class="o">|</span>
+<span class="o">|</span>    <span class="n">total</span> <span class="n">timesteps</span> <span class="o">|</span> <span class="mi">1200</span>     <span class="o">|</span>
+<span class="o">|</span> <span class="n">train</span><span class="o">/</span>             <span class="o">|</span>          <span class="o">|</span>
+<span class="o">|</span>    <span class="n">actor_loss</span>      <span class="o">|</span> <span class="o">-</span><span class="mf">0.699</span>   <span class="o">|</span>
+<span class="o">|</span>    <span class="n">critic_loss</span>     <span class="o">|</span> <span class="mf">0.0808</span>   <span class="o">|</span>
+<span class="o">|</span>    <span class="n">learning_rate</span>   <span class="o">|</span> <span class="mf">0.001</span>    <span class="o">|</span>
+<span class="o">|</span>    <span class="n">n_updates</span>       <span class="o">|</span> <span class="mi">196</span>      <span class="o">|</span>
+<span class="o">---------------------------------</span>
+<span class="n">baseline</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">ours</span><span class="p">:</span> <span class="mf">0.8412776898734177</span><span class="p">,</span> <span class="n">bits</span><span class="p">:</span> <span class="mf">12.0</span> <span class="o">/</span> <span class="mi">32</span>
+<span class="n">Saving</span> <span class="n">to</span> <span class="n">examples</span><span class="o">/</span><span class="n">logs</span><span class="o">/</span><span class="n">ddpg</span><span class="o">/</span><span class="n">mnist_trainer_2</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="eve.html" class="btn btn-neutral float-right" title="eve package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pruning/pruning.html" class="btn btn-neutral float-left" title="Network Pruning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; <a href="copyright.html">Copyright</a> 2020, densechen.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -29,6 +29,8 @@ Guidance
 
    Pruning Neural Network <pruning/pruning.md>
 
+   NAS <nas.md>
+
 Indices and tables
 ==================
 
