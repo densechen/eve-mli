@@ -93,15 +93,16 @@
 </ul>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Spiking Neural Network with Eve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#ifnode-with-different-timesteps">IFNode with different timesteps</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#ifnode-vs-lif-node">IFNode vs LIF Node</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spiking Neural Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ifnode-with-different-timesteps">IFNode with different timesteps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ifnode-vs-lif-node">IFNode vs LIF Node</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ifnode-with-different-configurations">IFNode with different configurations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ifnode-with-different-surrogate-functions">IFNode with different surrogate functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#hybrid">Hybrid</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../quantization/quantization.html">Quantization Neural Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pruning/pruning.html">Pruning Neural Network</a></li>
 </ul>
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul>
@@ -378,9 +379,8 @@ influence of different Node, i.e. IFNode and LIFNode combined with different sur
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test Accuracy: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;acc&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%, Elapsed time: </span><span class="si">{</span><span class="n">toc</span><span class="o">-</span><span class="n">tic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
 <div class="section" id="ifnode-with-different-timesteps">
-<h1>IFNode with different timesteps<a class="headerlink" href="#ifnode-with-different-timesteps" title="Permalink to this headline">¶</a></h1>
+<h2>IFNode with different timesteps<a class="headerlink" href="#ifnode-with-different-timesteps" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
 <span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -419,7 +419,7 @@ influence of different Node, i.e. IFNode and LIFNode combined with different sur
 <p><img alt="png" src="../_images/output_8_1.png" /></p>
 </div>
 <div class="section" id="ifnode-vs-lif-node">
-<h1>IFNode vs LIF Node<a class="headerlink" href="#ifnode-vs-lif-node" title="Permalink to this headline">¶</a></h1>
+<h2>IFNode vs LIF Node<a class="headerlink" href="#ifnode-vs-lif-node" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
 <span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -446,6 +446,7 @@ influence of different Node, i.e. IFNode and LIFNode combined with different sur
 </pre></div>
 </div>
 <p><img alt="png" src="../_images/output_10_1.png" /></p>
+</div>
 <div class="section" id="ifnode-with-different-configurations">
 <h2>IFNode with different configurations<a class="headerlink" href="#ifnode-with-different-configurations" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>

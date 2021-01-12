@@ -93,10 +93,9 @@
 </ul>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html">Spiking Neural Network with Eve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html#ifnode-with-different-timesteps">IFNode with different timesteps</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html#ifnode-vs-lif-node">IFNode vs LIF Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html">Spiking Neural Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quantization/quantization.html">Quantization Neural Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pruning/pruning.html">Pruning Neural Network</a></li>
 </ul>
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul class="current">
@@ -1396,11 +1395,6 @@ if None, we will infer it from filter type.</p></li>
 </pre></div>
 </div>
 <dl class="py attribute">
-<dt id="eve.core.state.State.local_statistics">
-<code class="sig-name descname">local_statistics</code><em class="property"> = []</em><a class="headerlink" href="#eve.core.state.State.local_statistics" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt id="eve.core.state.State.neuron_wise">
 <code class="sig-name descname">neuron_wise</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.state.State.neuron_wise" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1420,11 +1414,21 @@ if None, we will infer it from filter type.</p></li>
 <code class="sig-name descname">data_reduce_dims</code><em class="property">: List<span class="p">[</span>int<span class="p">]</span></em><a class="headerlink" href="#eve.core.state.State.data_reduce_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt id="eve.core.state.State.local_statistics">
+<code class="sig-name descname">local_statistics</code><em class="property">: List</em><a class="headerlink" href="#eve.core.state.State.local_statistics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt id="eve.core.state.State.register_global_statistic">
 <em class="property">static </em><code class="sig-name descname">register_global_statistic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">statistic</span><span class="p">:</span> <span class="n">Union<span class="p">[</span><a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic">eve.core.state.Statistic</a><span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.register_global_statistic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register statistic to share among all states.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.State.reset_global_statistic">
+<em class="property">static </em><code class="sig-name descname">reset_global_statistic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.reset_global_statistic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt id="eve.core.state.State.set_neuron_wise">

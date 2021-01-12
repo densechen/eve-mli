@@ -27,6 +27,8 @@ Guidance
 
    Quantization Neural Network <quantization/quantization.md>
 
+   Pruning Neural Network <pruning/pruning.md>
+
 Indices and tables
 ==================
 

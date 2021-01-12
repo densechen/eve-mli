@@ -214,7 +214,7 @@ def train(net, exp_name: str = "snn", data_root: str = "/home/densechen/dataset"
     print(f"Test Accuracy: {info['acc']*100:.2f}%, Elapsed time: {toc-tic}")
 ```
 
-# IFNode with different timesteps
+## IFNode with different timesteps
 
 
 ```python
@@ -259,7 +259,7 @@ plot()
     
 
 
-# IFNode vs LIF Node
+## IFNode vs LIF Node
 
 
 ```python

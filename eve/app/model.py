@@ -408,10 +408,7 @@ class Classifier(BaseModel):
     def __init__(self, model: Eve, device: Union[th.device, str] = "auto"):
         super().__init__(device)
 
-        self.model = model
-
-        # move model to device
-        self.model.to(self.device)
+        self.model = model.to(self.device)
 
         # set action and observation space.
         if hasattr(self.model, "action_space"):

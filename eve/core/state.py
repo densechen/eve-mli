@@ -64,9 +64,9 @@ class State(object):
         >>> tensor.mean(data_reduce_dims)
     """
 
-    __global_statistics = [] 
+    __global_statistics = []
 
-    local_statistics = []
+    local_statistics: List
 
     # use to align a variable with one dimension to as many dimensions as state
     align_dims: List[int]
@@ -133,6 +133,7 @@ class State(object):
                 data_reduce_dims = [0, 2, 3]
         self.data_reduce_dims = data_reduce_dims
 
+        self.local_statistics = []
         if statistic is not None:
             for s in statistic:
                 if isinstance(s, str):
@@ -153,6 +154,10 @@ class State(object):
             State.__global_statistics.append(statistic)
         elif isinstance(statistic, str):
             State.__global_statistics.append(__build_in_statistic__[statistic])
+
+    @staticmethod
+    def reset_global_statistic():
+        State.__global_statistics = []
 
     def set_neuron_wise(self, mode: bool = True):
         self.neuron_wise = mode
