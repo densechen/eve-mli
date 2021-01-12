@@ -6,9 +6,11 @@
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve-mli) [![Documentation Status](https://readthedocs.org/projects/eve-mli/badge/?version=latest)](https://eve-mli.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-mli)](https://pypi.org/project/eve-mli) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-mli)](https://pypi.org/project/eve-mli)
 
-Eve is an open-source deep learning framework used to devise various architectures in a more flexible and interesting way.
+Eve is an open-source deep learning framework used to devise and modify a network architecture in a flexible and interesting way.
 
-We provide a jupyter notebook to show the basic usage and the advanced features of Eve in `./examples`.
+We provide several jupyter notebooks under `./examples` to demonstrate how to build various network structures.
+
+The most features of Eve are that: it provides a well defined framework which make your network structure can be upgraded along with the learning of weights.
 
 **Any contributions to Eve is welcome!**
 
@@ -44,21 +46,10 @@ Vailidate installation:
 python -c "import eve; print(eve.__version__)"
 ```
 
-## RL
-
-| algo  | neuron wise | episode | multi-env | continuous | discrete |
-| :---: | :---------: | :-----: | :-------: | :--------: | :------: |
-|  a2c  |      ✅      |    ❌    |     ✅     |     ✅      |    ✅     |
-| ddpg  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
-|  dqn  |      ✅      |    ❌    |     ❌     |     ❌      |    ✅     |
-|  ppo  |      ✅      |    ✅    |     ✅     |     ✅      |    ✅     |
-|  sac  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
-|  td3  |      ✅      |    ✅    |     ❌     |     ✅      |    ❌     |
-
 ## About the project
 
 The documentation can be found [here](https://eve-mli.readthedocs.io).
-(Auto-building of documentation may fail sometimes, you can build it manually via ```cd docs; make html```)
+(Auto-building of documentation fails sometimes, you can build it manually via ```cd docs; make html```).
 
 The project remains in development. We encourage more volunteers to come together!
 
