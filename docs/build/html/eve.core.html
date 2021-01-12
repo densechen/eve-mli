@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>eve.core package &mdash; eve-mli 0.0.1.rc documentation</title>
   
@@ -16,7 +16,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -52,7 +55,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> eve-mli
+            <a href="index.html" class="icon icon-home"> eve-mli
           
 
           
@@ -87,6 +90,13 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html">Spiking Neural Network with Eve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html#ifnode-with-different-timesteps">IFNode with different timesteps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html#ifnode-vs-lif-node">IFNode vs LIF Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quantization/quantization.html">Quantization Neural Network</a></li>
 </ul>
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul class="current">
@@ -151,6 +161,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -164,7 +176,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/eve.core.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -354,16 +366,6 @@ name of the torch buffers as well as the torch buffer itself.</p>
 See similar function under <code class="xref py py-class docutils literal notranslate"><span class="pre">eve.Upgrader</span></code> for more context.</p>
 </dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.eve.Eve.training">
-<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.eve.Eve.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.eve.Eve.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.eve.Eve.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt id="eve.core.eve.Eve.obs">
 <code class="sig-name descname">obs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.eve.Eve.obs" title="Permalink to this definition">¶</a></dt>
@@ -380,14 +382,40 @@ See similar function under <code class="xref py py-class docutils literal notran
 <div class="section" id="module-eve.core.layer">
 <span id="eve-core-layer-module"></span><h2>eve.core.layer module<a class="headerlink" href="#module-eve.core.layer" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
+<dt id="eve.core.layer.QuanModule">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanModule</code><a class="headerlink" href="#eve.core.layer.QuanModule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.eve.Eve</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.layer.QuanModule.assign_quantizer">
+<code class="sig-name descname">assign_quantizer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantizer</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.quan.Quantizer" title="eve.core.quan.Quantizer">eve.core.quan.Quantizer</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanModule.assign_quantizer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.layer.QuanModule.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.QuanModule.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.layer.QuanModule.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.QuanModule.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.layer.QuanModule.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.core.layer.QuanModule.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.layer.QuanModule.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.QuanModule.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt id="eve.core.layer.QuanConv2d">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanConv2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_channels</span></em>, <em class="sig-param"><span class="n">out_channels</span></em>, <em class="sig-param"><span class="n">kernel_size</span></em>, <em class="sig-param"><span class="n">stride</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">padding</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">dilation</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">groups</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bias</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">padding_mode</span><span class="o">=</span><span class="default_value">'zeros'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanConv2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>kwargs</strong> – the argument used to define quantizer, except state.</p>
-</dd>
-</dl>
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanConv2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_channels</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">out_channels</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">kernel_size</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">stride</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">padding</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">dilation</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">groups</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bias</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">padding_mode</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'zeros'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanConv2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code>, <a class="reference internal" href="#eve.core.layer.QuanModule" title="eve.core.layer.QuanModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.layer.QuanModule</span></code></a></p>
 <dl class="py method">
 <dt id="eve.core.layer.QuanConv2d.forward">
 <code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanConv2d.forward" title="Permalink to this definition">¶</a></dt>
@@ -452,13 +480,8 @@ See similar function under <code class="xref py py-class docutils literal notran
 
 <dl class="py class">
 <dt id="eve.core.layer.QuanConvTranspose2d">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanConvTranspose2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_channels</span></em>, <em class="sig-param"><span class="n">out_channels</span></em>, <em class="sig-param"><span class="n">kernel_size</span></em>, <em class="sig-param"><span class="n">stride</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">padding</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">output_padding</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">dilation</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">groups</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bias</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">padding_mode</span><span class="o">=</span><span class="default_value">'zeros'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanConvTranspose2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.ConvTranspose2d</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>kwargs</strong> – the argument used to define quantizer, except state.</p>
-</dd>
-</dl>
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanConvTranspose2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_channels</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">out_channels</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">kernel_size</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">stride</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">padding</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">output_padding</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">groups</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bias</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">dilation</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">padding_mode</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'zeros'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanConvTranspose2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.ConvTranspose2d</span></code>, <a class="reference internal" href="#eve.core.layer.QuanModule" title="eve.core.layer.QuanModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.layer.QuanModule</span></code></a></p>
 <dl class="py method">
 <dt id="eve.core.layer.QuanConvTranspose2d.forward">
 <code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanConvTranspose2d.forward" title="Permalink to this definition">¶</a></dt>
@@ -519,17 +542,12 @@ See similar function under <code class="xref py py-class docutils literal notran
 <code class="sig-name descname">weight</code><em class="property">: torch.Tensor</em><a class="headerlink" href="#eve.core.layer.QuanConvTranspose2d.weight" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.layer.QuanConvTranspose2d.training">
-<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.QuanConvTranspose2d.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt id="eve.core.layer.QuanBNFuseConv2d">
 <em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanBNFuseConv2d</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_channels</span></em>, <em class="sig-param"><span class="n">out_channels</span></em>, <em class="sig-param"><span class="n">kernel_size</span></em>, <em class="sig-param"><span class="n">stride</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">padding</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">dilation</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">groups</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bias</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">padding_mode</span><span class="o">=</span><span class="default_value">'zeros'</span></em>, <em class="sig-param"><span class="n">eps</span><span class="o">=</span><span class="default_value">1e-05</span></em>, <em class="sig-param"><span class="n">momentum</span><span class="o">=</span><span class="default_value">0.01</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanBNFuseConv2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.conv.Conv2d</span></code>, <a class="reference internal" href="#eve.core.layer.QuanModule" title="eve.core.layer.QuanModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.layer.QuanModule</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>kwargs</strong> – the argument used to define quantizer, except state.</p>
@@ -595,17 +613,12 @@ See similar function under <code class="xref py py-class docutils literal notran
 <code class="sig-name descname">weight</code><em class="property">: torch.Tensor</em><a class="headerlink" href="#eve.core.layer.QuanBNFuseConv2d.weight" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.layer.QuanBNFuseConv2d.training">
-<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.QuanBNFuseConv2d.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt id="eve.core.layer.QuanLinear">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanLinear</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_features</span></em>, <em class="sig-param"><span class="n">out_features</span></em>, <em class="sig-param"><span class="n">bias</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanLinear" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.linear.Linear</span></code></p>
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.layer.</code><code class="sig-name descname">QuanLinear</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_features</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">out_features</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">bias</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanLinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.linear.Linear</span></code>, <a class="reference internal" href="#eve.core.layer.QuanModule" title="eve.core.layer.QuanModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.layer.QuanModule</span></code></a></p>
 <dl class="py method">
 <dt id="eve.core.layer.QuanLinear.forward">
 <code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.layer.QuanLinear.forward" title="Permalink to this definition">¶</a></dt>
@@ -675,11 +688,6 @@ See similar function under <code class="xref py py-class docutils literal notran
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.Dropout.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.layer.Dropout.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.Dropout.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -709,11 +717,6 @@ See similar function under <code class="xref py py-class docutils literal notran
 <dl class="py attribute">
 <dt id="eve.core.layer.Dropout2d.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.Dropout2d.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.layer.Dropout2d.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.Dropout2d.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -767,11 +770,6 @@ See similar function under <code class="xref py py-class docutils literal notran
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.Encoder.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.layer.Encoder.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.Encoder.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -802,11 +800,6 @@ See similar function under <code class="xref py py-class docutils literal notran
 <dl class="py attribute">
 <dt id="eve.core.layer.RateEncoder.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.RateEncoder.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.layer.RateEncoder.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.RateEncoder.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -843,11 +836,6 @@ the total spiking times is timesteps // interval_steps.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.IntervalEncoder.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.layer.IntervalEncoder.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.IntervalEncoder.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -877,11 +865,6 @@ the total spiking times is timesteps // interval_steps.</p>
 <dl class="py attribute">
 <dt id="eve.core.layer.LatencyEncoder.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.LatencyEncoder.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.layer.LatencyEncoder.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.LatencyEncoder.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -914,11 +897,6 @@ the total spiking times is timesteps // interval_steps.</p>
 <dl class="py attribute">
 <dt id="eve.core.layer.PoissonEncoder.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.layer.PoissonEncoder.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.layer.PoissonEncoder.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.layer.PoissonEncoder.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -964,11 +942,6 @@ the total spiking times is timesteps // interval_steps.</p>
 <dl class="py attribute">
 <dt id="eve.core.node.Node.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.node.Node.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.node.Node.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.node.Node.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1049,11 +1022,6 @@ return (voltage - voltage_reset).</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.node.IFNode.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.node.IFNode.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.node.IFNode.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1129,11 +1097,6 @@ return (voltage - voltage_reset).</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.node.LIFNode.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.node.LIFNode.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.node.LIFNode.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1143,6 +1106,11 @@ return (voltage - voltage_reset).</p>
 <dt id="eve.core.quan.Quan">
 <em class="property">class </em><code class="sig-prename descclassname">eve.core.quan.</code><code class="sig-name descname">Quan</code><a class="headerlink" href="#eve.core.quan.Quan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.eve.Eve</span></code></a></p>
+<dl class="py attribute">
+<dt id="eve.core.quan.Quan.state">
+<code class="sig-name descname">state</code><em class="property">: <a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></em><a class="headerlink" href="#eve.core.quan.Quan.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt id="eve.core.quan.Quan.quantization_forward">
 <em class="property">abstract </em><code class="sig-name descname">quantization_forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.quan.Quan.quantization_forward" title="Permalink to this definition">¶</a></dt>
@@ -1158,36 +1126,11 @@ return (voltage - voltage_reset).</p>
 <code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.quan.Quan.forward" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.quan.Quan.spiking">
-<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quan.Quan.spiking" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.quan.Quan.quantization">
-<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quan.Quan.quantization" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.quan.Quan.obs_momentum">
-<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.core.quan.Quan.obs_momentum" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.quan.Quan.training">
-<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quan.Quan.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.quan.Quan.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.quan.Quan.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt id="eve.core.quan.Quantizer">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.quan.</code><code class="sig-name descname">Quantizer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">bits</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">8</span></em>, <em class="sig-param"><span class="n">quantize_fn</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Round'</span></em>, <em class="sig-param"><span class="n">range_tracker</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'average_tracker'</span></em>, <em class="sig-param"><span class="n">average_tracker_momentum</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">upgrade_bits</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">neuron_wise</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">asymmetric</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">signed_quantization</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">learnable_alpha</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">state_list</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">upgrade_fn</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quan.Quantizer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.quan.</code><code class="sig-name descname">Quantizer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">bits</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">8</span></em>, <em class="sig-param"><span class="n">quantize_fn</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Round'</span></em>, <em class="sig-param"><span class="n">range_tracker</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'average_tracker'</span></em>, <em class="sig-param"><span class="n">average_tracker_momentum</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">upgrade_bits</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">neuron_wise</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">asymmetric</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">signed_quantization</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">learnable_alpha</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>bool<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">upgrade_fn</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quan.Quantizer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eve.core.quan.Quan" title="eve.core.quan.Quan"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.quan.Quan</span></code></a></p>
 <p>The base quantizer to hold different quantization function.</p>
 <dl class="field-list simple">
@@ -1210,10 +1153,7 @@ if <code class="docutils literal notranslate"><span class="pre">Flase</span></co
 <li><p><strong>signed_quantization</strong> – if <code class="docutils literal notranslate"><span class="pre">True</span></code>, the quantization range can be negative.</p></li>
 <li><p><strong>learnable_alpha</strong> – if the alpha should be learnable. in some quantization
 functions, the alpha value can be updated by gradient. if the alpha
-can be learnabled, we will not update it by tracker information.</p></li>
-<li><p><strong>state_list</strong> – a list contains [“name”, fn] to calculate states.
-if fn is None, we will try to load the build-in methods.
-refer <code class="docutils literal notranslate"><span class="pre">eve.core.state</span></code> to see the supported function.</p></li>
+can be learnable, we will not update it by tracker information.</p></li>
 <li><p><strong>upgrade_fn</strong> – the function to update eve parameter, e.i. bits in this module.
 if None, a directly replace operation will be used.</p></li>
 <li><p><strong>kwargs</strong> – the extra arguments to quantization function.</p></li>
@@ -1226,6 +1166,11 @@ if None, a directly replace operation will be used.</p></li>
 if learnable_alpha is enabled, the range tracker will be disabled to
 avoid the conflict of grad update of alpha.</p>
 </div>
+<dl class="py attribute">
+<dt id="eve.core.quan.Quantizer.state">
+<code class="sig-name descname">state</code><em class="property">: <a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></em><a class="headerlink" href="#eve.core.quan.Quantizer.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt id="eve.core.quan.Quantizer.states">
 <em class="property">property </em><code class="sig-name descname">states</code><a class="headerlink" href="#eve.core.quan.Quantizer.states" title="Permalink to this definition">¶</a></dt>
@@ -1296,11 +1241,6 @@ avoid the conflict of grad update of alpha.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quan.Quantizer.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.quan.Quantizer.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.quan.Quantizer.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1309,55 +1249,92 @@ avoid the conflict of grad update of alpha.</p>
 <dl class="py class">
 <dt id="eve.core.quantize_fn.Round">
 <em class="property">class </em><code class="sig-prename descclassname">eve.core.quantize_fn.</code><code class="sig-name descname">Round</code><a class="headerlink" href="#eve.core.quantize_fn.Round" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.autograd.function.Function</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.eve.Eve</span></code></a></p>
 <dl class="py method">
 <dt id="eve.core.quantize_fn.Round.forward">
-<em class="property">static </em><code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">zero_point</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">positive</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">negative</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.quantize_fn.Round.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.quantize_fn.Round.forward" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt id="eve.core.quantize_fn.Round.backward">
-<em class="property">static </em><code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">grad_output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>Optional<span class="p">[</span>torch.Tensor<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#eve.core.quantize_fn.Round.backward" title="Permalink to this definition">¶</a></dt>
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Round.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Round.spiking" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-</dd></dl>
-
-<dl class="py class">
-<dt id="eve.core.quantize_fn.lsq">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.quantize_fn.</code><code class="sig-name descname">lsq</code><a class="headerlink" href="#eve.core.quantize_fn.lsq" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.autograd.function.Function</span></code></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>LEARNED STEP SIZE QUANTIZATION: <a class="reference external" href="https://quanoview.readthedocs.io/en/latest/_raw/LSQ.html">https://quanoview.readthedocs.io/en/latest/_raw/LSQ.html</a></p>
-</div>
-<dl class="py method">
-<dt id="eve.core.quantize_fn.lsq.forward">
-<em class="property">static </em><code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">zero_point</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">positive</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">negative</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.quantize_fn.lsq.forward" title="Permalink to this definition">¶</a></dt>
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Round.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Round.quantization" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt id="eve.core.quantize_fn.lsq.backward">
-<em class="property">static </em><code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">grad_output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>Optional<span class="p">[</span>torch.Tensor<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#eve.core.quantize_fn.lsq.backward" title="Permalink to this definition">¶</a></dt>
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Round.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.core.quantize_fn.Round.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Round.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Round.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt id="eve.core.quantize_fn.llsq">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.quantize_fn.</code><code class="sig-name descname">llsq</code><a class="headerlink" href="#eve.core.quantize_fn.llsq" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.autograd.function.Function</span></code></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Linear Symmetric Quantization of Neural Networks for Low-precision Integer Hardware: <a class="reference external" href="https://openreview.net/forum?id=H1lBj2VFPS">https://openreview.net/forum?id=H1lBj2VFPS</a></p>
-</div>
+<dt id="eve.core.quantize_fn.Lsq">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.quantize_fn.</code><code class="sig-name descname">Lsq</code><a class="headerlink" href="#eve.core.quantize_fn.Lsq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.eve.Eve</span></code></a></p>
 <dl class="py method">
-<dt id="eve.core.quantize_fn.llsq.forward">
-<em class="property">static </em><code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">zero_point</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">positive</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">negative</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">regular</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.quantize_fn.llsq.forward" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.quantize_fn.Lsq.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quantize_fn.Lsq.forward" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Lsq.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Lsq.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Lsq.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Lsq.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Lsq.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.core.quantize_fn.Lsq.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Lsq.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Lsq.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.quantize_fn.Llsq">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.quantize_fn.</code><code class="sig-name descname">Llsq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">regular</span><span class="o">=</span><span class="default_value">'l2'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quantize_fn.Llsq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.eve.Eve</span></code></a></p>
 <dl class="py method">
-<dt id="eve.core.quantize_fn.llsq.backward">
-<em class="property">static </em><code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ctx</span></em>, <em class="sig-param"><span class="n">grad_output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>Optional<span class="p">[</span>torch.Tensor<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#eve.core.quantize_fn.llsq.backward" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.quantize_fn.Llsq.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.quantize_fn.Llsq.forward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Llsq.spiking">
+<code class="sig-name descname">spiking</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Llsq.spiking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Llsq.quantization">
+<code class="sig-name descname">quantization</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Llsq.quantization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Llsq.obs_momentum">
+<code class="sig-name descname">obs_momentum</code><em class="property">: float</em><a class="headerlink" href="#eve.core.quantize_fn.Llsq.obs_momentum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="eve.core.quantize_fn.Llsq.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.quantize_fn.Llsq.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1366,101 +1343,103 @@ avoid the conflict of grad update of alpha.</p>
 <div class="section" id="module-eve.core.state">
 <span id="eve-core-state-module"></span><h2>eve.core.state module<a class="headerlink" href="#module-eve.core.state" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt id="eve.core.state.State">
-<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">State</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">module</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve">eve.core.eve.Eve</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.Statistic">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">Statistic</code><a class="headerlink" href="#eve.core.state.Statistic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Records various state objects.</p>
+<p>Basic class to trace differetn variable state.</p>
+<dl class="py method">
+<dt id="eve.core.state.Statistic.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">set_to_none</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.Statistic.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>reset statistic variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.Statistic.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.Statistic.on_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function will be called at <cite>State.__init__()</cite></p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.Statistic.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.Statistic.on_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function will be called at <cite>State.gather_states()</cite></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.State">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">State</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">module</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.eve.Eve" title="eve.core.eve.Eve">eve.core.eve.Eve</a></span></em>, <em class="sig-param"><span class="n">apply_on</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'data'</span></em>, <em class="sig-param"><span class="n">align_dims</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param_reduce_dims</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">data_reduce_dims</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>List<span class="p">[</span>int<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">neuron_wise</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">statistic</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Union<span class="p">[</span><a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic">eve.core.state.Statistic</a><span class="p">, </span>str<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A special auxiliary module to manage different data and parameter state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module contains convolution layer or linear layer.
-NOTE: if the module contains multi-conv or linear layers, only the
-last layer will take into account.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module which used to extra state.</p></li>
+<li><p><strong>apply_on</strong> – data or param.</p></li>
+<li><p><strong>align_dims</strong> – use to align a variabl with single dimension to as many
+dimensions as state. if None, we will infer it from filter type.</p></li>
+<li><p><strong>param_reduce_dims</strong> – use to reduce param to singgle dimension.
+if None, we will infer it from filter type.</p></li>
+<li><p><strong>data_reduce_dims</strong> – use to reduce data to single dimension.
+if None, we will infer it from filter type.</p></li>
+</ul>
 </dd>
 </dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>We will apply a empirely normalization method for implemented state.
-You shoud reset this class if you want to begin a new record via <a class="reference internal" href="#eve.core.state.State.reset" title="eve.core.state.State.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">State.reset()</span></code></a>.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tensor</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tensor</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">align_dims</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tensor</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tensor</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data_reduce_dims</span><span class="p">)</span>
+</pre></div>
 </div>
 <dl class="py attribute">
-<dt id="eve.core.state.State.global_idx">
-<code class="sig-name descname">global_idx</code><em class="property"> = 0.0</em><a class="headerlink" href="#eve.core.state.State.global_idx" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.State.local_statistics">
+<code class="sig-name descname">local_statistics</code><em class="property"> = []</em><a class="headerlink" href="#eve.core.state.State.local_statistics" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt id="eve.core.state.State.global_feat_out">
-<code class="sig-name descname">global_feat_out</code><em class="property"> = 0.0</em><a class="headerlink" href="#eve.core.state.State.global_feat_out" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.State.neuron_wise">
+<code class="sig-name descname">neuron_wise</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.state.State.neuron_wise" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt id="eve.core.state.State.global_feat_in">
-<code class="sig-name descname">global_feat_in</code><em class="property"> = 0.0</em><a class="headerlink" href="#eve.core.state.State.global_feat_in" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.State.align_dims">
+<code class="sig-name descname">align_dims</code><em class="property">: List<span class="p">[</span>int<span class="p">]</span></em><a class="headerlink" href="#eve.core.state.State.align_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt id="eve.core.state.State.global_param_num">
-<code class="sig-name descname">global_param_num</code><em class="property"> = 0.0</em><a class="headerlink" href="#eve.core.state.State.global_param_num" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.State.param_reduce_dims">
+<code class="sig-name descname">param_reduce_dims</code><em class="property">: List<span class="p">[</span>int<span class="p">]</span></em><a class="headerlink" href="#eve.core.state.State.param_reduce_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt id="eve.core.state.State.global_stride">
-<code class="sig-name descname">global_stride</code><em class="property"> = 0.0</em><a class="headerlink" href="#eve.core.state.State.global_stride" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.state.State.global_kernel_size">
-<code class="sig-name descname">global_kernel_size</code><em class="property"> = 0.0</em><a class="headerlink" href="#eve.core.state.State.global_kernel_size" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.State.data_reduce_dims">
+<code class="sig-name descname">data_reduce_dims</code><em class="property">: List<span class="p">[</span>int<span class="p">]</span></em><a class="headerlink" href="#eve.core.state.State.data_reduce_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt id="eve.core.state.State.register_global_statistic">
+<em class="property">static </em><code class="sig-name descname">register_global_statistic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">statistic</span><span class="p">:</span> <span class="n">Union<span class="p">[</span><a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic">eve.core.state.Statistic</a><span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.register_global_statistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register statistic to share among all states.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="eve.core.state.State.set_neuron_wise">
-<code class="sig-name descname">set_neuron_wise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.set_neuron_wise" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_neuron_wise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.set_neuron_wise" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt id="eve.core.state.State.reset">
-<em class="property">static </em><code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.reset" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">set_to_none</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.reset" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.state_list">
-<code class="sig-name descname">state_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.state_list" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.register_state_fn">
-<code class="sig-name descname">register_state_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">fn</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Callable<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#eve.core.state.State.register_state_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Registers a function to calcute specified state.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> – the name of states. We obey the named relus that, if fn
-returns state for each neuron, we will add a <cite>_neuron_wise</cite>
-postfix in the name, otherwise, the fn should return a
-single value.</p></li>
-<li><p><strong>fn</strong> – the function to calcute the state.</p></li>
-</ul>
-</dd>
-</dl>
-<dl>
-<dt>fn must have the following signature:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">fn</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="o">...</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="n">state</span>
-</pre></div>
-</div>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If fn is <code class="docutils literal notranslate"><span class="pre">None</span></code>, we will try to register a build-in method with
-the same name.</p>
-</div>
-</dd></dl>
 
 <dl class="py method">
 <dt id="eve.core.state.State.gather_states">
-<code class="sig-name descname">gather_states</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; collections.namedtuple<a class="headerlink" href="#eve.core.state.State.gather_states" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run over all states functions and stack all states along the last dim.</p>
+<code class="sig-name descname">gather_states</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.state.State.gather_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run over all statistic functions and stack all states along the last dim.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1483,55 +1462,133 @@ the same name.</p>
 <em class="property">property </em><code class="sig-name descname">filter_weight</code><a class="headerlink" href="#eve.core.state.State.filter_weight" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt id="eve.core.state.State.filter_bias">
-<em class="property">property </em><code class="sig-name descname">filter_bias</code><a class="headerlink" href="#eve.core.state.State.filter_bias" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.k_fn">
-<em class="property">static </em><code class="sig-name descname">k_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.k_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.feat_out_fn">
-<em class="property">static </em><code class="sig-name descname">feat_out_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.feat_out_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.feat_in_fn">
-<em class="property">static </em><code class="sig-name descname">feat_in_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.feat_in_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.param_num_fn">
-<em class="property">static </em><code class="sig-name descname">param_num_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.param_num_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.stride_fn">
-<em class="property">static </em><code class="sig-name descname">stride_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.stride_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.kernel_size_fn">
-<em class="property">static </em><code class="sig-name descname">kernel_size_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.kernel_size_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.l1_norm_fn">
-<em class="property">static </em><code class="sig-name descname">l1_norm_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.l1_norm_fn" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="eve.core.state.State.kl_div_fn">
-<em class="property">static </em><code class="sig-name descname">kl_div_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.kl_div_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>input is a list containing all input non-position value.</p>
 </dd></dl>
 
+<dl class="py class">
+<dt id="eve.core.state.cnt">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">cnt</code><a class="headerlink" href="#eve.core.state.cnt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
 <dl class="py method">
-<dt id="eve.core.state.State.fire_rate_fn">
-<em class="property">static </em><code class="sig-name descname">fire_rate_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">input</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.State.fire_rate_fn" title="Permalink to this definition">¶</a></dt>
+<dt id="eve.core.state.cnt.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.cnt.on_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.cnt.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.cnt.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.feat_out">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">feat_out</code><a class="headerlink" href="#eve.core.state.feat_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.feat_out.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.feat_out.on_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.feat_out.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.feat_out.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.feat_in">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">feat_in</code><a class="headerlink" href="#eve.core.state.feat_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.feat_in.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.feat_in.on_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.feat_in.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.feat_in.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.param_num">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">param_num</code><a class="headerlink" href="#eve.core.state.param_num" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.param_num.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.param_num.on_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.param_num.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.param_num.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.stride">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">stride</code><a class="headerlink" href="#eve.core.state.stride" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.stride.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.stride.on_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.stride.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.stride.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.kernel_size">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">kernel_size</code><a class="headerlink" href="#eve.core.state.kernel_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.kernel_size.on_init">
+<code class="sig-name descname">on_init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.kernel_size.on_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="eve.core.state.kernel_size.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.kernel_size.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.l1_norm">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">l1_norm</code><a class="headerlink" href="#eve.core.state.l1_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.l1_norm.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.l1_norm.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.kl_div">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">kl_div</code><a class="headerlink" href="#eve.core.state.kl_div" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.kl_div.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.kl_div.on_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="eve.core.state.fire_rate">
+<em class="property">class </em><code class="sig-prename descclassname">eve.core.state.</code><code class="sig-name descname">fire_rate</code><a class="headerlink" href="#eve.core.state.fire_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eve.core.state.Statistic" title="eve.core.state.Statistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.state.Statistic</span></code></a></p>
+<dl class="py method">
+<dt id="eve.core.state.fire_rate.on_step">
+<code class="sig-name descname">on_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#eve.core.state.State" title="eve.core.state.State">eve.core.state.State</a></span></em>, <em class="sig-param"><span class="n">input</span><span class="p">:</span> <span class="n">torch.Tensor</span></em>, <em class="sig-param"><span class="n">output</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eve.core.state.fire_rate.on_step" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1579,11 +1636,6 @@ the same name.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.SurrogateFnBase.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.SurrogateFnBase.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.SurrogateFnBase.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1618,11 +1670,6 @@ the same name.</p>
 <dl class="py attribute">
 <dt id="eve.core.surrogate_fn.PiecewiseQuadratic.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseQuadratic.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.PiecewiseQuadratic.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseQuadratic.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1661,11 +1708,6 @@ the same name.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.Sigmoid.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.Sigmoid.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.Sigmoid.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1700,11 +1742,6 @@ the same name.</p>
 <dl class="py attribute">
 <dt id="eve.core.surrogate_fn.SoftSign.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.SoftSign.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.SoftSign.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.SoftSign.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1743,11 +1780,6 @@ the same name.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.ATan.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.ATan.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.ATan.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1782,11 +1814,6 @@ the same name.</p>
 <dl class="py attribute">
 <dt id="eve.core.surrogate_fn.NonzeroSignLogAbs.training">
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.NonzeroSignLogAbs.training" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.NonzeroSignLogAbs.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.NonzeroSignLogAbs.optimizer" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1825,11 +1852,6 @@ the same name.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.Erf.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.Erf.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.Erf.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1838,12 +1860,12 @@ the same name.</p>
 <dd><p>Bases: <a class="reference internal" href="#eve.core.surrogate_fn.SurrogateFnBase" title="eve.core.surrogate_fn.SurrogateFnBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">eve.core.surrogate_fn.SurrogateFnBase</span></code></a></p>
 <dl class="py method">
 <dt id="eve.core.surrogate_fn.PiecewiseLeakyReLU.spiking_function">
-<em class="property">static </em><code class="sig-name descname">spiking_function</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseLeakyReLU.spiking_function" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">spiking_function</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseLeakyReLU.spiking_function" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt id="eve.core.surrogate_fn.PiecewiseLeakyReLU.primitive_function">
-<em class="property">static </em><code class="sig-name descname">primitive_function</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseLeakyReLU.primitive_function" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">primitive_function</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">torch.Tensor</span></em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseLeakyReLU.primitive_function" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -1866,11 +1888,6 @@ the same name.</p>
 <code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseLeakyReLU.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt id="eve.core.surrogate_fn.PiecewiseLeakyReLU.optimizer">
-<code class="sig-name descname">optimizer</code><em class="property">: Optional<span class="p">[</span>torch.optim.optimizer.Optimizer<span class="p">]</span></em><a class="headerlink" href="#eve.core.surrogate_fn.PiecewiseLeakyReLU.optimizer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1884,38 +1901,29 @@ the same name.</p>
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="eve.utils.html" class="btn btn-neutral float-right" title="eve.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="eve.app.algorithm.html" class="btn btn-neutral float-left" title="eve.app.algorithm package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="eve.utils.html" class="btn btn-neutral float-right" title="eve.utils package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="eve.app.algorithm.html" class="btn btn-neutral float-left" title="eve.app.algorithm package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        
-        &copy; <a href="copyright.html">Copyright</a> 2020, densechen
+        &#169; <a href="copyright.html">Copyright</a> 2020, densechen.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

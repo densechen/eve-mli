@@ -17,7 +17,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torch.autograd import Function
+from eve.core.eve import Eve
 
+import warnings
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
 
@@ -37,7 +39,7 @@ def dequantize(input: Tensor, alpha: Tensor, zero_point: Tensor) -> Tensor:
     return (input + zero_point) * alpha
 
 
-class Round(Function):
+class round_fn(Function):
     @staticmethod
     def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
                 positive: Tensor, negative: Tensor) -> Tensor:
@@ -52,7 +54,12 @@ class Round(Function):
         return grad_output, None, None, None, None
 
 
-class lsq(Function):
+class Round(Eve):
+    def forward(self, *args) -> Tensor:
+        return round_fn.apply(*args)
+
+
+class lsq_fn(Function):
     """
     .. note::
 
@@ -61,6 +68,9 @@ class lsq(Function):
     @staticmethod
     def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
                 positive: Tensor, negative: Tensor) -> Tensor:
+        if th.any(alpha < 0):
+            warnings.warn('alpha must be positive!')
+            alpha = th.clamp_min(alpha, 0.0)
         quan_x = quantize(x, alpha, zero_point, positive, negative)
 
         dequan_x = dequantize(quan_x, alpha, zero_point)
@@ -88,6 +98,11 @@ class lsq(Function):
         grad_x = middle * grad_output
 
         return grad_x, grad_alpha, None, None, None, None
+
+
+class Lsq(Eve):
+    def forward(self, *args):
+        return lsq_fn.apply(*args)
 
 
 def ln_error(x: Tensor, alpha: Tensor, zero_point: Tensor, positive: Tensor,
@@ -130,7 +145,7 @@ def update_running_alpha(error: Tensor, lower_error: Tensor,
     return b, s
 
 
-class llsq(Function):
+class llsq_fn(Function):
     """
     .. note::
 
@@ -139,7 +154,11 @@ class llsq(Function):
     """
     @staticmethod
     def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
-                positive: Tensor, negative: Tensor, regular: str) -> Tensor:
+                positive: Tensor, negative: Tensor, regular: str = "l1") -> Tensor:
+        assert regular in ["l1", "l2"]
+        if th.any(alpha < 0):
+            warnings.warn('alpha must be positive!')
+            alpha = th.clamp_min(alpha, 0.0)
         quan_x = quantize(x, alpha, zero_point, positive, negative)
         dequan_x = dequantize(quan_x, alpha, zero_point)
         ctx.save_for_backward(x, quan_x, zero_point, alpha, positive, negative)
@@ -172,8 +191,17 @@ class llsq(Function):
         return grad_output, grad_alpha, None, None, None, None
 
 
+class Llsq(Eve):
+    def __init__(self, regular="l2"):
+        super().__init__()
+        self.regular = regular
+
+    def forward(self, *args):
+        return llsq_fn.apply(*args, self.regular)
+
+
 __all__ = [
     "Round",
-    "lsq",
-    "llsq",
+    "Lsq",
+    "Llsq",
 ]

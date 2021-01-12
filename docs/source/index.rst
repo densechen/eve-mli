@@ -16,6 +16,17 @@ Welcome to eve's documentation!
    
    Copyright <copyright.rst>
 
+Guidance
+========
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   Spiking Neural Network <spiking/spiking.md>
+
+   Quantization Neural Network <quantization/quantization.md>
+
 Indices and tables
 ==================
 

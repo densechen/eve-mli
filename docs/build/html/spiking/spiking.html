@@ -1,0 +1,615 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Spiking Neural Network with Eve &mdash; eve-mli 0.0.1.rc documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="copyright" title="Copyright" href="../copyright.html" />
+    <link rel="next" title="Quantization Neural Network with Eve" href="../quantization/quantization.html" />
+    <link rel="prev" title="MIT License" href="../copyright.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> eve-mli
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../README.html">Readme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../copyright.html">Copyright</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spiking Neural Network with Eve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#ifnode-with-different-timesteps">IFNode with different timesteps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#ifnode-vs-lif-node">IFNode vs LIF Node</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ifnode-with-different-configurations">IFNode with different configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ifnode-with-different-surrogate-functions">IFNode with different surrogate functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hybrid">Hybrid</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quantization/quantization.html">Quantization Neural Network</a></li>
+</ul>
+<p class="caption"><span class="caption-text">APIs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../eve.html">eve package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">eve-mli</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Spiking Neural Network with Eve</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/spiking/spiking.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="spiking-neural-network-with-eve">
+<h1>Spiking Neural Network with Eve<a class="headerlink" href="#spiking-neural-network-with-eve" title="Permalink to this headline">¶</a></h1>
+<p>In this script, we will build a general spiking neural network with eve-mli, then we will further investigating the
+influence of different Node, i.e. IFNode and LIFNode combined with different surrotage functions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># import necessary packages.</span>
+<span class="c1"># at the beginning, ensure that the eve-mli package is in your python path.</span>
+<span class="c1"># or you just install it via `pip install eve-mli`.</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span> <span class="k">as</span> <span class="nn">th</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="kn">import</span> <span class="nn">eve</span>
+<span class="kn">import</span> <span class="nn">eve.app</span>
+<span class="kn">import</span> <span class="nn">eve.app.model</span>
+<span class="kn">import</span> <span class="nn">eve.app.trainer</span>
+<span class="kn">import</span> <span class="nn">eve.core</span>
+<span class="kn">import</span> <span class="nn">eve.app.space</span> <span class="k">as</span> <span class="nn">space</span>
+<span class="kn">import</span> <span class="nn">eve.core.layer</span>
+
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># build a basic network for trainer, use Poisson Encoder as default</span>
+<span class="k">class</span> <span class="nc">mnist</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Eve</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">timesteps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+                 <span class="n">node</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;IFNode&quot;</span><span class="p">,</span>
+                 <span class="n">voltage_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">voltage_reset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">learnable_threshold</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">learnable_reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">time_dependent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">neuron_wise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">surrogate_fn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Sigmoid&quot;</span><span class="p">,</span>
+                 <span class="n">binary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="c1"># we support IFNode and LIFNode, </span>
+        <span class="c1"># in non-spiking mode, the IFNode equals to a ReLU operation</span>
+        <span class="c1"># the LIFNode equals to a LeakyReLU operation.</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        
+        <span class="k">def</span> <span class="nf">build_node</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">node</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> 
+                        <span class="n">voltage_threshold</span><span class="o">=</span><span class="n">voltage_threshold</span><span class="p">,</span>
+                        <span class="n">voltage_reset</span><span class="o">=</span><span class="n">voltage_reset</span><span class="p">,</span>
+                        <span class="n">learnable_threshold</span><span class="o">=</span><span class="n">learnable_threshold</span><span class="p">,</span>
+                        <span class="n">learnable_reset</span><span class="o">=</span><span class="n">learnable_reset</span><span class="p">,</span>
+                        <span class="n">time_dependent</span><span class="o">=</span><span class="n">time_dependent</span><span class="p">,</span>
+                        <span class="n">neuron_wise</span><span class="o">=</span><span class="n">neuron_wise</span><span class="p">,</span>
+                        <span class="n">surrogate_fn</span><span class="o">=</span><span class="n">surrogate_fn</span><span class="p">,</span>
+                        <span class="n">binary</span><span class="o">=</span><span class="n">binary</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">,)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">layer</span><span class="o">.</span><span class="n">PoissonEncoder</span><span class="p">(</span><span class="n">timesteps</span><span class="o">=</span><span class="n">timesteps</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node1</span> <span class="o">=</span> <span class="n">build_node</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node2</span> <span class="o">=</span> <span class="n">build_node</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node3</span> <span class="o">=</span> <span class="n">build_node</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv3</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">16</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node4</span> <span class="o">=</span> <span class="n">build_node</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">linear1</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linear2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">encoder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        
+        <span class="n">conv1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">encoder</span><span class="p">)</span>
+        <span class="n">node1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node1</span><span class="p">(</span><span class="n">conv1</span><span class="p">)</span>
+
+        <span class="n">conv2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">node1</span><span class="p">)</span>
+        <span class="n">node2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node2</span><span class="p">(</span><span class="n">conv2</span><span class="p">)</span>
+
+        <span class="n">conv3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv3</span><span class="p">(</span><span class="n">node2</span><span class="p">)</span>
+        <span class="n">node3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node3</span><span class="p">(</span><span class="n">conv3</span><span class="p">)</span>
+
+        <span class="n">node3</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">node3</span><span class="p">,</span> <span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">linear1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear1</span><span class="p">(</span><span class="n">node3</span><span class="p">)</span>
+        <span class="n">node4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node4</span><span class="p">(</span><span class="n">linear1</span><span class="p">)</span>
+
+        <span class="n">linear2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear2</span><span class="p">(</span><span class="n">node4</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">linear2</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># define a MnistClassifier</span>
+<span class="c1"># Classifier uses the corss entropy as default.</span>
+<span class="c1"># in most case, we just rewrite the `prepare_data`.</span>
+<span class="k">class</span> <span class="nc">MnistClassifier</span><span class="p">(</span><span class="n">eve</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Classifier</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">random_split</span>
+        <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">transforms</span>
+        <span class="kn">from</span> <span class="nn">torchvision.datasets</span> <span class="kn">import</span> <span class="n">MNIST</span>
+
+        <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">data_root</span><span class="p">,</span>
+                              <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">())</span>
+        <span class="n">test_dataset</span> <span class="o">=</span> <span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">data_root</span><span class="p">,</span>
+                             <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                             <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_dataset</span> <span class="o">=</span> <span class="n">random_split</span><span class="p">(</span>
+            <span class="n">train_dataset</span><span class="p">,</span> <span class="p">[</span><span class="mi">55000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_dataset</span> <span class="o">=</span> <span class="n">test_dataset</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset</span><span class="p">,</span>
+                                           <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                                           <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                           <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataset</span><span class="p">,</span>
+                                          <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                                          <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                          <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_dataset</span><span class="p">,</span>
+                                           <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                                           <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">num_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># in spiking mode, you should reset the membrane voltage every time.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
+        
+        <span class="n">y_hat</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">timesteps</span><span class="p">)]</span>
+        <span class="n">y_hat</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">y_hat</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">y_hat</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+            <span class="s2">&quot;acc&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_top_one_accuracy</span><span class="p">(</span><span class="n">y_hat</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+        <span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># store accuracy result</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">def</span> <span class="nf">plot</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">y</span>
+    <span class="n">keys</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">y</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> 
+                 <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span> <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> 
+                 <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span> <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span> 
+                 <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span> <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s2">&quot;:&quot;</span><span class="p">,</span> 
+                 <span class="n">label</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;accuracy over epoches (train)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;epochs&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;accuracy&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;snn&quot;</span><span class="p">,</span> <span class="n">data_root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;/home/densechen/dataset&quot;</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">y</span>
+    <span class="c1"># replace the data_root for your path.</span>
+    <span class="n">classifier</span> <span class="o">=</span> <span class="n">MnistClassifier</span><span class="p">(</span><span class="n">net</span><span class="p">)</span>
+    <span class="n">classifier</span><span class="o">.</span><span class="n">prepare_data</span><span class="p">(</span><span class="n">data_root</span><span class="o">=</span><span class="n">data_root</span><span class="p">)</span>
+    
+    <span class="c1"># use default configuration</span>
+    <span class="n">classifier</span><span class="o">.</span><span class="n">setup_train</span><span class="p">()</span>
+    
+    <span class="c1"># assign model to trainer</span>
+    <span class="n">eve</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">BaseTrainer</span><span class="o">.</span><span class="n">assign_model</span><span class="p">(</span><span class="n">classifier</span><span class="p">)</span>
+    
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">eve</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">BaseTrainer</span><span class="p">()</span>
+    
+    <span class="c1"># train 10 epoches and report the final accuracy</span>
+    <span class="n">y</span><span class="p">[</span><span class="n">exp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tic</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">exp_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;acc&quot;</span><span class="p">])</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
+    <span class="n">toc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">y</span><span class="p">[</span><span class="n">exp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">exp_name</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test Accuracy: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;acc&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%, Elapsed time: </span><span class="si">{</span><span class="n">toc</span><span class="o">-</span><span class="n">tic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ifnode-with-different-timesteps">
+<h1>IFNode with different timesteps<a class="headerlink" href="#ifnode-with-different-timesteps" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="c1"># define spiking neural network with different timesteps</span>
+<span class="n">ifnode_spiking_neural_network_1_timesteps</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">timesteps</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="n">ifnode_spiking_neural_network_2_timesteps</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">timesteps</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="n">ifnode_spiking_neural_network_5_timesteps</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">timesteps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="n">ifnode_spiking_neural_network_10_timesteps</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">timesteps</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+
+<span class="c1"># train and compare the influence of different timesteps.</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; timesteps: 1&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_1_timesteps</span><span class="p">,</span> <span class="s2">&quot;timesetps=1&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; timesteps: 2&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_2_timesteps</span><span class="p">,</span> <span class="s2">&quot;timesteps=2&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; timesteps: 5&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_5_timesteps</span><span class="p">,</span> <span class="s2">&quot;timesteps=5&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; timesteps: 10&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_10_timesteps</span><span class="p">,</span> <span class="s2">&quot;timesteps=10&quot;</span><span class="p">)</span>
+
+<span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">===&gt;</span> <span class="n">timesteps</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">92.84</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mf">00.376058</span>
+<span class="o">===&gt;</span> <span class="n">timesteps</span><span class="p">:</span> <span class="mi">2</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">95.23</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mf">27.988771</span>
+<span class="o">===&gt;</span> <span class="n">timesteps</span><span class="p">:</span> <span class="mi">5</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.73</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">39.402739</span>
+<span class="o">===&gt;</span> <span class="n">timesteps</span><span class="p">:</span> <span class="mi">10</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.38</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mf">20.826122</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_8_1.png" /></p>
+</div>
+<div class="section" id="ifnode-vs-lif-node">
+<h1>IFNode vs LIF Node<a class="headerlink" href="#ifnode-vs-lif-node" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="c1"># define IFNode network</span>
+<span class="n">ifnode_spiking_neural_network</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s2">&quot;IFNode&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+
+<span class="c1"># define LIFNode network</span>
+<span class="n">lifnode_spiking_neural_network</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s2">&quot;LIFNode&quot;</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+
+<span class="c1"># train and compare</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network</span><span class="p">,</span> <span class="s2">&quot;IFNode&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; LIFNode, tau=1.0&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">lifnode_spiking_neural_network</span><span class="p">,</span> <span class="s2">&quot;LIFNode&quot;</span><span class="p">)</span>
+
+<span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">===&gt;</span> <span class="n">IFNode</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.10</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">40.809373</span>
+<span class="o">===&gt;</span> <span class="n">LIFNode</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.30</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">54.205864</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_10_1.png" /></p>
+<div class="section" id="ifnode-with-different-configurations">
+<h2>IFNode with different configurations<a class="headerlink" href="#ifnode-with-different-configurations" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="c1"># define IFNode network with different configuration</span>
+<span class="n">ifnode_spiking_neural_network_learnable_threshold</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">learnable_threshold</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode learnable threshold&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_learnable_threshold</span><span class="p">,</span> <span class="s2">&quot;learnable threshold&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_learnable_reset</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">learnable_reset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode learnable reset&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_learnable_reset</span><span class="p">,</span> <span class="s2">&quot;learable reset&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_time_independent</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">time_dependent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode time independent&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_time_independent</span><span class="p">,</span> <span class="s2">&quot;time independent&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_neuron_share</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">neuron_wise</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode neuron share&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_neuron_share</span><span class="p">,</span> <span class="s2">&quot;neuron share&quot;</span><span class="p">)</span>
+
+<span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">learnable</span> <span class="n">threshold</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">95.34</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">47.300100</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">learnable</span> <span class="n">reset</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">88.60</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">44.121851</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">time</span> <span class="n">independent</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.38</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">36.499136</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">neuron</span> <span class="n">share</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">95.99</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">41.603358</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_12_1.png" /></p>
+</div>
+<div class="section" id="ifnode-with-different-surrogate-functions">
+<h2>IFNode with different surrogate functions<a class="headerlink" href="#ifnode-with-different-surrogate-functions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">ifnode_spiking_neural_network_PiecewiseQuadratic</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">surrogate_fn</span><span class="o">=</span><span class="s2">&quot;PiecewiseQuadratic&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode PiecewiseQuadratic&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_PiecewiseQuadratic</span><span class="p">,</span> <span class="s2">&quot;PiecewiseQuadratic&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_SoftSign</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">surrogate_fn</span><span class="o">=</span><span class="s2">&quot;SoftSign&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode SoftSign&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_SoftSign</span><span class="p">,</span> <span class="s2">&quot;SoftSign&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_ATan</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">surrogate_fn</span><span class="o">=</span><span class="s2">&quot;ATan&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode ATan&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_ATan</span><span class="p">,</span> <span class="s2">&quot;ATan&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_NonzeroSignLogAbs</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">surrogate_fn</span><span class="o">=</span><span class="s2">&quot;NonzeroSignLogAbs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode NonzeroSignLogAbs&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_NonzeroSignLogAbs</span><span class="p">,</span> <span class="s2">&quot;NonzeroSignLogAbs&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_Erf</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">surrogate_fn</span><span class="o">=</span><span class="s2">&quot;Erf&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode Erf&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_Erf</span><span class="p">,</span> <span class="s2">&quot;Erf&quot;</span><span class="p">)</span>
+
+<span class="n">ifnode_spiking_neural_network_PiecewiseLeakyReLU</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span><span class="n">surrogate_fn</span><span class="o">=</span><span class="s2">&quot;PiecewiseLeakyReLU&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; IFNode PiecewiseLeakyReLU&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">ifnode_spiking_neural_network_PiecewiseLeakyReLU</span><span class="p">,</span> <span class="s2">&quot;PiecewiseLeakyReLU&quot;</span><span class="p">)</span>
+
+<span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">PiecewiseQuadratic</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.59</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">50.522003</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">SoftSign</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.74</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">46.623716</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">ATan</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">94.56</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">44.426878</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">NonzeroSignLogAbs</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">95.71</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">39.817249</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">Erf</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">26.70</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">43.860484</span>
+<span class="o">===&gt;</span> <span class="n">IFNode</span> <span class="n">PiecewiseLeakyReLU</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.82</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">02</span><span class="p">:</span><span class="mf">47.646427</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_14_1.png" /></p>
+</div>
+<div class="section" id="hybrid">
+<h2>Hybrid<a class="headerlink" href="#hybrid" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reset y</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">spiking_neural_network</span> <span class="o">=</span> <span class="n">mnist</span><span class="p">(</span>
+                 <span class="n">timesteps</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                 <span class="n">node</span> <span class="o">=</span><span class="s2">&quot;IFNode&quot;</span><span class="p">,</span>
+                 <span class="n">voltage_threshold</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">voltage_reset</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">learnable_threshold</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">learnable_reset</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">time_dependent</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">neuron_wise</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">surrogate_fn</span> <span class="o">=</span> <span class="s2">&quot;SoftSign&quot;</span><span class="p">,</span>
+                 <span class="n">binary</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,)</span><span class="o">.</span><span class="n">spike</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===&gt; Hybrid Spiking Neural Network&quot;</span><span class="p">)</span>
+<span class="n">train</span><span class="p">(</span><span class="n">spiking_neural_network</span><span class="p">)</span>
+
+<span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">===&gt;</span> <span class="n">Hybrid</span> <span class="n">Spiking</span> <span class="n">Neural</span> <span class="n">Network</span>
+<span class="n">Test</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">96.68</span><span class="o">%</span><span class="p">,</span> <span class="n">Elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mi">0</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mf">11.330691</span>
+</pre></div>
+</div>
+<p><img alt="png" src="../_images/output_16_1.png" /></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../quantization/quantization.html" class="btn btn-neutral float-right" title="Quantization Neural Network with Eve" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../copyright.html" class="btn btn-neutral float-left" title="MIT License" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; <a href="../copyright.html">Copyright</a> 2020, densechen.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

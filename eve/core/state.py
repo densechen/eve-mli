@@ -64,9 +64,9 @@ class State(object):
         >>> tensor.mean(data_reduce_dims)
     """
 
-    __global_statistics = []  # type: List[Statistic], class used to instantiate
+    __global_statistics = [] 
 
-    local_statistics = []  # type: List[Statistic], class already initialized.
+    local_statistics = []
 
     # use to align a variable with one dimension to as many dimensions as state
     align_dims: List[int]
@@ -111,25 +111,25 @@ class State(object):
         self.neuron_wise = neuron_wise
 
         if align_dims is None:
-            if self.filter_type == nn.Linear:
+            if isinstance(self.filter_module, nn.Linear):
                 align_dims = {"data": [1, 1, -1],
                               "param": [-1, 1]}[self.apply_on]
-            elif self.filter_type == nn.Conv2d:
+            elif isinstance(self.filter_module, nn.Conv2d):
                 align_dims = {"data": [1, -1, 1, 1],
                               "param": [-1, 1, 1, 1]}[self.apply_on]
         self.align_dims = align_dims
 
         if param_reduce_dims is None:
-            if self.filter_type == nn.Linear:
+            if isinstance(self.filter_module, nn.Linear):
                 param_reduce_dims = [1, ]
-            elif self.filter_type == nn.Conv2d:
+            elif isinstance(self.filter_module, nn.Conv2d):
                 param_reduce_dims = [1, 2, 3]
         self.param_reduce_dims = param_reduce_dims
 
         if data_reduce_dims is None:
-            if self.filter_type == nn.Linear:
+            if isinstance(self.filter_module, nn.Linear):
                 data_reduce_dims = [0, 1, ]
-            elif self.filter_type == nn.Conv2d:
+            elif isinstance(self.filter_module, nn.Conv2d):
                 data_reduce_dims = [0, 2, 3]
         self.data_reduce_dims = data_reduce_dims
 

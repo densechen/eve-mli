@@ -232,7 +232,7 @@ class piecewise_leaky_relu(Function):
         mask_width = (x.abs() < w)
         mask_c = mask_width.logical_not()
         grad_x = grad_output * \
-            w.masked_fill(mask_width, 1/w).masked_fill(mask_c, c)
+            x.masked_fill(mask_width, 1/w).masked_fill(mask_c, c)
         return grad_x, None, None
 
 

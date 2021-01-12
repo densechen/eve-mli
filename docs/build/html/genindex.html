@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>Index &mdash; eve-mli 0.0.1.rc documentation</title>
   
@@ -16,7 +16,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -50,7 +53,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> eve-mli
+            <a href="index.html" class="icon icon-home"> eve-mli
           
 
           
@@ -85,6 +88,13 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="README.html">Readme</a></li>
 <li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html">Spiking Neural Network with Eve</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html#ifnode-with-different-timesteps">IFNode with different timesteps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiking/spiking.html#ifnode-vs-lif-node">IFNode vs LIF Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quantization/quantization.html">Quantization Neural Network</a></li>
 </ul>
 <p class="caption"><span class="caption-text">APIs</span></p>
 <ul>
@@ -129,6 +139,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -140,7 +152,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
         
       </li>
     
@@ -249,7 +261,11 @@
 </li>
       <li><a href="eve.app.html#eve.app.buffers.RolloutBufferSamples.advantages">advantages (eve.app.buffers.RolloutBufferSamples attribute)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.state.State.align_dims">align_dims (eve.core.state.State attribute)</a>
+</li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.assign_model">assign_model() (eve.app.trainer.BaseTrainer static method)</a>
+</li>
+      <li><a href="eve.core.html#eve.core.layer.QuanModule.assign_quantizer">assign_quantizer() (eve.core.layer.QuanModule method)</a>
 </li>
       <li><a href="eve.core.html#eve.core.quan.Quantizer.asymmetric_quantization_param">asymmetric_quantization_param() (eve.core.quan.Quantizer method)</a>
 </li>
@@ -265,14 +281,6 @@
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eve.core.html#eve.core.quantize_fn.llsq.backward">backward() (eve.core.quantize_fn.llsq static method)</a>
-
-      <ul>
-        <li><a href="eve.core.html#eve.core.quantize_fn.lsq.backward">(eve.core.quantize_fn.lsq static method)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.quantize_fn.Round.backward">(eve.core.quantize_fn.Round static method)</a>
-</li>
-      </ul></li>
       <li><a href="eve.app.html#eve.app.algo.VectorizedActionNoise.base_noise">base_noise() (eve.app.algo.VectorizedActionNoise property)</a>
 </li>
       <li><a href="eve.app.html#eve.app.algo.BaseAlgorithm">BaseAlgorithm (class in eve.app.algo)</a>
@@ -285,14 +293,14 @@
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.baseline_acc">baseline_acc (eve.app.trainer.BaseTrainer attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.model.BaseModel">BaseModel (class in eve.app.model)</a>
 
       <ul>
         <li><a href="eve.app.html#eve.app.policies.BaseModel">(class in eve.app.policies)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.policies.BasePolicy">BasePolicy (class in eve.app.policies)</a>
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer">BaseTrainer (class in eve.app.trainer)</a>
@@ -369,6 +377,8 @@
       </ul></li>
       <li><a href="eve.app.html#eve.app.env.CloudpickleWrapper">CloudpickleWrapper (class in eve.app.env)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.state.cnt">cnt (class in eve.core.state)</a>
+</li>
       <li><a href="eve.app.html#eve.app.algo.OffPolicyAlgorithm.collect_rollouts">collect_rollouts() (eve.app.algo.OffPolicyAlgorithm method)</a>
 
       <ul>
@@ -441,6 +451,8 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="eve.core.html#eve.core.state.State.data_reduce_dims">data_reduce_dims (eve.core.state.State attribute)</a>
+</li>
       <li><a href="eve.app.html#eve.app.utils.data_to_json">data_to_json() (in module eve.app.utils)</a>
 </li>
       <li><a href="eve.app.algorithm.html#eve.app.algorithm.ddpg.DDPG">DDPG (class in eve.app.algorithm.ddpg)</a>
@@ -837,15 +849,13 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eve.core.html#eve.core.state.State.feat_in_fn">feat_in_fn() (eve.core.state.State static method)</a>
+      <li><a href="eve.core.html#eve.core.state.feat_in">feat_in (class in eve.core.state)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.state.State.feat_out_fn">feat_out_fn() (eve.core.state.State static method)</a>
+      <li><a href="eve.core.html#eve.core.state.feat_out">feat_out (class in eve.core.state)</a>
 </li>
       <li><a href="eve.app.html#eve.app.policies.BaseFeaturesExtractor.features_dim">features_dim() (eve.app.policies.BaseFeaturesExtractor property)</a>
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.fetch_obs">fetch_obs() (eve.app.trainer.BaseTrainer method)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.filter_bias">filter_bias() (eve.core.state.State property)</a>
 </li>
       <li><a href="eve.app.html#eve.app.logger.filter_excluded_keys">filter_excluded_keys() (in module eve.app.logger)</a>
 </li>
@@ -855,7 +865,7 @@
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.finetune_acc">finetune_acc (eve.app.trainer.BaseTrainer attribute)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.state.State.fire_rate_fn">fire_rate_fn() (eve.core.state.State static method)</a>
+      <li><a href="eve.core.html#eve.core.state.fire_rate">fire_rate (class in eve.core.state)</a>
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.fit">fit() (eve.app.trainer.BaseTrainer method)</a>
 </li>
@@ -920,11 +930,11 @@
 </li>
         <li><a href="eve.core.html#eve.core.quan.Quan.forward">(eve.core.quan.Quan method)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quantize_fn.llsq.forward">(eve.core.quantize_fn.llsq static method)</a>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Llsq.forward">(eve.core.quantize_fn.Llsq method)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quantize_fn.lsq.forward">(eve.core.quantize_fn.lsq static method)</a>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Lsq.forward">(eve.core.quantize_fn.Lsq method)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quantize_fn.Round.forward">(eve.core.quantize_fn.Round static method)</a>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Round.forward">(eve.core.quantize_fn.Round method)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.SurrogateFnBase.forward">(eve.core.surrogate_fn.SurrogateFnBase method)</a>
 </li>
@@ -1001,14 +1011,14 @@
 </li>
       <li><a href="eve.app.html#eve.app.env.get_monitor_files">get_monitor_files() (in module eve.app.env)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.policies.StateDependentNoiseDistribution.get_noise">get_noise() (eve.app.policies.StateDependentNoiseDistribution method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.buffers.get_obs_shape">get_obs_shape() (in module eve.app.buffers)</a>
 </li>
       <li><a href="eve.app.html#eve.app.env.VecNormalize.get_original_obs">get_original_obs() (eve.app.env.VecNormalize method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.env.VecNormalize.get_original_reward">get_original_reward() (eve.app.env.VecNormalize method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.algo.BaseAlgorithm.get_parameters">get_parameters() (eve.app.algo.BaseAlgorithm method)</a>
@@ -1041,19 +1051,7 @@
       </ul></li>
       <li><a href="eve.app.html#eve.app.env.VecEnvWrapper.getattr_recursive">getattr_recursive() (eve.app.env.VecEnvWrapper method)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.state.State.global_feat_in">global_feat_in (eve.core.state.State attribute)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.global_feat_out">global_feat_out (eve.core.state.State attribute)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.global_idx">global_idx (eve.core.state.State attribute)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.global_kernel_size">global_kernel_size (eve.core.state.State attribute)</a>
-</li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.global_model">global_model (eve.app.trainer.BaseTrainer attribute)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.global_param_num">global_param_num (eve.core.state.State attribute)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.global_stride">global_stride (eve.core.state.State attribute)</a>
 </li>
       <li><a href="eve.core.html#eve.core.quan.Quantizer.global_tracker">global_tracker() (eve.core.quan.Quantizer static method)</a>
 </li>
@@ -1135,11 +1133,11 @@
 <h2 id="K">K</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eve.core.html#eve.core.state.State.k_fn">k_fn() (eve.core.state.State static method)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.layer.QuanBNFuseConv2d.kernel_size">kernel_size (eve.core.layer.QuanBNFuseConv2d attribute)</a>
+      <li><a href="eve.core.html#eve.core.state.kernel_size">kernel_size (class in eve.core.state)</a>
 
       <ul>
+        <li><a href="eve.core.html#eve.core.layer.QuanBNFuseConv2d.kernel_size">(eve.core.layer.QuanBNFuseConv2d attribute)</a>
+</li>
         <li><a href="eve.core.html#eve.core.layer.QuanConv2d.kernel_size">(eve.core.layer.QuanConv2d attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.layer.QuanConvTranspose2d.kernel_size">(eve.core.layer.QuanConvTranspose2d attribute)</a>
@@ -1147,15 +1145,13 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eve.core.html#eve.core.state.State.kernel_size_fn">kernel_size_fn() (eve.core.state.State static method)</a>
-</li>
       <li><a href="eve.app.html#eve.app.model.BaseModel.key_map">key_map (eve.app.model.BaseModel attribute)</a>
 
       <ul>
         <li><a href="eve.app.html#eve.app.model.Classifier.key_map">(eve.app.model.Classifier attribute)</a>
 </li>
       </ul></li>
-      <li><a href="eve.core.html#eve.core.state.State.kl_div_fn">kl_div_fn() (eve.core.state.State static method)</a>
+      <li><a href="eve.core.html#eve.core.state.kl_div">kl_div (class in eve.core.state)</a>
 </li>
       <li><a href="eve.app.html#eve.app.logger.KVWriter">KVWriter (class in eve.app.logger)</a>
 </li>
@@ -1165,7 +1161,7 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eve.core.html#eve.core.state.State.l1_norm_fn">l1_norm_fn() (eve.core.state.State static method)</a>
+      <li><a href="eve.core.html#eve.core.state.l1_norm">l1_norm (class in eve.core.state)</a>
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.last_eve">last_eve (eve.app.trainer.BaseTrainer attribute)</a>
 </li>
@@ -1197,7 +1193,7 @@
 </li>
       <li><a href="eve.app.html#eve.app.utils.linear_schedule">linear_schedule() (in module eve.app.utils)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.quantize_fn.llsq">llsq (class in eve.core.quantize_fn)</a>
+      <li><a href="eve.core.html#eve.core.quantize_fn.Llsq">Llsq (class in eve.core.quantize_fn)</a>
 </li>
       <li><a href="eve.app.html#eve.app.algo.BaseAlgorithm.load">load() (eve.app.algo.BaseAlgorithm class method)</a>
 
@@ -1221,10 +1217,10 @@
 </li>
       <li><a href="eve.app.html#eve.app.policies.BaseModel.load_from_vector">load_from_vector() (eve.app.policies.BaseModel method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.utils.load_from_zip_file">load_from_zip_file() (in module eve.app.utils)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.algo.OffPolicyAlgorithm.load_replay_buffer">load_replay_buffer() (eve.app.algo.OffPolicyAlgorithm method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.env.load_results">load_results() (in module eve.app.env)</a>
@@ -1234,6 +1230,8 @@
       <li><a href="eve.utils.html#eve.utils.legacy.load_weight_from_legacy_checkpoint">load_weight_from_legacy_checkpoint() (in module eve.utils.legacy)</a>
 </li>
       <li><a href="eve.app.html#eve.app.env.LoadMonitorResultsError">LoadMonitorResultsError</a>
+</li>
+      <li><a href="eve.core.html#eve.core.state.State.local_statistics">local_statistics (eve.core.state.State attribute)</a>
 </li>
       <li><a href="eve.app.html#eve.app.logger.Logger.log">log() (eve.app.logger.Logger method)</a>
 
@@ -1277,7 +1275,7 @@
       </ul></li>
       <li><a href="eve.app.html#eve.app.logger.Logger">Logger (class in eve.app.logger)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.quantize_fn.lsq">lsq (class in eve.core.quantize_fn)</a>
+      <li><a href="eve.core.html#eve.core.quantize_fn.Lsq">Lsq (class in eve.core.quantize_fn)</a>
 </li>
       <li><a href="eve.app.html#eve.app.policies.LSTMExtractor">LSTMExtractor (class in eve.app.policies)</a>
 </li>
@@ -1452,6 +1450,8 @@
 </li>
       <li><a href="eve.core.html#eve.core.quan.Quantizer.negative">negative() (eve.core.quan.Quantizer property)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.state.State.neuron_wise">neuron_wise (eve.core.state.State attribute)</a>
+</li>
       <li><a href="eve.core.html#eve.core.state.State.neurons">neurons() (eve.core.state.State property)</a>
 </li>
       <li><a href="eve.app.html#eve.app.buffers.ReplayBufferSamples.next_observations">next_observations (eve.app.buffers.ReplayBufferSamples attribute)</a>
@@ -1462,10 +1462,10 @@
 </li>
       <li><a href="eve.core.html#eve.core.quan.Quan.non_quantization_forward">non_quantization_forward() (eve.core.quan.Quan method)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.eve.Eve.non_quantize">non_quantize() (eve.core.eve.Eve method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="eve.core.html#eve.core.eve.Eve.non_quantize">non_quantize() (eve.core.eve.Eve method)</a>
+</li>
       <li><a href="eve.core.html#eve.core.eve.Eve.non_spike">non_spike() (eve.core.eve.Eve method)</a>
 </li>
       <li><a href="eve.core.html#eve.core.layer.Dropout.non_spiking_forward">non_spiking_forward() (eve.core.layer.Dropout method)</a>
@@ -1555,6 +1555,8 @@
 </li>
         <li><a href="eve.core.html#eve.core.layer.PoissonEncoder.obs_momentum">(eve.core.layer.PoissonEncoder attribute)</a>
 </li>
+        <li><a href="eve.core.html#eve.core.layer.QuanModule.obs_momentum">(eve.core.layer.QuanModule attribute)</a>
+</li>
         <li><a href="eve.core.html#eve.core.layer.RateEncoder.obs_momentum">(eve.core.layer.RateEncoder attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.node.IFNode.obs_momentum">(eve.core.node.IFNode attribute)</a>
@@ -1563,9 +1565,13 @@
 </li>
         <li><a href="eve.core.html#eve.core.node.Node.obs_momentum">(eve.core.node.Node attribute)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quan.Quan.obs_momentum">(eve.core.quan.Quan attribute)</a>
-</li>
         <li><a href="eve.core.html#eve.core.quan.Quantizer.obs_momentum">(eve.core.quan.Quantizer attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Llsq.obs_momentum">(eve.core.quantize_fn.Llsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Lsq.obs_momentum">(eve.core.quantize_fn.Lsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Round.obs_momentum">(eve.core.quantize_fn.Round attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.ATan.obs_momentum">(eve.core.surrogate_fn.ATan attribute)</a>
 </li>
@@ -1604,6 +1610,8 @@
       </ul></li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.observation_space">observation_space() (eve.app.trainer.BaseTrainer property)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.buffers.ReplayBufferSamples.observations">observations (eve.app.buffers.ReplayBufferSamples attribute)</a>
 
       <ul>
@@ -1612,20 +1620,56 @@
       </ul></li>
       <li><a href="eve.app.html#eve.app.env.ObservationWrapper">ObservationWrapper (class in eve.app.env)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eve.app.html#eve.app.algo.OffPolicyAlgorithm">OffPolicyAlgorithm (class in eve.app.algo)</a>
 </li>
       <li><a href="eve.app.html#eve.app.buffers.RolloutBufferSamples.old_log_prob">old_log_prob (eve.app.buffers.RolloutBufferSamples attribute)</a>
 </li>
       <li><a href="eve.app.html#eve.app.buffers.RolloutBufferSamples.old_values">old_values (eve.app.buffers.RolloutBufferSamples attribute)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.state.cnt.on_init">on_init() (eve.core.state.cnt method)</a>
+
+      <ul>
+        <li><a href="eve.core.html#eve.core.state.feat_in.on_init">(eve.core.state.feat_in method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.feat_out.on_init">(eve.core.state.feat_out method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.kernel_size.on_init">(eve.core.state.kernel_size method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.param_num.on_init">(eve.core.state.param_num method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.Statistic.on_init">(eve.core.state.Statistic method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.stride.on_init">(eve.core.state.stride method)</a>
+</li>
+      </ul></li>
       <li><a href="eve.app.html#eve.app.callbacks.BaseCallback.on_rollout_end">on_rollout_end() (eve.app.callbacks.BaseCallback method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.callbacks.BaseCallback.on_rollout_start">on_rollout_start() (eve.app.callbacks.BaseCallback method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.callbacks.BaseCallback.on_step">on_step() (eve.app.callbacks.BaseCallback method)</a>
+
+      <ul>
+        <li><a href="eve.core.html#eve.core.state.cnt.on_step">(eve.core.state.cnt method)</a>
 </li>
+        <li><a href="eve.core.html#eve.core.state.feat_in.on_step">(eve.core.state.feat_in method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.feat_out.on_step">(eve.core.state.feat_out method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.fire_rate.on_step">(eve.core.state.fire_rate method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.kernel_size.on_step">(eve.core.state.kernel_size method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.kl_div.on_step">(eve.core.state.kl_div method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.l1_norm.on_step">(eve.core.state.l1_norm method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.param_num.on_step">(eve.core.state.param_num method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.Statistic.on_step">(eve.core.state.Statistic method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.stride.on_step">(eve.core.state.stride method)</a>
+</li>
+      </ul></li>
       <li><a href="eve.app.html#eve.app.callbacks.BaseCallback.on_training_end">on_training_end() (eve.app.callbacks.BaseCallback method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.callbacks.BaseCallback.on_training_start">on_training_start() (eve.app.callbacks.BaseCallback method)</a>
@@ -1660,48 +1704,6 @@
         <li><a href="eve.app.html#eve.app.policies.BasePolicy.optimizer">(eve.app.policies.BasePolicy attribute)</a>
 </li>
         <li><a href="eve.app.html#eve.app.policies.ContinuousCritic.optimizer">(eve.app.policies.ContinuousCritic attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.eve.Eve.optimizer">(eve.core.eve.Eve attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.Dropout.optimizer">(eve.core.layer.Dropout attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.Dropout2d.optimizer">(eve.core.layer.Dropout2d attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.Encoder.optimizer">(eve.core.layer.Encoder attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.IntervalEncoder.optimizer">(eve.core.layer.IntervalEncoder attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.LatencyEncoder.optimizer">(eve.core.layer.LatencyEncoder attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.PoissonEncoder.optimizer">(eve.core.layer.PoissonEncoder attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.RateEncoder.optimizer">(eve.core.layer.RateEncoder attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.node.IFNode.optimizer">(eve.core.node.IFNode attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.node.LIFNode.optimizer">(eve.core.node.LIFNode attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.node.Node.optimizer">(eve.core.node.Node attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.quan.Quan.optimizer">(eve.core.quan.Quan attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.quan.Quantizer.optimizer">(eve.core.quan.Quantizer attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.ATan.optimizer">(eve.core.surrogate_fn.ATan attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.Erf.optimizer">(eve.core.surrogate_fn.Erf attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.NonzeroSignLogAbs.optimizer">(eve.core.surrogate_fn.NonzeroSignLogAbs attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseLeakyReLU.optimizer">(eve.core.surrogate_fn.PiecewiseLeakyReLU attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseQuadratic.optimizer">(eve.core.surrogate_fn.PiecewiseQuadratic attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.Sigmoid.optimizer">(eve.core.surrogate_fn.Sigmoid attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.SoftSign.optimizer">(eve.core.surrogate_fn.SoftSign attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.SurrogateFnBase.optimizer">(eve.core.surrogate_fn.SurrogateFnBase attribute)</a>
 </li>
       </ul></li>
       <li><a href="eve.app.html#eve.app.algo.OrnsteinUhlenbeckActionNoise">OrnsteinUhlenbeckActionNoise (class in eve.app.algo)</a>
@@ -1746,7 +1748,9 @@
         <li><a href="eve.core.html#eve.core.layer.QuanConvTranspose2d.padding_mode">(eve.core.layer.QuanConvTranspose2d attribute)</a>
 </li>
       </ul></li>
-      <li><a href="eve.core.html#eve.core.state.State.param_num_fn">param_num_fn() (eve.core.state.State static method)</a>
+      <li><a href="eve.core.html#eve.core.state.param_num">param_num (class in eve.core.state)</a>
+</li>
+      <li><a href="eve.core.html#eve.core.state.State.param_reduce_dims">param_reduce_dims (eve.core.state.State attribute)</a>
 </li>
       <li><a href="eve.app.html#eve.app.policies.BaseModel.parameters_to_vector">parameters_to_vector() (eve.app.policies.BaseModel method)</a>
 </li>
@@ -1791,7 +1795,7 @@
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.NonzeroSignLogAbs.primitive_function">(eve.core.surrogate_fn.NonzeroSignLogAbs method)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseLeakyReLU.primitive_function">(eve.core.surrogate_fn.PiecewiseLeakyReLU static method)</a>
+        <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseLeakyReLU.primitive_function">(eve.core.surrogate_fn.PiecewiseLeakyReLU method)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseQuadratic.primitive_function">(eve.core.surrogate_fn.PiecewiseQuadratic method)</a>
 </li>
@@ -1852,6 +1856,8 @@
 </li>
       <li><a href="eve.core.html#eve.core.layer.QuanLinear">QuanLinear (class in eve.core.layer)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.layer.QuanModule">QuanModule (class in eve.core.layer)</a>
+</li>
       <li><a href="eve.app.algorithm.html#eve.app.algorithm.dqn.DQNPolicy.quantization">quantization (eve.app.algorithm.dqn.DQNPolicy attribute)</a>
 
       <ul>
@@ -1897,6 +1903,8 @@
 </li>
         <li><a href="eve.core.html#eve.core.layer.PoissonEncoder.quantization">(eve.core.layer.PoissonEncoder attribute)</a>
 </li>
+        <li><a href="eve.core.html#eve.core.layer.QuanModule.quantization">(eve.core.layer.QuanModule attribute)</a>
+</li>
         <li><a href="eve.core.html#eve.core.layer.RateEncoder.quantization">(eve.core.layer.RateEncoder attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.node.IFNode.quantization">(eve.core.node.IFNode attribute)</a>
@@ -1905,9 +1913,13 @@
 </li>
         <li><a href="eve.core.html#eve.core.node.Node.quantization">(eve.core.node.Node attribute)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quan.Quan.quantization">(eve.core.quan.Quan attribute)</a>
-</li>
         <li><a href="eve.core.html#eve.core.quan.Quantizer.quantization">(eve.core.quan.Quantizer attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Llsq.quantization">(eve.core.quantize_fn.Llsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Lsq.quantization">(eve.core.quantize_fn.Lsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Round.quantization">(eve.core.quantize_fn.Round attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.ATan.quantization">(eve.core.surrogate_fn.ATan attribute)</a>
 </li>
@@ -1982,11 +1994,11 @@
 </li>
       <li><a href="eve.core.html#eve.core.eve.Eve.register_eve_parameter">register_eve_parameter() (eve.core.eve.Eve method)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.state.State.register_global_statistic">register_global_statistic() (eve.core.state.State static method)</a>
+</li>
       <li><a href="eve.app.html#eve.app.model.BaseModel.register_info_hook">register_info_hook() (eve.app.model.BaseModel method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.policies.register_policy">register_policy() (in module eve.app.policies)</a>
-</li>
-      <li><a href="eve.core.html#eve.core.state.State.register_state_fn">register_state_fn() (eve.core.state.State method)</a>
 </li>
       <li><a href="eve.core.html#eve.core.eve.Eve.register_upgrade_fn">register_upgrade_fn() (eve.core.eve.Eve method)</a>
 </li>
@@ -2045,7 +2057,9 @@
 </li>
         <li><a href="eve.core.html#eve.core.eve.Eve.reset">(eve.core.eve.Eve method)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.state.State.reset">(eve.core.state.State static method)</a>
+        <li><a href="eve.core.html#eve.core.state.State.reset">(eve.core.state.State method)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.state.Statistic.reset">(eve.core.state.Statistic method)</a>
 </li>
         <li><a href="eve.app.html#eve.app.logger.reset">(in module eve.app.logger)</a>
 </li>
@@ -2305,6 +2319,8 @@
 </li>
         <li><a href="eve.core.html#eve.core.layer.PoissonEncoder.spiking">(eve.core.layer.PoissonEncoder attribute)</a>
 </li>
+        <li><a href="eve.core.html#eve.core.layer.QuanModule.spiking">(eve.core.layer.QuanModule attribute)</a>
+</li>
         <li><a href="eve.core.html#eve.core.layer.RateEncoder.spiking">(eve.core.layer.RateEncoder attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.node.IFNode.spiking">(eve.core.node.IFNode attribute)</a>
@@ -2313,9 +2329,13 @@
 </li>
         <li><a href="eve.core.html#eve.core.node.Node.spiking">(eve.core.node.Node attribute)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quan.Quan.spiking">(eve.core.quan.Quan attribute)</a>
-</li>
         <li><a href="eve.core.html#eve.core.quan.Quantizer.spiking">(eve.core.quan.Quantizer attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Llsq.spiking">(eve.core.quantize_fn.Llsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Lsq.spiking">(eve.core.quantize_fn.Lsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Round.spiking">(eve.core.quantize_fn.Round attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.ATan.spiking">(eve.core.surrogate_fn.ATan attribute)</a>
 </li>
@@ -2361,7 +2381,7 @@
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.NonzeroSignLogAbs.spiking_function">(eve.core.surrogate_fn.NonzeroSignLogAbs method)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseLeakyReLU.spiking_function">(eve.core.surrogate_fn.PiecewiseLeakyReLU static method)</a>
+        <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseLeakyReLU.spiking_function">(eve.core.surrogate_fn.PiecewiseLeakyReLU method)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.PiecewiseQuadratic.spiking_function">(eve.core.surrogate_fn.PiecewiseQuadratic method)</a>
 </li>
@@ -2378,15 +2398,21 @@
 </li>
       <li><a href="eve.core.html#eve.core.state.State">State (class in eve.core.state)</a>
 </li>
+      <li><a href="eve.core.html#eve.core.quan.Quan.state">state (eve.core.quan.Quan attribute)</a>
+
+      <ul>
+        <li><a href="eve.core.html#eve.core.quan.Quantizer.state">(eve.core.quan.Quantizer attribute)</a>
+</li>
+      </ul></li>
       <li><a href="eve.app.html#eve.app.upgrader.Upgrader.state_dict">state_dict() (eve.app.upgrader.Upgrader method)</a>
 </li>
       <li><a href="eve.app.html#eve.app.trainer.BaseTrainer.state_dict_cache">state_dict_cache (eve.app.trainer.BaseTrainer attribute)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.state.State.state_list">state_list() (eve.core.state.State method)</a>
-</li>
       <li><a href="eve.app.html#eve.app.policies.StateDependentNoiseDistribution">StateDependentNoiseDistribution (class in eve.app.policies)</a>
 </li>
       <li><a href="eve.core.html#eve.core.quan.Quantizer.states">states() (eve.core.quan.Quantizer property)</a>
+</li>
+      <li><a href="eve.core.html#eve.core.state.Statistic">Statistic (class in eve.core.state)</a>
 </li>
       <li><a href="eve.app.html#eve.app.env.ActionWrapper.step">step() (eve.app.env.ActionWrapper method)</a>
 
@@ -2438,16 +2464,16 @@
 </li>
       <li><a href="eve.app.html#eve.app.exp_manager.StoreDict">StoreDict (class in eve.app.exp_manager)</a>
 </li>
-      <li><a href="eve.core.html#eve.core.layer.QuanBNFuseConv2d.stride">stride (eve.core.layer.QuanBNFuseConv2d attribute)</a>
+      <li><a href="eve.core.html#eve.core.state.stride">stride (class in eve.core.state)</a>
 
       <ul>
+        <li><a href="eve.core.html#eve.core.layer.QuanBNFuseConv2d.stride">(eve.core.layer.QuanBNFuseConv2d attribute)</a>
+</li>
         <li><a href="eve.core.html#eve.core.layer.QuanConv2d.stride">(eve.core.layer.QuanConv2d attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.layer.QuanConvTranspose2d.stride">(eve.core.layer.QuanConvTranspose2d attribute)</a>
 </li>
       </ul></li>
-      <li><a href="eve.core.html#eve.core.state.State.stride_fn">stride_fn() (eve.core.state.State static method)</a>
-</li>
       <li><a href="eve.app.html#eve.app.env.SubprocVecEnv">SubprocVecEnv (class in eve.app.env)</a>
 </li>
       <li><a href="eve.app.html#eve.app.policies.sum_independent_dims">sum_independent_dims() (in module eve.app.policies)</a>
@@ -2587,19 +2613,11 @@
 </li>
         <li><a href="eve.app.html#eve.app.policies.ActorCriticPolicy.training">(eve.app.policies.ActorCriticPolicy attribute)</a>
 </li>
-        <li><a href="eve.app.html#eve.app.policies.BaseModel.training">(eve.app.policies.BaseModel attribute)</a>
-</li>
         <li><a href="eve.app.html#eve.app.policies.BasePolicy.training">(eve.app.policies.BasePolicy attribute)</a>
 </li>
         <li><a href="eve.app.html#eve.app.policies.ContinuousCritic.training">(eve.app.policies.ContinuousCritic attribute)</a>
 </li>
         <li><a href="eve.app.html#eve.app.policies.FlattenExtractor.training">(eve.app.policies.FlattenExtractor attribute)</a>
-</li>
-        <li><a href="eve.app.html#eve.app.policies.LSTMExtractor.training">(eve.app.policies.LSTMExtractor attribute)</a>
-</li>
-        <li><a href="eve.app.html#eve.app.policies.MlpExtractor.training">(eve.app.policies.MlpExtractor attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.eve.Eve.training">(eve.core.eve.Eve attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.layer.Dropout.training">(eve.core.layer.Dropout attribute)</a>
 </li>
@@ -2613,9 +2631,7 @@
 </li>
         <li><a href="eve.core.html#eve.core.layer.PoissonEncoder.training">(eve.core.layer.PoissonEncoder attribute)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.layer.QuanBNFuseConv2d.training">(eve.core.layer.QuanBNFuseConv2d attribute)</a>
-</li>
-        <li><a href="eve.core.html#eve.core.layer.QuanConvTranspose2d.training">(eve.core.layer.QuanConvTranspose2d attribute)</a>
+        <li><a href="eve.core.html#eve.core.layer.QuanModule.training">(eve.core.layer.QuanModule attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.layer.RateEncoder.training">(eve.core.layer.RateEncoder attribute)</a>
 </li>
@@ -2625,9 +2641,13 @@
 </li>
         <li><a href="eve.core.html#eve.core.node.Node.training">(eve.core.node.Node attribute)</a>
 </li>
-        <li><a href="eve.core.html#eve.core.quan.Quan.training">(eve.core.quan.Quan attribute)</a>
-</li>
         <li><a href="eve.core.html#eve.core.quan.Quantizer.training">(eve.core.quan.Quantizer attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Llsq.training">(eve.core.quantize_fn.Llsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Lsq.training">(eve.core.quantize_fn.Lsq attribute)</a>
+</li>
+        <li><a href="eve.core.html#eve.core.quantize_fn.Round.training">(eve.core.quantize_fn.Round attribute)</a>
 </li>
         <li><a href="eve.core.html#eve.core.surrogate_fn.ATan.training">(eve.core.surrogate_fn.ATan attribute)</a>
 </li>
@@ -2827,29 +2847,25 @@
            
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        
-        &copy; <a href="copyright.html">Copyright</a> 2020, densechen
+        &#169; <a href="copyright.html">Copyright</a> 2020, densechen.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

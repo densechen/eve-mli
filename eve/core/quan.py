@@ -114,7 +114,7 @@ class Quantizer(Quan):
         self.signed_quantization = signed_quantization
 
         # set default learnable values
-        if learnable_alpha is None and isinstance(quantize_fn, str) and quantize_fn in ["lsq", "llsq"]:
+        if learnable_alpha is None and isinstance(quantize_fn, str) and quantize_fn in ["Lsq", "Llsq"]:
             learnable_alpha = True
         elif learnable_alpha is None:
             learnable_alpha = False
@@ -134,7 +134,6 @@ class Quantizer(Quan):
 
         # register function for bits_eve
         if upgrade_fn is None:
-
             def upgrade_fn(param, action=None):
                 # action is always in [0, 1]
                 # if action is not None, take action
@@ -169,7 +168,7 @@ class Quantizer(Quan):
                     f"only the following function supported: {eve.core.quantize_fn.__all__}"
                     f"Got: {quantize_fn}"
                     f"Raise: {e}")
-        self.quantize_fn = quantize_fn
+        self.quantize_fn = quantize_fn(**self.kwargs)
 
     @property
     def states(self):
@@ -203,8 +202,7 @@ class Quantizer(Quan):
     def asymmetric_quantization_param(self):
         quantized_range = self.positive - self.negative
         float_range = self.max_val - self.min_val
-        float_range = float_range.reshape(self.state.align_dims)
-        
+
         self.alpha.data.zero_().add_(
             float_range * quantized_range /
             (quantized_range * quantized_range + 1e-8))
@@ -215,7 +213,6 @@ class Quantizer(Quan):
     def symmetric_quantization_param(self):
         quantized_range = th.max(th.abs(self.positive), th.abs(self.negative))
         float_range = th.max(th.abs(self.min_val), th.abs(self.max_val))
-        float_range = float_range.reshape(self.state.align_dims)
 
         # in bits == 0, the quantized_range equals zero too.
         # we multiply quantized_range both in Numerator and Denominator to keep the
@@ -241,8 +238,8 @@ class Quantizer(Quan):
         for dim in dims:
             min_val = min_val.min(dim, keepdim=True)[0]
             max_val = max_val.max(dim, keepdim=True)[0]
-        min_val = min_val.view(-1)
-        max_val = max_val.view(-1)
+        min_val = min_val.reshape(cls.state.align_dims)
+        max_val = max_val.reshape(cls.state.align_dims)
 
         if cls.learnable_alpha:
             if cls.asymmetric:
@@ -279,8 +276,8 @@ class Quantizer(Quan):
         for dim in dims:
             min_val = min_val.min(dim, keepdim=True)[0]
             max_val = max_val.max(dim, keepdim=True)[0]
-        min_val = min_val.view(-1)
-        max_val = max_val.view(-1)
+        min_val = min_val.reshape(cls.state.align_dims)
+        max_val = max_val.reshape(cls.state.align_dims)
 
         if cls.learnable_alpha:
             if cls.asymmetric:
@@ -306,6 +303,5 @@ class Quantizer(Quan):
             cls.symmetric_quantization_param()
 
     def quantization_forward(self, x: Tensor) -> Tensor:
-        return self.quantize_fn.apply(x, self.alpha, self.zero_point,
-                                      self.positive, self.negative,
-                                      **self.kwargs)
+        return self.quantize_fn(x, self.alpha, self.zero_point,
+                                self.positive, self.negative)
