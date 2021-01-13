@@ -24,6 +24,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/densechen/eve-mli",
+    download_url = 'https://github.com/densechen/eve-mli/archive/main.zip',
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",

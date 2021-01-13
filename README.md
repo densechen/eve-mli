@@ -20,6 +20,7 @@ Install from [PyPI](https://pypi.org/project/eve-mli/):
 
 ```bash
 pip install eve-mli
+# pip install git+git@github.com:densechen/eve-mli.git
 ```
 
 Developers can download and install the latest version from:
@@ -39,6 +40,7 @@ git clone https://gitee.com/densechen/eve-mli.git
 cd eve-mli
 python setup.py install
 ```
+
 
 Vailidate installation:
 
