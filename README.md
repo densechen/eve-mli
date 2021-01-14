@@ -48,6 +48,19 @@ Vailidate installation:
 python -c "import eve; print(eve.__version__)"
 ```
 
+
+## Quick Start
+
+The core module of eve-mli is `eve.core.Eve`, this module is a wrapper of `torch.nn.Module`. 
+
+In `Eve`, the parameter ended with `_eve` will be treated as an eve parameters, and we call the rest as torch parameters. In the same way, we also define eve buffers and torch buffers. 
+
+As for eve parameters, you can fetch and attach an `.obs` properties via `eve.core.State` class, and assign an upgrade
+function to modify the eve parameter. As for eve buffers, it is useful to cache the hidden states, all the eve buffers will be cleared
+once we call `Eve.reset()`. 
+
+In default, the model defined by `Eve` is the same with `nn.Module`. You can train it directly for obtaining a baseline model. Then, `Eve.spike()` will turn it into a spiking neural network module, and `Eve.quantize()` will trun it into a quantization neural network model.
+
 ## About the project
 
 The documentation can be found [here](https://eve-mli.readthedocs.io).
@@ -55,7 +68,7 @@ The documentation can be found [here](https://eve-mli.readthedocs.io).
 
 The project remains in development. We encourage more volunteers to come together!
 
-**The first official version of eve-mli will be released very soon.**
+**eve-mli-v0.1.0 is released!**
 
 ## About the authors
 
