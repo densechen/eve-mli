@@ -20,7 +20,7 @@ Install from [PyPI](https://pypi.org/project/eve-mli/):
 
 ```bash
 pip install eve-mli
-# pip install git+git@github.com:densechen/eve-mli.git
+# pip install git+https://github.com/densechen/eve-mli.git
 ```
 
 Developers can download and install the latest version from:
