@@ -63,6 +63,10 @@ The project remains in development. We encourage more volunteers to come togethe
 Master @ National University of Defense Technology
 densechen@foxmail.com
 
+## DOING
+
+Start integrating the code of project [Awesome-Deep-Neural-Network-Compression](https://github.com/csyhhu/Awesome-Deep-Neural-Network-Compression).
+
 ## References
 
 [PyTorch](https://github.com/pytorch/pytorch)
