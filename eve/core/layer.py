@@ -17,6 +17,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.autograd import Function
 from torch.nn import Parameter
 
 from eve.core.eve import Eve
@@ -25,6 +26,17 @@ from eve.core.state import State
 
 # pylint: disable=no-member
 # pylint: disable=access-member-before-definition
+
+r"""
+                                     .__  .__ 
+  _______  __ ____             _____ |  | |__|
+_/ __ \  \/ // __ \   ______  /     \|  | |  |
+\  ___/\   /\  ___/  /_____/ |  Y Y  \  |_|  |
+ \___  >\_/  \___  >         |__|_|  /____/__|
+     \/          \/                \/       
+
+Quan
+"""
 
 
 class QuanModule(Eve):
@@ -153,6 +165,18 @@ class QuanLinear(nn.Linear, QuanModule):
     def forward(self, input):
         quan_weight = self.quantizer(self.weight)
         return F.linear(input, quan_weight, self.bias)
+
+
+r"""
+                                     .__  .__ 
+  _______  __ ____             _____ |  | |__|
+_/ __ \  \/ // __ \   ______  /     \|  | |  |
+\  ___/\   /\  ___/  /_____/ |  Y Y  \  |_|  |
+ \___  >\_/  \___  >         |__|_|  /____/__|
+     \/          \/                \/       
+
+Spiking
+"""
 
 
 class Dropout(Eve):
@@ -326,3 +350,93 @@ class PoissonEncoder(Encoder):
         if self.raw_input_eve is None:
             self.raw_input_eve = x
         return th.rand_like(self.raw_input_eve).le(self.raw_input_eve).float()
+
+
+r"""
+                                     .__  .__ 
+  _______  __ ____             _____ |  | |__|
+_/ __ \  \/ // __ \   ______  /     \|  | |  |
+\  ___/\   /\  ___/  /_____/ |  Y Y  \  |_|  |
+ \___  >\_/  \___  >         |__|_|  /____/__|
+     \/          \/                \/       
+
+Pruning  
+"""
+
+
+class fbs_penalty(Function):
+    @staticmethod
+    def forward(ctx, x: th.Tensor, penalty: float = 1e-8):
+        ctx.save_for_backward(x)
+        ctx.others = (penalty,)
+        return x
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, = ctx.saved_tensors
+        penalty, = ctx.others
+
+        penalty_grad = penalty * x.sum()
+
+        return grad_output + penalty_grad, None
+
+
+class FBSConv2d(nn.Conv2d):
+    """The implementation of Dynamic Channel Pruning: Feature Boosting and Suppression.
+
+    Args:
+        pruning_ratio: how may channels will be kept.
+        saliency_penalty: the penalty of saliency gradient.
+
+    """
+
+    def __init__(self, *args, pruning_ratio: float = 0.5, saliency_penalty: float = 1e-8, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # define saliency module
+        self.saliency_predictor = nn.Linear(
+            in_features=self.in_channels, out_features=self.out_channels, bias=True)
+        self.pruning_ratio = pruning_ratio
+        self.saliency_penalty = saliency_penalty
+
+    def forward(self, x: th.Tensor) -> th.Tensor:
+        # subsample input features [B, C, H, W] to [B, C] via l1 norm
+        subsample_x = th.abs(x).mean(dim=(2, 3))
+        saliency = th.abs(self.saliency_predictor(subsample_x))
+
+        threshold = th.topk(saliency, k=int(
+            self.out_channels * self.pruning_ratio), dim=1)[0][:, -1]
+
+        saliency = th.where(saliency < threshold.view(-1, 1),
+                            th.zeros_like(saliency), saliency)
+
+        # add gradient penalty to gradient
+        saliency = fbs_penalty.apply(saliency, self.saliency_penalty)
+
+        return saliency.unsqueeze(dim=-1).unsqueeze(dim=-1) * super().forward(x)
+
+
+class FBSLinear(nn.Linear):
+    def __init__(self, *args, pruning_ratio: float = 0.5, saliency_penalty: float = 1e-8, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.saliency_predictor = nn.Linear(
+            in_features=self.in_features, out_features=self.out_features, bias=True)
+
+        self.pruning_ratio = pruning_ratio
+        self.saliency_penalty = saliency_penalty
+
+    def forward(self, x: th.Tensor) -> th.Tensor:
+        # in `Eve`, the input to linear layer is [batch_size, numel, feature]
+        subsample_x = th.abs(x).mean(dim=(1,))
+        saliency = th.abs(self.saliency_predictor(subsample_x))
+
+        threshold = th.topk(saliency, k=int(
+            self.out_features * self.pruning_ratio), dim=1)[0][:, -1]
+
+        saliency = th.where(saliency < threshold.view(-1, 1),
+                            th.zeros_like(saliency), saliency)
+
+        saliency = fbs_penalty.apply(saliency, self.saliency_penalty)
+
+        return saliency.unsqueeze(dim=1) * super().forward(x)
