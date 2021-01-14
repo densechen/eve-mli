@@ -310,7 +310,7 @@ class Upgrader(object):
         for group in self.param_groups:
             eve_param = group['params']
             for v in eve_param:
-                if hasattr(v, 'obs') and v.obs is not None and v.requires_grad:
+                if v.requires_grad:
                     yield v
 
     @torch.no_grad()

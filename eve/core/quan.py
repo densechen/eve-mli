@@ -305,3 +305,67 @@ class Quantizer(Quan):
     def quantization_forward(self, x: Tensor) -> Tensor:
         return self.quantize_fn(x, self.alpha, self.zero_point,
                                 self.positive, self.negative)
+
+
+class INQuantizer(Quantizer):
+    """The implementation of Incremental Network Quantization
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        assert self.state.apply_on == "param", "INQuantizer can only be applied on param!"
+
+        mask_eve = Parameter(th.ones_like(self.state.filter_weight))
+        self.register_eve_parameter("mask_eve", mask_eve)
+
+        # register upgrade fn
+        @th.no_grad()
+        def upgrade_fn(param, action=None):
+            """In this case, the action is quan_ratio!!!"""
+            # rename the arguments here for a better understanding
+            quan_ratio = action
+            assert 0 <= quan_ratio <= 1.0, "quan_ratio must be in [0, 1]"
+            mask_eve = param
+            # get remaining weights (mask as 1)
+            remaining_weights = self.state.filter_weight * mask_eve
+            n_elements = self.state.filter_weight.numel()
+            n_remaining_elements = mask_eve.sum()
+            # Number of elements to be quantizated in this iteration
+            # No.Remaining Elements - No.Require.Remaining Elements
+            n_quan = int(n_remaining_elements - n_elements *
+                         (1 - quan_ratio))
+
+            # higher than quantization point will be quantized
+            quan_point = th.topk(
+                th.abs(remaining_weights).view(-1), n_quan)[0][-1]
+            quantized_idx = th.abs(remaining_weights) >= quan_point
+
+            # NOTE: Quantize weight here, not in forward pass!
+            quantized_weights = remaining_weights * quantized_idx.float()
+
+            # quantized weight
+            quantized_weights = self.quantize_fn(
+                quantized_weights, self.alpha, self.zero_point, self.positive, self.negative)
+
+            filter_weight = self.state.filter_weight.clone()
+            # set quantized weight to filter weight, in-place operation!
+            self.state.filter_weight[quantized_idx].zero_()
+            self.state.filter_weight.add_(quantized_weights)
+
+            # set new mask, in-place operation!
+            mask_eve[quantized_idx].zero_()
+
+        # register to upgrade_fn
+        self.register_upgrade_fn(self.mask_eve, upgrade_fn)
+
+    def quantization_forward(self, x: Tensor) -> Tensor:
+        # NOTE: DO NOT QUAN HERE, BUT AT THE UPGRADE FN OF mask_eve
+        # quan_x = slef.quantize_fn(
+        #     x, self.alpha, self.zero_point, self.positive, self.negative)
+
+        # mask out grad
+        if self.training:
+            x.register_hook(lambda grad: grad * self.mask_eve)
+
+        return x
