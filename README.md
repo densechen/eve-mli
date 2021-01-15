@@ -76,6 +76,8 @@ The project remains in development. We encourage more volunteers to come togethe
 Master @ National University of Defense Technology
 densechen@foxmail.com
 
+[csyhhu](https://github.com/csyhhu)
+
 ## References
 
 [PyTorch](https://github.com/pytorch/pytorch)
