@@ -238,6 +238,50 @@ class Ternary(Eve):
         return ternary.apply(*args)
 
 
+class ste(Function):
+    @staticmethod
+    def forward(ctx, x: Tensor, alpha: Tensor, zero_point: Tensor,
+                positive: Tensor, negative: Tensor) -> Tensor:
+        quan_x = quantize(x, alpha, zero_point, positive, negative)
+
+        dequan_x = dequantize(quan_x, alpha, zero_point)
+
+        ctx.save_for_backward(x)
+
+        return dequan_x
+
+    @staticmethod
+    def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
+        x, = ctx.saved_tensors
+        gate = (th.abs(x) <= 1).type_as(x)
+        grad_output = grad_output * gate
+        return grad_output, None, None, None, None
+
+
+class STE(Eve):
+    def forward(self, *args) -> Tensor:
+        return ste.apply(*args)
+
+
+class sign(Function):
+    @staticmethod
+    def forward(ctx, x: Tensor):
+        ctx.save_for_backward(x)
+        return th.sign(x)
+
+    @staticmethod
+    def backward(ctx, grad_output: Tensor):
+        x, = ctx.saved_tensors
+        gate = (th.abs(x) <= 1).type_as(x)
+        grad_output = grad_output * gate
+        return grad_output
+
+
+class Sign(Eve):
+    def forward(self, x, *args):
+        return sign.apply(x)
+
+
 __all__ = [
     "Round",
     "Lsq",
