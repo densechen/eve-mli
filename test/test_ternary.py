@@ -1,4 +1,4 @@
-# import utils  # pylint: disable=import-error
+import utils  # pylint: disable=import-error
 
 import os
 import random
@@ -33,27 +33,15 @@ class mnist(eve.core.Eve):
     def __init__(self,
                  quan_on_a: bool = True,
                  quan_on_w: bool = True,
-                 bits: int = 8,
-                 quantize_fn: str = "Round",
-                 upgrade_bits: bool = False,
                  neuron_wise: bool = False,
-                 asymmetric: bool = False,
-                 signed_quantization: bool = False,
-                 learnable_alpha: bool = None,
-                 upgrade_fn: callable = None,
+                 threshold_factor: float = 0.05,
                  **kwargs,):
         super().__init__()
 
         def build_quantizer(state):
-            return eve.core.quan.QILQuantizer(state,
-                                              bits=bits,
-                                              quantize_fn=quantize_fn,
-                                              upgrade_bits=upgrade_bits,
+            return eve.core.quan.TernaryQuantizer(state,
                                               neuron_wise=neuron_wise,
-                                              asymmetric=asymmetric,
-                                              signed_quantization=signed_quantization,
-                                              learnable_alpha=learnable_alpha,
-                                              upgrade_fn=upgrade_fn,
+                                              threshold_factor=threshold_factor,
                                               **kwargs,)
         if quan_on_w:
             self.conv1 = eve.core.layer.QuanBNFuseConv2d(
@@ -199,8 +187,8 @@ def train(net, exp_name: str = "quan", data_root: str = "/home/densechen/dataset
 
 
 # define quantization neural network with quantize param, quantize act and quantize
-quantization_neural_network_both = mnist(
+quantization_neural_network = mnist(
     quan_on_w=False, quan_on_a=True).quantize()
 
 print("===> Quantization")
-train(quantization_neural_network_both, "both")
+train(quantization_neural_network)

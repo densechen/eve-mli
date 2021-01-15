@@ -77,6 +77,9 @@ class State(object):
     # to reduce data to one dimension one.
     data_reduce_dims: List[int]
 
+    # the default reduce dims
+    reduce_dims: List[int]
+
     neuron_wise: bool
 
     def __init__(self,
@@ -132,6 +135,13 @@ class State(object):
             elif isinstance(self.filter_module, nn.Conv2d):
                 data_reduce_dims = [0, 2, 3]
         self.data_reduce_dims = data_reduce_dims
+
+        if self.apply_on == "data":
+            self.reduce_dims = self.data_reduce_dims
+        elif self.apply_on == "param":
+            self.reduce_dims = self.param_reduce_dims
+        else:
+            raise ValueError
 
         self.local_statistics = []
         if statistic is not None:

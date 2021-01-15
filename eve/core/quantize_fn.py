@@ -200,8 +200,47 @@ class Llsq(Eve):
         return llsq_fn.apply(*args, self.regular)
 
 
+class ternary(Function):
+
+    @staticmethod
+    def forward(ctx, x: Tensor, positive: Tensor, negative: Tensor, threshold: Tensor) -> Tensor:
+        pos_indices = (x > threshold).type_as(x)
+        neg_indices = (x < -threshold).type_as(x)
+
+        ternary_x = positive * pos_indices + negative * neg_indices
+
+        ctx.save_for_backward(pos_indices, neg_indices, positive, negative)
+
+        return ternary_x
+
+    @staticmethod
+    def backward(ctx, grad_output: Tensor) -> List[Union[Tensor, None]]:
+        pos_indices, neg_indices,  positive, negative = ctx.saved_tensors
+        pruned_indices = th.ones_like(pos_indices) - pos_indices - neg_indices
+
+        def reduce_dim(x):
+            for idx, dim in enumerate(positive.shape):
+                if dim == 1:
+                    x = x.mean(dim=idx, keepdim=True)
+            return x
+
+        grad_pos = reduce_dim(grad_output * pos_indices)
+        grad_neg = reduce_dim(grad_output * neg_indices)
+
+        grad_fp_weight = positive * grad_output * pos_indices + \
+            grad_output * pruned_indices + negative * grad_output * neg_indices
+
+        return grad_fp_weight, grad_pos, grad_neg, None
+
+
+class Ternary(Eve):
+    def forward(self, *args) -> Tensor:
+        return ternary.apply(*args)
+
+
 __all__ = [
     "Round",
     "Lsq",
     "Llsq",
+    "Ternary",
 ]

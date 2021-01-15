@@ -472,3 +472,49 @@ class QILQuantizer(Quantizer):
             cls.symmetric_quantization_param()
 
         return transformed_weight
+
+
+class TernaryQuantizer(Quan):
+    """The implementation of Ternary Quantizer.
+    """
+
+    def __init__(
+        self,
+        state: State,
+        neuron_wise: bool = False,
+        threshold_factor: float = 0.05,
+        **kwargs,
+    ):
+        super().__init__()
+
+        self.state = state
+
+        # set neuron wise for state which support neuron wise mode
+        self.state.set_neuron_wise(neuron_wise)
+
+        self.neuron_wise = neuron_wise
+        self.threshold_factor = threshold_factor
+
+        positive = th.rand([self.state.neurons] if self.neuron_wise else [1])
+        negative = th.rand([self.state.neurons] if self.neuron_wise else [1])
+
+        positive = positive.reshape(self.state.align_dims)
+        negative = negative.reshape(self.state.align_dims)
+
+        self.positive = nn.Parameter(positive)
+        self.negative = nn.Parameter(negative)
+
+        self.quantize_fn = getattr(eve.core.quantize_fn, "Ternary")(**kwargs)
+
+    def quantization_forward(self, x: Tensor) -> Tensor:
+        # compute threshold
+        with th.no_grad():
+            if self.state.neuron_wise:
+                threshold = th.abs(x)
+                for dim in self.state.reduce_dims:
+                    threshold = threshold.max(dim=dim, keepdim=True)[0]
+                threshold = self.threshold_factor * threshold
+            else:
+                threshold = self.threshold_factor * th.max(th.abs(x))
+
+        return self.quantize_fn(x, self.positive, self.negative, threshold)
