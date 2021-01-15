@@ -200,7 +200,7 @@ def train(net, exp_name: str = "quan", data_root: str = "/home/densechen/dataset
 
 # define quantization neural network with quantize param, quantize act and quantize
 quantization_neural_network_both = mnist(
-    quan_on_w=True, quan_on_a=True).quantize()
+    quan_on_w=False, quan_on_a=True).quantize()
 
 print("===> Quantization")
 train(quantization_neural_network_both, "both")
