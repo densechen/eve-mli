@@ -1,4 +1,4 @@
-import utils  # pylint: disable=import-error
+# import utils  # pylint: disable=import-error
 
 import os
 import random
@@ -19,7 +19,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from matplotlib import pyplot as plt
 
-
 # import necessary packages.
 # at the beginning, ensure that the eve-mli package is in your python path.
 # or you just install it via `pip install eve-mli`.
@@ -36,8 +35,6 @@ class mnist(eve.core.Eve):
                  quan_on_w: bool = True,
                  bits: int = 8,
                  quantize_fn: str = "Round",
-                 range_tracker: str = "average_tracker",
-                 average_tracker_momentum: float = 0.1,
                  upgrade_bits: bool = False,
                  neuron_wise: bool = False,
                  asymmetric: bool = False,
@@ -48,33 +45,16 @@ class mnist(eve.core.Eve):
         super().__init__()
 
         def build_quantizer(state):
-            if state.apply_on == "param":
-                # use INQuantizer for param
-                return eve.core.quan.INQuantizer(state,
-                                                 bits=bits,
-                                                 quantize_fn=quantize_fn,
-                                                 range_tracker=range_tracker,
-                                                 average_tracker_momentum=average_tracker_momentum,
-                                                 upgrade_bits=upgrade_bits,
-                                                 neuron_wise=neuron_wise,
-                                                 asymmetric=asymmetric,
-                                                 signed_quantization=signed_quantization,
-                                                 learnable_alpha=learnable_alpha,
-                                                 upgrade_fn=upgrade_fn,
-                                                 **kwargs,)
-            else:
-                return eve.core.quan.Quantizer(state,
-                                               bits=bits,
-                                               quantize_fn=quantize_fn,
-                                               range_tracker=range_tracker,
-                                               average_tracker_momentum=average_tracker_momentum,
-                                               upgrade_bits=upgrade_bits,
-                                               neuron_wise=neuron_wise,
-                                               asymmetric=asymmetric,
-                                               signed_quantization=signed_quantization,
-                                               learnable_alpha=learnable_alpha,
-                                               upgrade_fn=upgrade_fn,
-                                               **kwargs,)
+            return eve.core.quan.QILQuantizer(state,
+                                              bits=bits,
+                                              quantize_fn=quantize_fn,
+                                              upgrade_bits=upgrade_bits,
+                                              neuron_wise=neuron_wise,
+                                              asymmetric=asymmetric,
+                                              signed_quantization=signed_quantization,
+                                              learnable_alpha=learnable_alpha,
+                                              upgrade_fn=upgrade_fn,
+                                              **kwargs,)
         if quan_on_w:
             self.conv1 = eve.core.layer.QuanBNFuseConv2d(
                 1, 4, 3, stride=2, padding=1)
@@ -196,14 +176,6 @@ class MnistClassifier(eve.app.model.Classifier):
 
 
 def train(net, exp_name: str = "quan", data_root: str = "/home/densechen/dataset"):
-    # define an upgrader to update the mask_eve for INQ
-    mask_eve = []
-    for k, v in net.named_eve_parameters():
-        if k.endswith("mask_eve"):
-            print(k)
-            mask_eve.append(v)
-    mask_upgrader = eve.app.Upgrader(mask_eve)
-
     # replace the data_root for your path.
     classifier = MnistClassifier(net)
     classifier.prepare_data(data_root=data_root)
@@ -211,30 +183,24 @@ def train(net, exp_name: str = "quan", data_root: str = "/home/densechen/dataset
     # use default configuration
     # use a smaller lr for that alpha is unstable during training
     classifier.setup_train(lr=1e-4)
-
     # assign model to trainer
     eve.app.trainer.BaseTrainer.assign_model(classifier)
 
     trainer = eve.app.trainer.BaseTrainer()
 
     # train 10 epoches and report the final accuracy
-    tic = datetime.now()
     for e in range(1, 11):
+        tic = datetime.now()
         info = trainer.fit()
         info = trainer.test()
         toc = datetime.now()
         print(
             f"Test Accuracy: {info['acc']*100:.2f}%, Elapsed time: {toc-tic}")
 
-        # update
-        quan_ratio = float(e / 10.0)
-        for mask_eve in mask_upgrader.eve_parameters():
-            mask_upgrader.take_action(mask_eve, quan_ratio)
 
-
-# define quantization neural network with quantize param, quantize act and quantize on both
+# define quantization neural network with quantize param, quantize act and quantize
 quantization_neural_network_both = mnist(
     quan_on_w=True, quan_on_a=True).quantize()
 
-print("===> Quantization on both")
+print("===> Quantization")
 train(quantization_neural_network_both, "both")

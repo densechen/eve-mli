@@ -286,7 +286,7 @@ class l1_norm(Statistic):
 
 class kl_div(Statistic):
     def on_step(self, state: State, input: Tensor, output: Tensor):
-        _kl_div = F.kl_div(input[0], output, reduction="none").mean(
+        _kl_div = F.kl_div(input, output, reduction="none").mean(
             state.data_reduce_dims, keepdim=False)
         return _kl_div if state.neuron_wise else _kl_div.mean(0, keepdim=True)
 

@@ -11,7 +11,7 @@
 # \/__________/       \_\/\/__________/              \/_/\_______\/   \/_________/
 
 from abc import abstractmethod
-from typing import Callable, List, Union
+from typing import Callable, List, Union, Tuple
 
 import torch as th
 import torch.nn as nn
@@ -149,7 +149,8 @@ class Quantizer(Quan):
         self.register_buffer("max_val", None, persistent=False)
 
         # alpha
-        alpha = th.Tensor([1.0] * self.state.neurons)
+        alpha = th.Tensor(
+            [1.0] * (self.state.neurons if self.neuron_wise else 1))
         alpha = alpha.reshape(self.state.align_dims)
         self.alpha = nn.Parameter(alpha, learnable_alpha)
 
@@ -172,9 +173,9 @@ class Quantizer(Quan):
 
     @property
     def states(self):
-        return len(self.state.state_list())
+        return len(self.state.local_statistics)
 
-    def obs(self, input, output):
+    def obs(self, input: th.Tensor, output: th.Tensor) -> th.Tensor:
         if not self.bits_eve.requires_grad:
             return None
         else:
@@ -224,7 +225,7 @@ class Quantizer(Quan):
 
     @staticmethod
     @th.no_grad()
-    def average_tracker(cls, input: Tensor):
+    def average_tracker(cls, input: Tuple):
         # input is tuple, take the first element.
         input = input[0]
 
@@ -243,7 +244,8 @@ class Quantizer(Quan):
 
         if cls.learnable_alpha:
             if cls.asymmetric:
-                cls.zero_point = th.round(min_val * cls.alpha)
+                with th.no_grad():
+                    cls.zero_point = th.round(cls.min_val * cls.alpha)
             else:
                 cls.zero_point = th.zeros_like(cls.alpha)
             return
@@ -265,7 +267,7 @@ class Quantizer(Quan):
 
     @staticmethod
     @th.no_grad()
-    def global_tracker(cls, input: Tensor):
+    def global_tracker(cls, input: Tuple):
         # input is tuple, take the first element.
         input = input[0]
 
@@ -281,7 +283,8 @@ class Quantizer(Quan):
 
         if cls.learnable_alpha:
             if cls.asymmetric:
-                cls.zero_point = th.round(min_val * cls.alpha)
+                with th.no_grad():
+                    cls.zero_point = th.round(cls.min_val * cls.alpha)
             else:
                 cls.zero_point = th.zeros_like(cls.alpha)
             return
@@ -369,3 +372,103 @@ class INQuantizer(Quantizer):
             x.register_hook(lambda grad: grad * self.mask_eve)
 
         return x
+
+
+class QILQuantizer(Quantizer):
+    """The implementation of "Learning to Quantize Deep Networks by Optimizing Quantization Intervals with Task Loss".
+    """
+
+    def __init__(self, *args, **kwargs):
+        if args[0].apply_on == "data":
+            range_tracker = self.data_range_tracker
+        elif args[0].apply_on == "param":
+            range_tracker = self.param_range_tracker
+        else:
+            raise TypeError
+        kwargs["range_tracker"] = range_tracker
+        super().__init__(*args, **kwargs)
+
+        # re-register max_val and min_val to parameters, which need grad
+        del self.max_val
+        del self.min_val
+
+        max_val = th.Tensor(
+            [1.0] * (self.state.neurons if self.neuron_wise else 1))
+        max_val = max_val.reshape(self.state.align_dims)
+        self.max_val = nn.Parameter(max_val)
+        min_val = th.Tensor(
+            [0.0] * (self.state.neurons if self.neuron_wise else 1))
+        min_val = min_val.reshape(self.state.align_dims)
+        self.min_val = nn.Parameter(min_val)
+        if self.state.apply_on == "param":
+            # only param needed gamma
+            gamma = th.Tensor(
+                [1.0] * (self.state.neurons if self.neuron_wise else 1))
+            gamma = gamma.reshape(self.state.align_dims)
+            self.gamma = nn.Parameter(gamma)
+
+    @staticmethod
+    def data_range_tracker(cls, input: Tuple):
+        input = input[0]
+        assert th.all(cls.max_val > cls.min_val)
+
+        c_w = 0.5 * (cls.min_val + cls.max_val)  # 0.5
+        d_w = 0.5 * (cls.max_val - cls.min_val)  # 0.5
+        assert d_w > 0
+        alpha_w = 0.5 / d_w  # 1
+        beta_w = - 0.5 * c_w / d_w + 0.5  # 0
+
+        interval_act = input * (th.abs(input) > cls.min_val).type_as(input) * \
+            (th.abs(input) < cls.max_val).type_as(input)
+
+        transformed_act = (th.abs(input) > cls.max_val).type_as(
+            input) + alpha_w * th.abs(interval_act) + beta_w
+
+        if cls.learnable_alpha:
+            if cls.asymmetric:
+                with th.no_grad():
+                    cls.zero_point = th.round(cls.min_val * cls.alpha)
+            else:
+                cls.zero_point = th.zeros_like(cls.alpha)
+            return
+
+        # update parameters
+        if cls.asymmetric:
+            cls.asymmetric_quantization_param()
+        else:
+            cls.symmetric_quantization_param()
+
+        return transformed_act
+
+    @staticmethod
+    def param_range_tracker(cls, input: Tuple):
+        input = input[0]
+        assert th.all(cls.max_val > cls.min_val)
+
+        c_w = 0.5 * (cls.max_val + cls.min_val)  # 0.5
+        d_w = 0.5 * (cls.max_val - cls.min_val)  # 0.5
+        assert d_w > 0
+        alpha_w = 0.5 / d_w  # 1
+        beta_w = - 0.5 * c_w / d_w + 0.5  # 0
+
+        interval_weight = input * (th.abs(input) > cls.min_val).type_as(
+            input) * (th.abs(input) < cls.max_val).type_as(input)
+
+        transformed_weight = th.sign(input) * (th.abs(input) > cls.max_val).type_as(input) + th.pow(
+            alpha_w * th.abs(interval_weight) + beta_w,  cls.gamma) * th.sign(interval_weight)
+
+        if cls.learnable_alpha:
+            if cls.asymmetric:
+                with th.no_grad():
+                    cls.zero_point = th.round(cls.min_val * cls.alpha)
+            else:
+                cls.zero_point = th.zeros_like(cls.alpha)
+            return
+
+        # update parameters
+        if cls.asymmetric:
+            cls.asymmetric_quantization_param()
+        else:
+            cls.symmetric_quantization_param()
+
+        return transformed_weight
