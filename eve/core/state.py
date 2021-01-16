@@ -207,6 +207,10 @@ class State(object):
     def filter_weight(self):
         return self.filter_module.weight
 
+    @property
+    def filter_bias(self):
+        return self.filter_module.bias
+
 
 class cnt(Statistic):
     __cnt = 0.0
