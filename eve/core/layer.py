@@ -283,6 +283,18 @@ class RateEncoder(Encoder):
         return self.raw_input_eve.float()
 
 
+class RateOnceEncoder(Encoder):
+    """Just return the input as encoding trains at the first time.
+    """
+
+    def spiking_forward(self, x: Tensor) -> Tensor:
+        if self.raw_input_eve is None:
+            self.raw_input_eve = x
+            return self.raw_input_eve.float()
+        else:
+            return th.zeros_like(self.raw_input_eve).float()
+
+
 class IntervalEncoder(Encoder):
     def __init__(self, interval_steps, timesteps):
         """In this encoder, timesteps is only used to make sure the spiking times.

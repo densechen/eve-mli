@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "/home/densechen/miniconda3/envs/pytorch/bin/python",
+    "python.pythonPath": "/home/densechen/miniconda3/envs/eve-mli/bin/python",
     "python.formatting.provider": "autopep8"
 }
