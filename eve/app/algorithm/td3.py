@@ -397,10 +397,10 @@ class TD3(OffPolicyAlgorithm):
             self.policy.reset(set_to_none=True)
             if self.sample_episode:
                 actor_loss, critic_loss = self.train_episode_forward(
-                    replay_datas)
+                    replay_datas, gradient_step)
             else:
                 actor_loss, critic_loss = self.train_step_forward(
-                    replay_datas[0])
+                    replay_datas[0], gradient_step)
             actor_losses.append(actor_loss)
             critic_losses.append(critic_loss)
 
@@ -411,7 +411,7 @@ class TD3(OffPolicyAlgorithm):
         logger.record("train/actor_loss", np.mean(actor_losses))
         logger.record("train/critic_loss", np.mean(critic_losses))
 
-    def train_step_forward(self, replay_data):
+    def train_step_forward(self, replay_data, gradient_step):
         """
         :param replay_data: contains only a step's information.
         :return: the actor loss and critic loss as float number.
@@ -481,7 +481,7 @@ class TD3(OffPolicyAlgorithm):
 
         return actor_loss.item(), critic_loss.item()
 
-    def train_episode_forward(self, replay_datas):
+    def train_episode_forward(self, replay_datas, gradient_step):
         """
         :param replay_datas: is a list contains the information for whole episode.
         :return: the actor loss and critic loss as float.
