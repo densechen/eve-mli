@@ -42,6 +42,7 @@ class Actor(BasePolicy):
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
+
     def __init__(
         self,
         observation_space: space.EveSpace,
@@ -120,6 +121,7 @@ class TD3Policy(BasePolicy):
     :param share_features_extractor: Whether to share or not the features extractor
         between the actor and the critic (this saves computation time)
     """
+
     def __init__(
         self,
         observation_space: space.EveSpace,
@@ -308,6 +310,7 @@ class TD3(OffPolicyAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
+
     def __init__(
         self,
         policy: Union[str, Type[TD3Policy]],
@@ -392,71 +395,14 @@ class TD3(OffPolicyAlgorithm):
                 batch_size, env=self._vec_normalize_env)
 
             self.policy.reset(set_to_none=True)
-            for replay_data in replay_datas:
-                with th.no_grad():
-                    # Select action according to policy and add clipped noise
-                    noise = replay_data.actions.clone().data.normal_(
-                        0, self.target_policy_noise)
-                    noise = noise.clamp(-self.target_noise_clip,
-                                        self.target_noise_clip)
-                    next_actions = (
-                        self.actor_target(replay_data.next_observations) +
-                        noise).clamp(-1, 1)
-
-                    # Compute the next Q-values: min over all critics targets
-                    next_q_values = th.cat(self.critic_target(
-                        replay_data.next_observations, next_actions),
-                                           dim=-1)
-                    next_q_values, _ = th.min(next_q_values,
-                                              dim=-1,
-                                              keepdim=True)
-
-                    # make it suit for eve
-                    if replay_data.rewards.dim() < next_q_values.dim():
-                        rewards = replay_data.rewards.unsqueeze(1)
-                    else:
-                        rewards = replay_data.rewards
-                    if replay_data.dones.dim() < next_q_values.dim():
-                        dones = replay_data.dones.unsqueeze(1)
-                    else:
-                        dones = replay_data.dones
-
-                    target_q_values = rewards + (
-                        1 - dones) * self.gamma * next_q_values
-
-                # Get current Q-values estimates for each critic network
-                current_q_values = self.critic(replay_data.observations,
-                                               replay_data.actions)
-
-                # Compute critic loss
-                critic_loss = sum([
-                    F.mse_loss(current_q, target_q_values)
-                    for current_q in current_q_values
-                ])
-                critic_losses.append(critic_loss.item())
-
-                # Optimize the critics
-                self.critic.optimizer.zero_grad()
-                critic_loss.backward()
-                self.critic.optimizer.step()
-
-                # Delayed policy updates
-                if gradient_step % self.policy_delay == 0:
-                    # Compute actor loss
-                    actor_loss = -self.critic.q1_forward(
-                        replay_data.observations,
-                        self.actor(replay_data.observations)).mean()
-                    actor_losses.append(actor_loss.item())
-
-                    # Optimize the actor
-                    self.actor.optimizer.zero_grad()
-                    actor_loss.backward()
-                    self.actor.optimizer.step()
-
-                    polyak_update(self.critic.parameters(),
-                                  self.critic_target.parameters(), self.tau)
-                    polyak_update(self.actor.parameters(),
-                                  self.actor_target.parameters(), self.tau)
+            if self.sample_episode:
+                actor_loss, critic_loss = self.train_episode_forward(
+                    replay_datas)
+            else:
+                actor_loss, critic_loss = self.train_step_forward(
+                    replay_datas[0])
+            actor_losses.append(actor_loss)
+            critic_losses.append(critic_loss)
 
         self._n_updates += gradient_steps
         logger.record("train/n_updates",
@@ -464,6 +410,160 @@ class TD3(OffPolicyAlgorithm):
                       exclude="tensorboard")
         logger.record("train/actor_loss", np.mean(actor_losses))
         logger.record("train/critic_loss", np.mean(critic_losses))
+
+    def train_step_forward(self, replay_data):
+        """
+        :param replay_data: contains only a step's information.
+        :return: the actor loss and critic loss as float number.
+        """
+        with th.no_grad():
+            # Select action according to policy and add clipped noise
+            noise = replay_data.actions.clone().data.normal_(
+                0, self.target_policy_noise)
+            noise = noise.clamp(-self.target_noise_clip,
+                                self.target_noise_clip)
+            next_actions = (
+                self.actor_target(replay_data.next_observations) +
+                noise).clamp(-1, 1)
+
+            # Compute the next Q-values: min over all critics targets
+            next_q_values = th.cat(self.critic_target(
+                replay_data.next_observations, next_actions),
+                dim=-1)
+            next_q_values, _ = th.min(next_q_values,
+                                      dim=-1,
+                                      keepdim=True)
+
+            # make it suit for eve
+            if replay_data.rewards.dim() < next_q_values.dim():
+                rewards = replay_data.rewards.unsqueeze(1)
+            else:
+                rewards = replay_data.rewards
+            if replay_data.dones.dim() < next_q_values.dim():
+                dones = replay_data.dones.unsqueeze(1)
+            else:
+                dones = replay_data.dones
+
+            target_q_values = rewards + (
+                1 - dones) * self.gamma * next_q_values
+
+        # Get current Q-values estimates for each critic network
+        current_q_values = self.critic(replay_data.observations,
+                                       replay_data.actions)
+
+        # Compute critic loss
+        critic_loss = sum([
+            F.mse_loss(current_q, target_q_values)
+            for current_q in current_q_values
+        ])
+
+        # Optimize the critics
+        self.critic.optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic.optimizer.step()
+
+        # Delayed policy updates
+        if gradient_step % self.policy_delay == 0:
+            # Compute actor loss
+            actor_loss = -self.critic.q1_forward(
+                replay_data.observations,
+                self.actor(replay_data.observations)).mean()
+
+            # Optimize the actor
+            self.actor.optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor.optimizer.step()
+
+            polyak_update(self.critic.parameters(),
+                          self.critic_target.parameters(), self.tau)
+            polyak_update(self.actor.parameters(),
+                          self.actor_target.parameters(), self.tau)
+
+        return actor_loss.item(), critic_loss.item()
+
+    def train_episode_forward(self, replay_datas):
+        """
+        :param replay_datas: is a list contains the information for whole episode.
+        :return: the actor loss and critic loss as float.
+        """
+        target_q_values_episode = []
+        current_q_values_episode = []
+        for replay_data in replay_datas:
+            with th.no_grad():
+                # Select action according to policy and add clipped noise
+                noise = replay_data.actions.clone().data.normal_(
+                    0, self.target_policy_noise)
+                noise = noise.clamp(-self.target_noise_clip,
+                                    self.target_noise_clip)
+                next_actions = (
+                    self.actor_target(replay_data.next_observations) +
+                    noise).clamp(-1, 1)
+
+                # Compute the next Q-values: min over all critics targets
+                next_q_values = th.cat(self.critic_target(
+                    replay_data.next_observations, next_actions),
+                    dim=-1)
+                next_q_values, _ = th.min(next_q_values,
+                                          dim=-1,
+                                          keepdim=True)
+
+                # make it suit for eve
+                if replay_data.rewards.dim() < next_q_values.dim():
+                    rewards = replay_data.rewards.unsqueeze(1)
+                else:
+                    rewards = replay_data.rewards
+                if replay_data.dones.dim() < next_q_values.dim():
+                    dones = replay_data.dones.unsqueeze(1)
+                else:
+                    dones = replay_data.dones
+
+                target_q_values = rewards + (
+                    1 - dones) * self.gamma * next_q_values
+                target_q_values_episode.append(target_q_values)
+
+            # Get current Q-values estimates for each critic network
+            current_q_values = self.critic(replay_data.observations,
+                                           replay_data.actions)
+
+            current_q_values_episode.append(current_q_values)
+
+        target_q_values_episode = th.stack(
+            target_q_values_episode, dim=0).sum(dim=0)
+        current_q_values_episode = th.stack(
+            current_q_values_episode, dim=0).sum(dim=0)
+        # Compute critic loss
+        critic_loss = sum([
+            F.mse_loss(current_q, target_q_values_episode)
+            for current_q in current_q_values_episode
+        ])
+
+        # Optimize the critics
+        self.critic.optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic.optimizer.step()
+
+        actor_losses = []
+        for replay_data in replay_datas:
+            # Delayed policy updates
+            if gradient_step % self.policy_delay == 0:
+                # Compute actor loss
+                actor_loss = -self.critic.q1_forward(
+                    replay_data.observations,
+                    self.actor(replay_data.observations)).mean()
+                actor_losses.append(actor_loss)
+
+        actor_losses = th.stack(actor_losses, dim=0).sum(dim=0)
+        # Optimize the actor
+        self.actor.optimizer.zero_grad()
+        actor_losses.backward()
+        self.actor.optimizer.step()
+
+        polyak_update(self.critic.parameters(),
+                      self.critic_target.parameters(), self.tau)
+        polyak_update(self.actor.parameters(),
+                      self.actor_target.parameters(), self.tau)
+
+        return actor_losses.item(), critic_loss.item()
 
     def learn(
         self,

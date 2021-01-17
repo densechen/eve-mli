@@ -26,7 +26,7 @@ class mnist(eve.core.Eve):
     def __init__(self, neuron_wise: bool = False):
         super().__init__()
 
-        eve.core.State.register_global_statistic("l1_norm")
+        eve.core.State.register_global_statistic("param_l1_norm")
         eve.core.State.register_global_statistic("kl_div")
 
         self.conv1 = nn.Sequential(

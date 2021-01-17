@@ -290,7 +290,7 @@ class kernel_size(Statistic):
         return th.tensor([self._kernel_size / kernel_size.__kernel_size] * (state.neurons if state.neuron_wise else 1), device=state.device)
 
 
-class l1_norm(Statistic):
+class param_l1_norm(Statistic):
     def on_step(self, state: State, input: Tensor, output: Tensor):
         weight = state.filter_weight
 
@@ -298,14 +298,40 @@ class l1_norm(Statistic):
         return _l1_norm if state.neuron_wise else _l1_norm.mean(0, keepdim=True)
 
 
-class kl_div(Statistic):
+class data_l1_norm(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        _l1_norm = output.abs().mean(dim=state.data_reduce_dims)
+        return _l1_norm if state.neuron_wise else _l1_norm.mean(0, keepdim=True)
+
+
+class data_mean(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        mean = output.mean(dim=state.data_reduce_dims)
+        return mean if state.neuron_wise else mean.mean(0, keepdim=True)
+
+
+class data_var(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        var = output.var(dim=state.data_reduce_dims)
+        return var if state.neuron_wise else var.mean(0, keepdim=True)
+
+
+class data_max(Statistic):
+    def on_step(self, state: State, input: Tensor, output: Tensor):
+        max_ = output
+        for dim in state.data_reduce_dims:
+            max_ = max_.max(dim=dim, keepdim=True)[0]
+        return max_.view(-1) if state.neuron_wise else max_.max().view(-1)
+
+
+class data_kl_div(Statistic):
     def on_step(self, state: State, input: Tensor, output: Tensor):
         _kl_div = F.kl_div(input, output, reduction="none").mean(
             state.data_reduce_dims, keepdim=False)
         return _kl_div if state.neuron_wise else _kl_div.mean(0, keepdim=True)
 
 
-class fire_rate(Statistic):
+class data_fire_rate(Statistic):
     def on_step(self, state: State, input: Tensor, output: Tensor):
         _fire_rate = (output > 0.0).float().mean(
             state.data_reduce_dims, keepdim=False)
@@ -320,7 +346,11 @@ __build_in_statistic__ = {
     "param_num": param_num,
     "stride": stride,
     "kernel_size": kernel_size,
-    "l1_norm": l1_norm,
-    "kl_div": kl_div,
-    "fire_rate": fire_rate,
+    "param_l1_norm": param_l1_norm,
+    "data_l1_norm": data_l1_norm,
+    "data_mean": data_mean,
+    "data_var": data_var,
+    "data_max": data_max,
+    "data_kl_div": data_kl_div,
+    "data_fire_rate": data_fire_rate,
 }

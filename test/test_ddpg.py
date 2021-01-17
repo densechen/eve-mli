@@ -123,7 +123,7 @@ mnist_classifier.set_observation_space(None)
 # define a trainer
 MnistTrainer.assign_model(mnist_classifier)
 
-# define a experiment manager
+# define an experiment manager
 
 exp_manager = eve.app.ExperimentManager(
     algo="ddpg",
