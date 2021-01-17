@@ -524,13 +524,15 @@ class TD3(OffPolicyAlgorithm):
             # Get current Q-values estimates for each critic network
             current_q_values = self.critic(replay_data.observations,
                                            replay_data.actions)
-
-            current_q_values_episode.append(current_q_values)
+            if len(current_q_values_episode) == 0:
+                current_q_values_episode = current_q_values
+            else:
+                current_q_values_episode += current_q_values
 
         target_q_values_episode = th.stack(
             target_q_values_episode, dim=0).sum(dim=0)
-        current_q_values_episode = th.stack(
-            current_q_values_episode, dim=0).sum(dim=0)
+        current_q_values_episode = [th.stack(
+            current_q_values_episode, dim=0).sum(dim=0)]
         # Compute critic loss
         critic_loss = sum([
             F.mse_loss(current_q, target_q_values_episode)
