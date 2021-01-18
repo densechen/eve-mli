@@ -24,6 +24,7 @@ from eve.app.upgrader import Upgrader
 from eve.app.utils import get_device
 from eve.core.eve import Eve
 from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
 
 # pylint: disable=no-member
 
@@ -255,19 +256,20 @@ class BaseModel(Eve):
 
     def train_epoch(self,
                     *args,
-                    timesteps: int = -1,
                     **kwargs) -> Dict[str, Any]:
         """Train the model for timesteps times.
 
-        :param timesteps: the max iterations to train. if -1, train it on 
-            the dataset for one epoch.
+        :param tqdm_verbose: bool, if ture, use tqdm.
         """
         infos = {}
         train_step_generator = self._train_step(*args, **kwargs)
 
-        for timestep, info in enumerate(train_step_generator):
-            if timesteps > 0 and timestep > timesteps:
-                break
+        if kwargs.get("tqdm_verbose", False):
+            progress = tqdm(train_step_generator)
+        else:
+            progress = train_step_generator
+
+        for info in progress:
             extend_info(infos, **info)
 
         if self.reduce_info_hook is not None:
@@ -277,19 +279,20 @@ class BaseModel(Eve):
 
     def test_epoch(self,
                    *args,
-                   timesteps: int = -1,
                    **kwargs) -> Dict[str, Any]:
         """Test the model for timesteps times.
 
-        :param timesteps: the max iterations to test. if -1, test it on 
-            the dataset for one epoch.
+        :param tqdm_verbose: bool, if ture, use tqdm.
         """
         infos = {}
         test_step_generator = self._test_step(*args, **kwargs)
 
-        for timestep, info in enumerate(test_step_generator):
-            if timesteps > 0 and timestep > timesteps:
-                break
+        if kwargs.get("tqdm_verbose", False):
+            progress = tqdm(test_step_generator)
+        else:
+            progress = test_step_generator
+
+        for info in progress:
             extend_info(infos, **info)
 
         if self.reduce_info_hook is not None:
@@ -303,15 +306,17 @@ class BaseModel(Eve):
                     **kwargs) -> Dict[str, Any]:
         """Valid the model for timesteps times.
 
-        :param timesteps: the max iterations to valid. if -1, valid it on 
-            the dataset for one epoch.
+        :param tqdm_verbose: bool, if ture, use tqdm.
         """
         infos = {}
         valid_step_generator = self._valid_step(*args, **kwargs)
 
-        for timestep, info in enumerate(valid_step_generator):
-            if timesteps > 0 and timestep > timesteps:
-                break
+        if kwargs.get("tqdm_verbose", False):
+            progress = tqdm(valid_step_generator)
+        else:
+            progress = valid_step_generator
+
+        for info in progress:
             extend_info(infos, **info)
 
         if self.reduce_info_hook is not None:
