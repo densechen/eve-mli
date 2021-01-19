@@ -269,12 +269,15 @@ class BaseModel(Eve):
         else:
             progress = train_step_generator
 
-        for info in progress:
+        max_steps = kwargs.get("max_steps", None)
+        for idx, info in enumerate(progress):
             extend_info(infos, **info)
             if kwargs.get("tqdm_verbose", False):
                 progress.set_description(
                     f"loss:{info['loss']:.2f}, acc: {info['acc'] * 100:.2f}%")
-
+            if max_steps is not None and idx > max_steps:
+                break
+            
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
         else:
@@ -295,10 +298,13 @@ class BaseModel(Eve):
         else:
             progress = test_step_generator
 
-        for info in progress:
+        max_steps = kwargs.get("max_steps", None)
+        for idx, info in enumerate(progress):
             extend_info(infos, **info)
             if kwargs.get("tqdm_verbose", False):
                 progress.set_description(f"acc: {info['acc'] * 100:.2f}%")
+            if max_steps is not None and idx > max_steps:
+                break
 
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
@@ -321,10 +327,13 @@ class BaseModel(Eve):
         else:
             progress = valid_step_generator
 
-        for info in progress:
+        max_steps = kwargs.get("max_steps", None)
+        for idx, info in enumerate(progress):
             extend_info(infos, **info)
             if kwargs.get("tqdm_verbose", False):
                 progress.set_description(f"acc: {info['acc'] * 100:.2f}%")
+            if max_steps is not None and idx > max_steps:
+                break
 
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
