@@ -176,7 +176,7 @@ class BaseModel(Eve):
 
     def register_info_hook(self, fn):
         """Registers fn to self.reduce_info_hook.
-        
+
             We will deliver infos, which like: dict(key: list(v)) to fn. 
         """
         self.reduce_info_hook = fn
@@ -271,6 +271,9 @@ class BaseModel(Eve):
 
         for info in progress:
             extend_info(infos, **info)
+            if kwargs.get("tqdm_verbose", False):
+                progress.set_description(
+                    f"loss:{info['loss']:.2f}, acc: {info['acc'] * 100:.2f}%")
 
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
@@ -294,6 +297,8 @@ class BaseModel(Eve):
 
         for info in progress:
             extend_info(infos, **info)
+            if kwargs.get("tqdm_verbose", False):
+                progress.set_description(f"acc: {info['acc'] * 100:.2f}%")
 
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
@@ -318,6 +323,8 @@ class BaseModel(Eve):
 
         for info in progress:
             extend_info(infos, **info)
+            if kwargs.get("tqdm_verbose", False):
+                progress.set_description(f"acc: {info['acc'] * 100:.2f}%")
 
         if self.reduce_info_hook is not None:
             return self.reduce_info_hook(infos)
@@ -410,6 +417,7 @@ class Classifier(BaseModel):
     We will use Cross-Entropy Loss as default and provide 
     a default settting to it.
     """
+
     def __init__(self, model: Eve, device: Union[th.device, str] = "auto"):
         super().__init__(device)
 
