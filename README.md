@@ -70,6 +70,10 @@ The project remains in development. We encourage more volunteers to come togethe
 
 **eve-mli-v0.1.0 is released!**
 
+## Next to do
+
+Add CUDA support for speeding up.
+
 ## About the authors
 
 [Dengsheng Chen](https://densechen.github.io)
