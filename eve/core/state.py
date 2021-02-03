@@ -42,6 +42,42 @@ class Statistic(object):
         """
 
 
+def align_dims_on_param(m: nn.Module) -> List[int]:
+    return {
+        nn.Linear: [-1, 1],
+        nn.Conv1d: [-1, 1, 1],
+        nn.Conv2d: [-1, 1, 1, 1],
+        nn.Conv3d: [-1, 1, 1, 1, 1],
+    }[type(m)]
+
+
+def align_dims_on_data(m: nn.Module) -> List[int]:
+    return {
+        nn.Linear: [1, 1, -1],
+        nn.Conv1d: [1, -1, 1],
+        nn.Conv2d: [1, -1, 1, 1],
+        nn.Conv3d: [1, -1, 1, 1, 1],
+    }[type(m)]
+
+
+def reduce_dims_on_param(m: nn.Module) -> List[int]:
+    return {
+        nn.Linear: [1, ],  # feature_out x feaure_in
+        nn.Conv1d: [1, 2],
+        nn.Conv2d: [1, 2, 3],
+        nn.Conv3d: [1, 2, 3, 4],
+    }[type(m)]
+
+
+def reduce_dims_on_data(m: nn.Module) -> List[int]:
+    return {
+        nn.Linear: [0, 1],
+        nn.Conv1d: [0, 2],
+        nn.Conv2d: [0, 2, 3],
+        nn.Conv3d: [0, 2, 3, 4],
+    }[type(m)]
+
+
 class State(object):
     """A special auxiliary module to manage different data and parameter state.
 
@@ -112,29 +148,25 @@ class State(object):
         self.filter_module = filter_module
 
         self.neuron_wise = neuron_wise
-
         if align_dims is None:
-            if isinstance(self.filter_module, nn.Linear):
-                align_dims = {"data": [1, 1, -1],
-                              "param": [-1, 1]}[self.apply_on]
-            elif isinstance(self.filter_module, nn.Conv2d):
-                align_dims = {"data": [1, -1, 1, 1],
-                              "param": [-1, 1, 1, 1]}[self.apply_on]
-        self.align_dims = align_dims
+            if self.apply_on == "data":
+                self.align_dims = align_dims_on_data(self.filter_module)
+            elif self.apply_on == "param":
+                self.align_dims = align_dims_on_param(self.filter_module)
+            else:
+                raise ValueError
+        else:
+            self.align_dims = align_dims
 
         if param_reduce_dims is None:
-            if isinstance(self.filter_module, nn.Linear):
-                param_reduce_dims = [1, ]
-            elif isinstance(self.filter_module, nn.Conv2d):
-                param_reduce_dims = [1, 2, 3]
-        self.param_reduce_dims = param_reduce_dims
+            self.param_reduce_dims = reduce_dims_on_param(self.filter_module)
+        else:
+            self.param_reduce_dims = param_reduce_dims
 
         if data_reduce_dims is None:
-            if isinstance(self.filter_module, nn.Linear):
-                data_reduce_dims = [0, 1, ]
-            elif isinstance(self.filter_module, nn.Conv2d):
-                data_reduce_dims = [0, 2, 3]
-        self.data_reduce_dims = data_reduce_dims
+            self.data_reduce_dims = reduce_dims_on_data(self.filter_module)
+        else:
+            self.data_reduce_dims = data_reduce_dims
 
         if self.apply_on == "data":
             self.reduce_dims = self.data_reduce_dims
