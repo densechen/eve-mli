@@ -72,7 +72,7 @@ The project remains in development. We encourage more volunteers to come togethe
 
 ## Next to do
 
-Add CUDA support for speeding up.
+Add CUDA support for speeding up, refer to [here](https://github.com/tudelft/cuSNN).
 
 ## About the authors
 
