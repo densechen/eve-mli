@@ -80,8 +80,6 @@ Add CUDA support for speeding up, refer to [here](https://github.com/tudelft/cuS
 Master @ National University of Defense Technology
 densechen@foxmail.com
 
-[csyhhu](https://github.com/csyhhu)
-
 ## References
 
 [PyTorch](https://github.com/pytorch/pytorch)
