@@ -2,17 +2,17 @@
 <img src="images/logo.png" width="37" height="52" alt="logo" />
 </center>
 
-# eve-mli: making learning interesting
+# OpenSpiking
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/densechen/eve-mli) [![Documentation Status](https://readthedocs.org/projects/eve-mli/badge/?version=latest)](https://eve-mli.readthedocs.io/en/latest/?badge=latest) [![PyPI](https://img.shields.io/pypi/v/eve-mli)](https://pypi.org/project/eve-mli) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/eve-mli)](https://pypi.org/project/eve-mli)
 
-Eve is an open-source deep learning framework used to devise and modify a network architecture in a flexible and interesting way.
+OpenSpiking is an open-source deep learning framework used to devise and modify a network architecture in a flexible and interesting way.
 
 We provide several jupyter notebooks under `./examples` to demonstrate how to build various network structures.
 
-The most features of Eve are that: it provides a well defined framework which make your network structure can be upgraded along with the learning of weights.
+The most features of OpenSpiking are that: it provides a well defined framework which make your network structure can be upgraded along with the learning of weights.
 
-**Any contributions to Eve is welcome!**
+**Any contributions to OpenSpiking is welcome!**
 
 ## Installation
 
